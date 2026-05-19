@@ -1,0 +1,70 @@
+# ⚽ Guía Conceptual: ¿Cómo funciona la Polla Mundialera 2026?
+
+Este documento explica en lenguaje sencillo, sin tecnicismos ni líneas de código, la arquitectura y el funcionamiento del sistema. Está diseñado especialmente para usuarios de Inteligencia Artificial (IA) que gestionan o expanden este repositorio mediante prompts, permitiendo entender el "mapa" del proyecto para interactuar eficientemente con modelos de lenguaje (como Gemini o Claude).
+
+---
+
+## 1. La Arquitectura en Simple: Los Tres Pilares
+
+El proyecto no es una sola pieza de software, sino un conjunto de tres componentes que conversan entre sí constantemente. Imagínalo como un restaurante:
+
+### A. La Fachada o Interfaz (`index.html`)
+* **Qué es:** Es el "comedor" del restaurante. Todo lo que el usuario ve, clickea y experimenta visualmente ocurre aquí. 
+* **Función:** Muestra los formularios de inscripción, las tablas de posiciones, los partidos para pronosticar y los efectos visuales. 
+* **Herramientas de diseño que utiliza:** Para no programar todo desde cero, se conecta a "asistentes de diseño" externos (servicios en la nube o CDNs) que le proporcionan la tipografía (*Outfit* y *Bebas Neue*), los íconos modernos (Lucide), los efectos de celebración (Confetti) y la capacidad de transformar los datos de la pantalla en un archivo de descarga (jsPDF para los comprobantes).
+
+### B. El Cerebro y Motor de Almacenamiento (`Code.gs`)
+* **Qué es:** Es la "cocina" y la "bodega". Funciona dentro del entorno de Google Drive (Google Apps Script) conectado directamente a una planilla de Google Sheets.
+* **Función:** Procesa las solicitudes de la interfaz. Cuando alguien hace clic en "Guardar", este componente recibe los datos, los revisa, y decide dónde guardarlos.
+* **Seguridad integrada:** Cuenta con un sistema de "cerrojo digital" (llamado LockService). Si 50 personas intentan guardar un pronóstico exactamente al mismo segundo, el cerebro las hace esperar en una fila virtual de fracciones de segundo para que los datos no se pisen ni se borren entre sí.
+
+### C. La Base de Datos (Google Sheets)
+* **Qué es:** El libro de actas físico de la bodega. Es una planilla común y corriente con tres pestañas clave:
+  * **Jugadores:** Guarda los nombres, correos y estados de pago.
+  * **Pronósticos:** Guarda las predicciones exactas de cada usuario para cada fase del mundial.
+  * **Resultados:** Guarda los resultados oficiales y reales de los partidos del Mundial.
+
+---
+
+## 2. El Flujo de la Información: ¿Qué pasa cuando...?
+
+Para entender cómo operan los archivos juntos, veamos el camino que recorren los datos en dos acciones críticas:
+
+### Escenario A: Un usuario guarda su pronóstico
+1. **Paso 1 (Interfaz):** El jugador llena su cartilla en la página web (`index.html`) y presiona "Enviar Pronóstico".
+2. **Paso 2 (Viaje):** La página web empaqueta esos datos en un formato ordenado y los manda por internet hacia la URL de la aplicación web de Google.
+3. **Paso 3 (Cerebro):** El archivo `Code.gs` recibe el paquete, activa el "cerrojo" para congelar la planilla por un instante, y desarma el paquete.
+4. **Paso 4 (Almacenamiento):** Escribe el pronóstico en la pestaña *Pronósticos* en una fila asignada a ese usuario específico.
+5. **Paso 5 (Confirmación):** El cerebro le avisa a la interfaz: "¡Listo, guardado con éxito!". La página web reacciona activando una lluvia de confeti y permitiendo descargar el comprobante en PDF.
+
+### Escenario B: El administrador sincroniza los resultados reales
+1. **Paso 1 (Petición):** El administrador hace clic en "Sincronizar con API" desde su panel de control en la web.
+2. **Paso 2 (Consulta Externa):** El cerebro (`Code.gs`) se conecta mediante un "cable virtual" de forma segura con un proveedor de datos deportivos en internet (football-data.org).
+3. **Paso 3 (Traducción):** El proveedor entrega los resultados en inglés (ej: "South Africa", "Group Stage"). El cerebro tiene una lista de traducción interna que convierte los nombres de los países y las fases al español de inmediato.
+4. **Paso 4 (Cálculo):** El sistema compara los resultados reales obtenidos con los pronósticos de la pestaña *Pronósticos*, calcula matemáticamente cuántos puntos ganó cada jugador según las reglas del torneo, y actualiza la tabla de posiciones en tiempo real.
+
+---
+
+## 3. Diccionario de Conceptos Clave para interactuar con IA
+
+Cuando le pidas modificaciones a una IA, utiliza estos términos para que el modelo entienda exactamente a qué te refieres dentro del contexto de este proyecto:
+
+* **Backend / Lógica del Servidor:** Se refiere exclusivamente al archivo `Code.gs`. Pídele cambios aquí si necesitas cambiar cómo se calculan los puntos, agregar una nueva pestaña a la planilla, o cambiar la clave del administrador.
+* **Frontend / Interfaz:** Se refiere al archivo `index.html`. Pídele cambios aquí si quieres cambiar los colores, mover un botón, modificar la estructura de las tarjetas de partidos o alterar el diseño del PDF de descarga.
+* **Endpoints / Acciones:** Son las "órdenes" predefinidas que el cerebro entiende. En el código actual existen órdenes específicas como: `getAll` (traer todos los datos), `inscribir` (crear un usuario nuevo), `guardarPronosticos` (guardar jugadas) y `fetchResultadosAPI` (traer los datos reales del fútbol).
+* **CORS / Preflight:** Es el mecanismo de seguridad de los navegadores web. El código está diseñado de una forma especial (usando solicitudes GET/POST unificadas) para evitar que los navegadores bloqueen la comunicación entre la página web (alojada en Netlify o GitHub) y Google Sheets.
+
+---
+
+## 4. Guía de Prompts: Cómo pedirle mejoras a la IA usando este repositorio
+
+Al adjuntar los archivos de este repositorio a una IA, puedes usar plantillas de prompts estructuradas como las siguientes para obtener resultados perfectos sin saber programar:
+
+### Para modificar las Reglas de Puntaje (Se trabaja en `Code.gs`)
+> *"Actúa como un desarrollador experto en Google Apps Script. Utilizando el archivo Code.gs adjunto, necesito modificar el sistema de asignación de puntajes. Actualmente el sistema da X puntos por acertar. Quiero que ahora otorgue 5 puntos por achuntarle al campeón exacto, 3 puntos por acertar a los finalistas y 1 punto por fase superada. Modifica la lógica de cálculo sin alterar la estructura de almacenamiento en Google Sheets."*
+
+### Para modificar el Diseño o Colores (Se trabaja en `index.html`)
+> *"Actúa como un diseñador frontend experto. Revisando el archivo index.html, localiza la sección de variables de diseño `:root` al inicio de los estilos. Quiero cambiar la paleta de colores actual del mundial por una temática más corporativa: el color principal (`--rosa`) debe ser un azul profundo, el secundario un gris elegante, y el fondo de la aplicación un tono blanquecino suave. Asegúrate de mantener el diseño responsivo para celulares."*
+
+### Para agregar una Nueva Pestaña o Dato (Se trabaja en ambos archivos)
+> *"Necesito agregar un nuevo campo en el formulario de inscripción: 'Teléfono de Contacto'. Modifica el archivo index.html para incluir este campo en el formulario visual, y actualiza el archivo Code.gs para que capture este dato y lo guarde en una nueva columna en la pestaña 'Jugadores' de la planilla Google Sheets."*
