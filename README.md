@@ -1,59 +1,122 @@
-# ⚽ Polla Mundialera 2026 (AI-Friendly)
+# ⚽ La Polla Mundialera 2026
 
-Bienvenido a la **Polla Mundialera 2026**. Este repositorio contiene una plataforma web ligera, moderna y completamente automatizada para gestionar una quiniela deportiva (polla) entre amigos, familiares o compañeros de trabajo para el Mundial de Fútbol 2026.
+> **Demo en vivo:** [tingado.github.io/PollaMundial2026](https://tingado.github.io/PollaMundial2026/)
 
-El proyecto ha sido diseñado bajo un enfoque **AI-Friendly**. Esto significa que su arquitectura es lo suficientemente limpia, modular y sencilla para que cualquier persona —incluso sin conocimientos previos de programación— pueda administrarlo, mantenerlo y expandirlo utilizando herramientas de Inteligencia Artificial (como Gemini, Claude o ChatGPT) mediante instrucciones en lenguaje natural (*prompts*).
-
----
-
-## 1. 🏗️ Arquitectura del Sistema (En Simple)
-
-Para gestionar este proyecto con IA, solo necesitas entender cómo interactúan sus tres componentes principales:
-
-1. **La Interfaz o Frontend (`index.html`):** Es la página web con la que interactúan los jugadores. Muestra los formularios de inscripción, las cartillas para ingresar los pronósticos, las tablas de posiciones y genera los comprobantes de juego en PDF.
-2. **El Cerebro o Backend (`Code.gs`):** Es un script que corre de forma gratuita dentro del entorno de Google Apps Script. Se encarga de procesar los datos que envía la página web, asegurar que dos registros no choquen entre sí (`LockService`), validar al administrador y conectarse de forma segura a internet para obtener los resultados oficiales.
-3. **La Base de Datos (Google Sheets):** Una planilla de cálculo tradicional en tu Google Drive que almacena la información en tres pestañas: `Jugadores`, `Pronosticos` y `Resultados`.
+Plataforma web para organizar una quiniela de fútbol entre amigos para el Mundial 2026. Sin servidores de pago, sin instalaciones — solo un archivo HTML y Google Sheets como base de datos.
 
 ---
 
-## 2. 🚀 Despliegue Rápido (En 15 Minutos)
+## ¿Qué incluye?
 
-El proyecto funciona de manera *serverless* (sin servidores de pago). El despliegue se realiza en tres grandes pasos:
-
-1. **Crear la Base de Datos:** Abre una nueva planilla en Google Sheets, ve a *Extensiones > Apps Script*, pega todo el contenido del archivo `Code.gs` e impleméntalo como **Aplicación Web** (configurando el acceso para "Cualquier persona").
-2. **Enlazar la Interfaz:** Copia la URL que te entregó Google Apps Script, abre tu archivo `index.html` y reemplaza la variable de conexión correspondiente.
-3. **Publicar la Web:** Sube el archivo `index.html` a un servicio de hosting estático gratuito como Netlify (arrastrando el archivo) o activando GitHub Pages en este repositorio.
-
-> 📋 *Para ver el paso a paso detallado con capturas lógicas de configuración y resolución de problemas comunes, lee el [MANUAL.md](./MANUAL.md).*
-
----
-
-## 3. 🤖 Guía de Mantenimiento y Evolución con IA
-
-Este repositorio está pensado para que lo co-administres con un modelo de lenguaje. A continuación, se detalla qué archivo debes entregarle a la IA según lo que desees lograr:
-
-### ¿Quieres cambiar el diseño, colores o interfaz?
-* **Archivo a modificar:** `index.html`
-* **Conceptos clave:** Tailwind CSS clases, estilos `:root`, estructura HTML, jsPDF (para el diseño del comprobante).
-* **Ejemplo de Prompt:** *"Revisa el archivo index.html adjunto. Quiero cambiar la paleta de colores actual para que coincida con la identidad visual de mi empresa (usa tonos azules y grises corporativos). Asegúrate de que los botones mantengan sus identificadores (`id`) para no romper la conexión con el servidor."*
-
-### ¿Quieres cambiar las reglas de puntaje o la lógica del juego?
-* **Archivo a modificar:** `Code.gs`
-* **Conceptos clave:** Google Apps Script, cálculo de puntajes, traducción de nombres de equipos de la API, endpoints (`getAll`, `inscribir`, `guardarPronosticos`).
-* **Ejemplo de Prompt:** *"Utilizando el archivo Code.gs adjunto, modifica la función que calcula los puntajes. Actualmente otorga X puntos por acierto; necesito que agregues una regla especial que premie con 10 puntos adicionales a quien adivine correctamente al Campeón del Mundo al final del torneo."*
-
-### ¿Quieres agregar campos de información nuevos?
-* **Archivos a modificar:** Ambos (`index.html` y `Code.gs`)
-* **Ejemplo de Prompt:** *"Necesito capturar el número de teléfono de los participantes al inscribirse. Modifica index.html para agregar el campo de texto en el formulario visual, y modifica Code.gs para que tome ese nuevo dato y lo escriba en una nueva columna en la pestaña 'Jugadores' de Google Sheets."*
+- 📅 Calendario de los 64 partidos de la fase de grupos
+- 🏟️ Tablas de posición de los 12 grupos (A–L)
+- 🎯 Pronósticos: quién clasifica 1° y 2° en cada grupo
+- 🏆 Eliminatorias: selección de equipos por ronda
+- 📊 Ranking con puntaje en tiempo real
+- 📋 Inscripción con gestión del pozo ($5.000 CLP entrada)
+- 🧮 Explicación del sistema de puntaje
+- ⚙️ Admin: resultados manuales + sincronización automática con football-data.org
+- ⚡ Panel lateral "¿Sabías que?" con datos curiosos del Mundial
 
 ---
 
-## 4. 🛠️ Tecnologías y Dependencias Externas
+## Sistema de puntaje
 
-Para mantener el proyecto liviano y fácil de leer en un solo archivo de interfaz, se utilizan los siguientes recursos vía CDN (no requieren instalación local):
+### Fase de grupos
+| Acierto | Puntos |
+|---|---|
+| 🥇 1° lugar del grupo correcto | **+2 pts** |
+| 🥈 2° lugar del grupo correcto | **+1 pt** |
 
-* **Fuentes:** Google Fonts (*Bebas Neue* y *Outfit*) para la consistencia tipográfica.
-* **Iconos:** Lucide Icons para la iconografía de la plataforma.
-* **Efectos:** Confetti-js para las animaciones de celebración al guardar datos.
-* **Documentos:** jsPDF y jsPDF-AutoTable para estructurar y descargar el comprobante de juego en el dispositivo del usuario.
-* **Datos Deportivos:** API de `football-data.org` para la descarga automatizada de los resultados oficiales del mundial.
+### Fase eliminatoria
+| Ronda | Puntos por equipo |
+|---|---|
+| 16avos de Final (32 equipos) | **+2 pts** |
+| Cuartos de Final (8 equipos) | **+4 pts** |
+| Semifinales (4 equipos) | **+6 pts** |
+| Finalista (2 equipos) | **+8 pts** |
+| 🏆 Campeón | **+10 pts** |
+
+Máximo posible: 36 pts grupos + 264 pts eliminatorias = **300 pts**
+
+---
+
+## Arquitectura
+
+```
+┌─────────────────────────────────────────────────────┐
+│              index.html (Frontend)                  │
+│  Todo el app en un solo archivo HTML/CSS/JS         │
+│  Se publica en GitHub Pages o Netlify               │
+└───────────────────┬─────────────────────────────────┘
+                    │ JSONP (GET)
+┌───────────────────▼─────────────────────────────────┐
+│         apps-script.gs (Backend)                    │
+│  Google Apps Script — gratis, sin servidor          │
+│  Desplegado como Web App pública                    │
+└───────────────────┬─────────────────────────────────┘
+                    │
+┌───────────────────▼─────────────────────────────────┐
+│         Google Sheets (Base de datos)               │
+│  Hojas: Jugadores · Pronosticos · Resultados        │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Archivos del repositorio
+
+| Archivo | Descripción |
+|---|---|
+| `index.html` | App completa (frontend) — todo en un solo archivo |
+| `apps-script.gs` | Backend (Google Apps Script) — se pega en el editor de Google |
+| `MANUAL.md` | Guía paso a paso para desplegar desde cero en ~15 minutos |
+| `Explicacion_Proyecto_Polla2026` | Guía conceptual para entender la arquitectura y trabajar con IA |
+
+---
+
+## Deploy rápido (15 minutos)
+
+1. **Backend:** Abre Google Sheets → Extensiones → Apps Script → pega `apps-script.gs` → Implementar como Web App
+2. **Frontend:** Activa GitHub Pages en este repo (Settings → Pages → rama `main`) o arrastra `index.html` a Netlify
+3. **Conectar:** Abre la app → pega la URL del Apps Script en el banner → Conectar
+
+📋 Instrucciones detalladas en el [MANUAL.md](./MANUAL.md)
+
+---
+
+## Replicar este proyecto para tu propio torneo
+
+Este proyecto está pensado para adaptarse fácilmente. Todo lo que necesitas cambiar está bien señalizado en los archivos:
+
+**Para adaptar el torneo:**
+- `FECHA_INICIO` y `FECHA_CIERRE` en `index.html`
+- Array `PARTIDOS` con el calendario de tu torneo
+- Objeto `GRUPOS` con los equipos participantes
+- `MONTO_ENTRADA` y porcentajes del pozo
+- `ADMIN_PIN` (default: `2026`)
+
+**Para cambiar el diseño:**
+- Variables CSS en `:root` al inicio del `<style>` (colores, fuentes)
+- El layout usa flexbox con sidebar fijo + main + panel derecho
+
+**Para cambiar la lógica de puntaje:**
+- `calcPtsGrupos()` y `calcPtsElim()` en `index.html`
+- `calcularScores()` en `apps-script.gs` (debe ser idéntico al frontend)
+- `ELIM_RONDAS` para las rondas y sus valores
+
+> 💡 La arquitectura está diseñada para que puedas describir los cambios en lenguaje natural a una IA (Claude, ChatGPT, Gemini) y aplicarlos sin saber programar. Ver [Explicacion_Proyecto_Polla2026](./Explicacion_Proyecto_Polla2026) para guía de prompts.
+
+---
+
+## Datos técnicos
+
+| | |
+|---|---|
+| Frontend | HTML + CSS + JS vanilla (sin frameworks) |
+| Backend | Google Apps Script (JSONP) |
+| Base de datos | Google Sheets |
+| Hosting | GitHub Pages (gratis) |
+| API resultados | football-data.org (plan gratuito) |
+| Fuentes | Google Fonts (Bebas Neue + Outfit) |
+| Costo total | **$0** |
