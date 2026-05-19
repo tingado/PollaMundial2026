@@ -130,10 +130,12 @@ Pasos:
 ### Sincronizar resultados automáticamente
 1. App → **Admin** → PIN: `2026`
 2. Sección **"🔌 Sincronización con API"**
-3. Token: `7dcb1c274a5a4c8582337e0752055982`
+3. Ingresa tu token de football-data.org (lo recibiste por email al registrarte)
 4. Clic en **"🔄 Sincronizar"**
 
 El sistema obtiene los resultados desde football-data.org, actualiza las rondas de eliminatoria y recalcula el ranking automáticamente.
+
+> ⚠️ La sincronización API solo funciona durante la fase eliminatoria (julio). Para la fase de grupos, usa el ingreso manual de resultados de grupos.
 
 ### Ingresar resultados de grupos manualmente
 1. App → **Admin** → sección **"🏟️ Resultados Finales de Grupos"**
@@ -180,7 +182,7 @@ Máximo en grupos: 12 grupos × 3 pts = **36 pts**
 | PIN admin | `2026` |
 | Monto entrada | $5.000 CLP |
 | Cierre pronósticos | 11 junio 2026, 15:00 hrs |
-| Token football-data.org | `7dcb1c274a5a4c8582337e0752055982` |
+| Token football-data.org | Tu token personal (recibido por email) |
 | Inicio del Mundial | 11 junio 2026 |
 | Final del torneo | 19 julio 2026 |
 | Premios | 50% / 30% / 20% del pozo |
