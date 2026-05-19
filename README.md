@@ -1,4 +1,5 @@
 ⚽ Polla Mundialera 2026 (AI-Friendly)
+
 Bienvenido a la Polla Mundialera 2026. Este repositorio contiene una plataforma web ligera, moderna y completamente automatizada para gestionar una quiniela deportiva (polla) entre amigos, familiares o compañeros de trabajo para el Mundial de Fútbol 2026.
 El proyecto ha sido diseñado bajo un enfoque AI-Friendly. Esto significa que su arquitectura es lo suficientemente limpia, modular y sencilla para que cualquier persona —incluso sin conocimientos previos de programación— pueda administrarlo, mantenerlo y expandirlo utilizando herramientas de Inteligencia Artificial (como Gemini, Claude o ChatGPT) mediante instrucciones en lenguaje natural (prompts).
 ---
