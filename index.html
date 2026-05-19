@@ -657,7 +657,7 @@ select option { background:#fff; }
         <div class="view-title">🏆 Eliminatorias</div>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+2</strong>, cuartos <strong style="color:var(--verde);">+4</strong>, semis <strong style="color:var(--verde);">+6</strong>, subcampeón <strong style="color:var(--dorado);">+8</strong>, campeón <strong style="color:var(--dorado);">+10</strong>
+        Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+2</strong>, cuartos <strong style="color:var(--verde);">+4</strong>, semis <strong style="color:var(--verde);">+6</strong>, finalistas <strong style="color:var(--dorado);">+8 c/u</strong>, campeón <strong style="color:var(--dorado);">+10</strong>
       </div>
       <div class="form-card" style="margin-bottom:1rem;">
         <label>Selecciona tu nombre</label>
@@ -739,7 +739,7 @@ select option { background:#fff; }
           <div class="score-row"><span>Equipo en 16avos</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
           <div class="score-row"><span>Equipo en Cuartos</span><span style="color:var(--verde);font-weight:700;">+4 pts</span></div>
           <div class="score-row"><span>Equipo en Semis</span><span style="color:var(--verde);font-weight:700;">+6 pts</span></div>
-          <div class="score-row"><span>Subcampeón</span><span style="color:var(--dorado);font-weight:700;">+8 pts</span></div>
+          <div class="score-row"><span>Finalista</span><span style="color:var(--dorado);font-weight:700;">+8 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);">
             <span>🏆 Campeón correcto</span>
             <span style="color:var(--dorado);font-weight:700;">+10 pts</span>
@@ -803,7 +803,7 @@ select option { background:#fff; }
           <div class="score-row"><span>Equipo correcto en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
           <div class="score-row"><span>Equipo correcto en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+4 pts</span></div>
           <div class="score-row"><span>Equipo correcto en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+6 pts</span></div>
-          <div class="score-row"><span>Subcampeón correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+8 pts</span></div>
+          <div class="score-row"><span>Finalista correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+8 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);border:1px solid rgba(245,188,0,0.25);">
             <span>🏆 Campeón del Mundo correcto</span>
             <span style="color:var(--dorado);font-weight:800;font-size:15px;">+10 pts</span>
@@ -1147,12 +1147,13 @@ function initCountdown(){
 // ══════════════════════════════════════════════════════════
 // FACTS WIDGET
 // ══════════════════════════════════════════════════════════
-let factIdx = 0;
 function initFacts(){
   const el=$id('fact-text'), dots=$id('fact-dots');
   if(!el) return;
   const facts = DATOS.slice(0,10);
-  dots.innerHTML = facts.map((_,i)=>`<div class="fact-dot${i===0?' active':''}" id="fdot-${i}"></div>`).join('');
+  if(!facts.length) return;
+  let factIdx = 0;
+  dots.innerHTML = facts.map((_,i)=>`<div class="fact-dot${i===0?' active':''}"></div>`).join('');
   function showFact(i){
     el.style.opacity='0';
     setTimeout(()=>{
@@ -1169,7 +1170,7 @@ function initFacts(){
 // WHATSAPP
 // ══════════════════════════════════════════════════════════
 function compartirWhatsApp(){
-  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $5.000\n🥇 1° lugar → 50% del pozo\n🥈 2° lugar → 30% del pozo\n🥉 3° lugar → 20% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica marcadores de grupos\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
+  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $5.000\n🥇 1° lugar → 50% del pozo\n🥈 2° lugar → 30% del pozo\n🥉 3° lugar → 20% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica 1° y 2° de cada grupo (A–L)\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1502,7 +1503,7 @@ const ELIM_RONDAS = [
   { key:'oct', label:'16avos de Final',    pts:2, max:32, desc:'Selecciona los 32 equipos que crees que clasifican de grupos (los mejores 3ros también pasan)' },
   { key:'qua', label:'Cuartos de Final',   pts:4, max:8,  desc:'Selecciona los 8 equipos que crees que llegan a cuartos' },
   { key:'sem', label:'Semifinales',        pts:6, max:4,  desc:'Selecciona los 4 equipos que crees que llegan a semis' },
-  { key:'fin', label:'Final (Finalistas)', pts:8, max:2,  desc:'Selecciona los 2 finalistas — subcampeón = +8 pts' },
+  { key:'fin', label:'Final (Finalistas)', pts:8, max:2,  desc:'Selecciona los 2 finalistas — cada finalista correcto = +8 pts' },
 ];
 
 function actualizarSelectorElim(){
@@ -1628,13 +1629,14 @@ async function guardarElim(){
   const jugador=$id('sel-jugador-elim').value;
   if(!jugador)return;
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
+  const f1v=$id('elim-f1')?.value||'', f2v=$id('elim-f2')?.value||'';
   pron.elim={
     oct: getElimSeleccionados('oct'),
     qua: getElimSeleccionados('qua'),
     sem: getElimSeleccionados('sem'),
-    fin: getElimSeleccionados('fin'),
-    f1:  $id('elim-f1')?.value||'',
-    f2:  $id('elim-f2')?.value||'',
+    fin: [f1v,f2v].filter(Boolean),
+    f1:  f1v,
+    f2:  f2v,
     campeon: $id('elim-campeon')?.value||'',
   };
   setLoad('btn-save-elim',true);
@@ -1725,7 +1727,8 @@ function calcPtsElim(pron, res){
   (elim.oct||[]).forEach(t=>{ if(rOct.includes(t)) pts+=2; });
   (elim.qua||[]).forEach(t=>{ if(rQua.includes(t)) pts+=4; });
   (elim.sem||[]).forEach(t=>{ if(rSem.includes(t)) pts+=6; });
-  (elim.fin||[]).forEach(t=>{ if(rFin.includes(t)) pts+=8; });
+  const userFin=[...new Set([elim.f1,elim.f2])].filter(Boolean);
+  userFin.forEach(t=>{ if(rFin.includes(t)) pts+=8; });
   if(elim.campeon&&elim.campeon===rCamp) pts+=10;
   return pts;
 }
