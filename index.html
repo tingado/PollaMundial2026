@@ -136,9 +136,29 @@ body {
   text-transform: uppercase; color: var(--rosa);
   margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;
 }
+.hist-cards { display: flex; flex-direction: column; gap: 6px; transition: opacity 0.5s ease; }
+.hist-card {
+  font-size: 11px; color: #ffb3d9; line-height: 1.6;
+  padding: 8px 10px; background: rgba(255,255,255,0.05);
+  border-radius: 8px; border-left: 2px solid var(--rosa);
+}
 .fact-text {
   font-size: 12px; color: #ffb3d9; line-height: 1.7;
   min-height: 80px; transition: opacity 0.5s ease;
+}
+.facts-widget-2026 {
+  background: linear-gradient(135deg, #1a0a2e, #2d1045);
+  border-radius: 14px; padding: 1rem;
+  border: 1px solid rgba(245,188,0,0.25);
+}
+.facts-label-2026 {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--dorado);
+  margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;
+}
+.fact-text-2026 {
+  font-size: 12px; color: #ffd88a; line-height: 1.7;
+  min-height: 72px; transition: opacity 0.5s ease;
 }
 .fact-dots {
   display: flex; gap: 4px; margin-top: 0.75rem; justify-content: center;
@@ -897,14 +917,18 @@ select option { background:#fff; }
 
   </main>
 
-  <!-- RIGHT PANEL: Sabías que -->
+  <!-- RIGHT PANEL -->
   <div class="right-panel">
     <div class="facts-widget">
-      <div class="facts-label">⚡ ¿Sabías que?</div>
-      <div class="fact-text" id="fact-text">Cargando...</div>
-      <div class="fact-dots" id="fact-dots"></div>
+      <div class="facts-label">📖 Historia del Mundial</div>
+      <div class="hist-cards" id="hist-cards"></div>
+      <div class="fact-dots" id="hist-dots"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">
+    <div class="facts-widget-2026">
+      <div class="facts-label-2026">⭐ Mundial 2026</div>
+      <div class="fact-text-2026" id="fact-2026">Cargando...</div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;padding:8px 0;">
       🌍 Copa Mundial<br>11 Jun — 19 Jul 2026<br>USA · MX · CAN
     </div>
   </div>
@@ -1066,7 +1090,7 @@ const GRUPOS = {
   L:['Inglaterra','Croacia','Ghana','Panamá'],
 };
 
-const DATOS = [
+const DATOS_HISTORIA = [
   "En 1930, el primer gol mundialista lo marcó el francés Lucien Laurent en el minuto 19 contra México.",
   "Brasil e Italia son los únicos países que jugaron todas las ediciones del Mundial hasta 2018.",
   "El gol más rápido en un Mundial: Hakan Şükür de Turquía en solo 11 segundos ante Corea del Sur, 2002.",
@@ -1075,16 +1099,21 @@ const DATOS = [
   "Camerún fue el primer equipo africano en llegar a cuartos de final, en Italia 1990. Roger Milla tenía 38 años.",
   "España ganó el Mundial 2010 con solo 8 goles a favor — el menor total de un campeón en la historia.",
   "La final de 1994 entre Brasil e Italia fue decidida por penales — la única en la historia hasta entonces.",
-  "El Mundial 2026 es el primero con 48 selecciones y 104 partidos en 3 países distintos.",
   "Francia tiene el récord de goles en una edición moderna: 13 goles en Rusia 2018.",
   "El único jugador que ganó la Copa del Mundo en 3 ediciones fue Pelé: 1958, 1962 y 1970.",
   "Argentina es la actual campeona, tras ganar en Qatar 2022 en penales ante Francia.",
-  "La final del Mundial 2026 se jugará el 19 de julio en el MetLife Stadium, Nueva York.",
   "Alemania y Brasil se han enfrentado 7 veces en Mundiales — más que cualquier otro par.",
-  "En el Mundial 2026, la fase de grupos tiene 12 grupos de 4 equipos cada uno.",
   "Roger Milla marcó 2 goles en Italia 1990 con 38 años — récord de mayor goleador mundialista.",
   "El portero Faryd Mondragón de Colombia jugó su último partido mundialista a los 43 años en 2014.",
   "South Africa 2010 fue el único Mundial en que ninguna selección sudamericana llegó a semis.",
+];
+
+const DATOS_2026 = [
+  "El Mundial 2026 es el primero en la historia con 48 selecciones disputando 104 partidos.",
+  "Por primera vez, el torneo se juega en 3 países: Estados Unidos, México y Canadá.",
+  "El Estadio Azteca de México es el único recinto que alberga partidos en tres Mundiales distintos (1970, 1986 y 2026).",
+  "La final del 19 de julio se jugará en el MetLife Stadium de Nueva York — capacidad para 82.500 espectadores.",
+  "Con 48 equipos clasificados, el formato incluye 12 grupos de 4 con los 8 mejores terceros también avanzando.",
 ];
 
 // ══════════════════════════════════════════════════════════
@@ -1148,22 +1177,38 @@ function initCountdown(){
 // FACTS WIDGET
 // ══════════════════════════════════════════════════════════
 function initFacts(){
-  const el=$id('fact-text'), dots=$id('fact-dots');
-  if(!el) return;
-  const facts = DATOS.slice(0,10);
-  if(!facts.length) return;
-  let factIdx = 0;
-  dots.innerHTML = facts.map((_,i)=>`<div class="fact-dot${i===0?' active':''}"></div>`).join('');
-  function showFact(i){
-    el.style.opacity='0';
-    setTimeout(()=>{
-      el.textContent='⚽ '+facts[i];
-      el.style.opacity='1';
-      dots.querySelectorAll('.fact-dot').forEach((d,j)=>d.classList.toggle('active',j===i));
-    },500);
+  // Historia: mostrar 3 tarjetas a la vez, rotar grupo cada 8s
+  const histCont=$id('hist-cards'), histDots=$id('hist-dots');
+  if(histCont && DATOS_HISTORIA.length){
+    const PAGE=3;
+    const pages=Math.ceil(DATOS_HISTORIA.length/PAGE);
+    let histPage=0;
+    histDots.innerHTML=Array.from({length:pages},(_,i)=>
+      `<div class="fact-dot${i===0?' active':''}"></div>`).join('');
+    function showHistPage(p){
+      histCont.style.opacity='0';
+      setTimeout(()=>{
+        const slice=DATOS_HISTORIA.slice(p*PAGE,(p+1)*PAGE);
+        histCont.innerHTML=slice.map(f=>`<div class="hist-card">⚽ ${f}</div>`).join('');
+        histCont.style.opacity='1';
+        histDots.querySelectorAll('.fact-dot').forEach((d,j)=>d.classList.toggle('active',j===p));
+      },500);
+    }
+    showHistPage(0);
+    setInterval(()=>{ histPage=(histPage+1)%pages; showHistPage(histPage); },8000);
   }
-  showFact(0);
-  setInterval(()=>{ factIdx=(factIdx+1)%facts.length; showFact(factIdx); },6000);
+
+  // 2026: rotar 1 dato cada 10s
+  const el2026=$id('fact-2026');
+  if(el2026 && DATOS_2026.length){
+    let idx2026=0;
+    function show2026(i){
+      el2026.style.opacity='0';
+      setTimeout(()=>{ el2026.textContent=DATOS_2026[i]; el2026.style.opacity='1'; },500);
+    }
+    show2026(0);
+    setInterval(()=>{ idx2026=(idx2026+1)%DATOS_2026.length; show2026(idx2026); },10000);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
