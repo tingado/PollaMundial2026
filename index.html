@@ -744,6 +744,7 @@ select option { background:#fff; }
           <option value="">-- Elige tu nombre --</option>
         </select>
       </div>
+      <div id="elim-aviso"></div>
       <div id="elim-container"></div>
       <div id="msg-elim"></div>
       <button class="btn btn-rosa btn-full" id="btn-save-elim" onclick="guardarElim()" style="display:none;margin-top:4px;">
@@ -1699,8 +1700,10 @@ function cargarPronostico(){
     btn.style.display='none'; return;
   }
   const gp = p.grupos || {};
+  const tieneGuardados = p.grupos && Object.keys(p.grupos).length > 0;
   cont.innerHTML =
     '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">🏆 Predice quién termina <strong>1° y 2°</strong> en cada grupo.</div>' +
+    (tieneGuardados?'<div style="margin-bottom:10px;padding:8px 13px;background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;font-size:12px;color:var(--verde);">✅ Tienes pronósticos guardados — puedes editarlos abajo.</div>':'')+
     '<div id="pron-progress" style="margin-bottom:12px;"></div>' +
     Object.entries(GRUPOS).map(([g,equipos])=>{
       const gg=gp[g]||{};
@@ -1756,11 +1759,17 @@ async function guardarPronostico(){
   if(!jugador)return;
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
   pron.grupos={};
+  const incompletos=[];
   Object.keys(GRUPOS).forEach(g=>{
     const p1=$id(`pron-g${g}-p1`)?.value||'';
     const p2=$id(`pron-g${g}-p2`)?.value||'';
     if(p1||p2) pron.grupos[g]={p1,p2};
+    if(!p1||!p2) incompletos.push(g);
   });
+  if(incompletos.length>0){
+    const ok=confirm(`⚠️ Te faltan ${incompletos.length} grupo(s) incompleto(s): ${incompletos.map(g=>'Grupo '+g).join(', ')}.\n\n¿Guardar de todos modos?`);
+    if(!ok)return;
+  }
   setLoad('btn-save-pron',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
@@ -1961,7 +1970,13 @@ function renderCuadro(){
 
   const champion=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
 
-  cont.innerHTML=`
+  const d=getCuadroData();
+  const progHtml=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;">
+    ${[['16avos',d.oct.length,16],['Octavos',d.qua.length,8],['Cuartos',d.sem.length,4],['Semis',[d.f1,d.f2].filter(Boolean).length,2],['Campeón',d.campeon?1:0,1]].map(([n,v,t])=>`
+      <span style="background:${v===t?'rgba(0,200,83,0.12)':'rgba(255,255,255,0.06)'};color:${v===t?'var(--verde)':'var(--muted)'};padding:2px 7px;border-radius:5px;border:1px solid ${v===t?'rgba(0,200,83,0.25)':'var(--border)'};">${n} ${v}/${t}</span>`).join('')}
+  </div>`;
+
+  cont.innerHTML=progHtml+`
     <div class="bracket-scroll">
       <div class="br-rounds">
         ${rounds.map(r=>`
@@ -2002,7 +2017,19 @@ function cargarElim(){
     cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong></div>';
     if(btn)btn.style.display='none'; return;
   }
+  const tieneElim=!!(state.pronosticos[jugador]?.elim?.campeon);
   initCuadro(jugador);
+  const noGrupos=Object.keys((state.pronosticos[jugador]||{}).grupos||{}).length<12;
+  const aviso=$id('elim-aviso');
+  if(aviso){
+    if(tieneElim){
+      aviso.innerHTML='<div style="background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;padding:8px 13px;font-size:12px;color:var(--verde);margin-bottom:10px;">✅ Tienes llaves guardadas — puedes editarlas abajo.</div>';
+    } else if(noGrupos){
+      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Completa primero los grupos para que el cuadro se llene automáticamente. Los slots en amarillo los puedes editar manualmente.</div>';
+    } else {
+      aviso.innerHTML='';
+    }
+  }
   renderCuadro();
 }
 
