@@ -608,6 +608,56 @@ select option { background:#fff; }
 .spinner { display:inline-block; width:15px; height:15px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 
+/* ══ FLAG IMAGES ══ */
+.fi-img { width:22px; height:16px; border-radius:2px; object-fit:cover; vertical-align:middle; flex-shrink:0; }
+
+/* ══ PASO WIZARD ══ */
+.wizard-steps { display:flex; gap:0; margin-bottom:1.25rem; border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+.wizard-step { flex:1; padding:10px 6px; text-align:center; font-size:11px; font-weight:700; color:var(--muted); background:#f9fafb; border-right:1px solid var(--border); transition:all .2s; cursor:default; }
+.wizard-step:last-child { border-right:none; }
+.wizard-step.done { background:rgba(0,200,83,0.07); color:var(--verde); }
+.wizard-step.active { background:var(--rosa); color:#fff; }
+.wizard-step-num { font-size:15px; display:block; margin-bottom:2px; }
+
+/* ══ TERCEROS ══ */
+.tercero-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:10px; }
+.tercero-card { background:#f9fafb; border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.tercero-oponent { font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; margin-bottom:8px; }
+.tercero-oponent .vs { font-size:11px; font-weight:400; color:var(--muted); }
+.tercero-select-wrap select { width:100%; }
+
+/* ══ LOCK (pronóstico completo) ══ */
+.lock-banner { background:rgba(0,200,83,0.07); border:1px solid rgba(0,200,83,0.25); border-radius:12px; padding:14px 18px; margin-bottom:1rem; font-size:13px; color:var(--verde); line-height:1.6; }
+
+/* ══ COMPROBANTE ══ */
+.comprobante-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:500; overflow-y:auto; padding:1rem; }
+.comprobante-overlay.open { display:flex; align-items:flex-start; justify-content:center; }
+.comprobante-box { background:#fff; border-radius:16px; width:100%; max-width:780px; margin:auto; padding:2rem; animation:slideUp .22s ease; }
+.comprobante-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:2px solid var(--border); }
+.comprobante-title { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:1px; color:var(--text); line-height:1; }
+.comprobante-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+.comprobante-section { margin-bottom:1.5rem; }
+.comprobante-section-title { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+.comprobante-grupos { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; }
+.comprobante-grupo { background:#f9fafb; border:1px solid var(--border); border-radius:7px; padding:7px 9px; }
+.comprobante-grupo-label { font-family:'Bebas Neue',sans-serif; font-size:.8rem; color:var(--rosa); letter-spacing:1px; margin-bottom:3px; }
+.comprobante-grupo-pick { font-size:11px; line-height:1.7; }
+.comprobante-rounds { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.comprobante-round { min-width:130px; flex-shrink:0; }
+.comprobante-round-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:5px; white-space:nowrap; }
+.comprobante-team { display:flex; align-items:center; gap:5px; background:#f9fafb; border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:11px; white-space:nowrap; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; }
+.comprobante-team.campeon { background:rgba(245,188,0,0.1); border-color:rgba(245,188,0,0.4); font-weight:700; font-size:12px; }
+@media print {
+  body > *:not(#comprobante-modal) { display:none !important; }
+  .comprobante-overlay { position:static !important; background:white !important; padding:0 !important; display:block !important; }
+  .comprobante-box { border-radius:0 !important; box-shadow:none !important; }
+  .no-print { display:none !important; }
+}
+@media (max-width:768px) {
+  .tercero-grid { grid-template-columns:1fr; }
+  .comprobante-box { padding:1.25rem; }
+}
+
 /* MOBILE NAV */
 .mobile-nav {
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:100;
@@ -704,8 +754,9 @@ select option { background:#fff; }
     <div class="sidebar-nav">
       <button class="nav-btn active" onclick="showView('partidos',this)">📅 Partidos</button>
       <button class="nav-btn" onclick="showView('grupos',this)">🏟️ Grupos</button>
-      <button class="nav-btn" onclick="showView('pronosticos',this)">🎯 Mis Pronósticos</button>
-      <button class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Eliminatorias</button>
+      <button class="nav-btn" onclick="showView('pronosticos',this)">🎯 Grupos</button>
+      <button class="nav-btn" onclick="showView('terceros',this)">3️⃣ Terceros</button>
+      <button class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Llaves</button>
       <button class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
       <button class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
       <button class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
@@ -811,14 +862,36 @@ select option { background:#fff; }
       </button>
     </div>
 
+    <!-- ══ VIEW: TERCEROS ══ -->
+    <div id="view-terceros" class="view">
+      <div class="view-header">
+        <div class="view-title">3️⃣ Terceros que Avanzan</div>
+      </div>
+      <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
+        En el Mundial 2026, <strong style="color:var(--text);">8 de los 12 terceros</strong> pasan a las llaves. Para cada slot de tercero en el bracket, elige el equipo que ocupará ese lugar.
+      </div>
+      <div class="form-card" style="margin-bottom:1rem;">
+        <label>Selecciona tu nombre</label>
+        <select id="sel-jugador-terc" onchange="cargarTerceros()">
+          <option value="">-- Elige tu nombre --</option>
+        </select>
+      </div>
+      <div id="terceros-aviso"></div>
+      <div id="terceros-container"></div>
+      <div id="msg-terceros"></div>
+      <button class="btn btn-rosa btn-full" id="btn-save-terceros" onclick="guardarTerceros()" style="display:none;margin-top:4px;">
+        💾 Guardar terceros y continuar →
+      </button>
+    </div>
+
     <!-- ══ VIEW: ELIMINATORIAS ══ -->
     <div id="view-eliminatorias" class="view">
       <div class="view-header">
-        <div class="view-title">🏆 Eliminatorias</div>
+        <div class="view-title">🏆 Llaves</div>
       </div>
       <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Ahora predice las eliminatorias.<br>
-        <span style="font-size:12px;">Paso 2 de 2 — elige los equipos que avanzan en cada ronda y guarda.</span>
+        ✅ <strong style="color:var(--verde);">¡Terceros guardados!</strong> Ahora completa las llaves.<br>
+        <span style="font-size:12px;">Paso 3 de 3 — elige los ganadores de cada partido y guarda.</span>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+2</strong>, cuartos <strong style="color:var(--verde);">+4</strong>, semis <strong style="color:var(--verde);">+6</strong>, finalistas <strong style="color:var(--dorado);">+8 c/u</strong>, campeón <strong style="color:var(--dorado);">+10</strong>
@@ -1186,8 +1259,11 @@ select option { background:#fff; }
   <button class="mobile-nav-btn" onclick="showView('pronosticos',this)">
     <span>🎯</span>Grupos
   </button>
+  <button class="mobile-nav-btn" onclick="showView('terceros',this)">
+    <span>3️⃣</span>3ros
+  </button>
   <button class="mobile-nav-btn" onclick="showView('eliminatorias',this)">
-    <span>🏆</span>Elim.
+    <span>🏆</span>Llaves
   </button>
   <button class="mobile-nav-btn" onclick="showView('ranking',this)">
     <span>📊</span>Ranking
@@ -1237,6 +1313,28 @@ const FLAGS = {
 };
 function flag(t){ return FLAGS[t]||'🏳️'; }
 function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+const ISO_CODES={
+  'México':'mx','Brasil':'br','Argentina':'ar','Francia':'fr','Alemania':'de',
+  'España':'es','Inglaterra':'gb-eng','Portugal':'pt','Países Bajos':'nl',
+  'Canadá':'ca','Estados Unidos':'us','Colombia':'co','Uruguay':'uy',
+  'Ecuador':'ec','Paraguay':'py','Bolivia':'bo','Venezuela':'ve','Perú':'pe',
+  'Marruecos':'ma','Senegal':'sn','Ghana':'gh','Egipto':'eg','Nigeria':'ng',
+  'Camerún':'cm','Sudáfrica':'za','Costa de Marfil':'ci','Algeria':'dz',
+  'Japón':'jp','Corea del Sur':'kr','Australia':'au','Arabia Saudita':'sa',
+  'Irán':'ir','Qatar':'qa','Jordania':'jo','Irak':'iq','China':'cn',
+  'Uzbekistán':'uz','Suiza':'ch','Bélgica':'be','Croacia':'hr',
+  'Suecia':'se','Noruega':'no','Escocia':'gb-sct','Austria':'at',
+  'Chequia':'cz','Turquía':'tr','Bosnia y Herzegovina':'ba',
+  'Cabo Verde':'cv','Haití':'ht','Panamá':'pa','Curazao':'cw',
+  'Nueva Zelanda':'nz','R.D. del Congo':'cd','Haití':'ht',
+};
+function fi(t){
+  if(!t||isSlotLabel(t)) return '';
+  const code=ISO_CODES[t];
+  if(code) return `<img class="fi-img" src="https://flagcdn.com/24x18/${code}.png" alt="${esc(t)}" loading="lazy">`;
+  return FLAGS[t]||'🏳️';
+}
 
 const TODOS_EQUIPOS = Object.keys(FLAGS).sort((a,b)=>a.localeCompare(b,'es'));
 
@@ -1542,6 +1640,7 @@ function applyState(d){
   renderGroups();
   actualizarSelector();
   actualizarSelectorElim();
+  actualizarSelectorTerc();
   cargarCamposAdmin();
   renderAdminPlayers();
   renderAdminGrupos();
@@ -1565,13 +1664,14 @@ function restoreLastPlayer(){
       <div style="width:28px;height:28px;border-radius:50%;background:var(--rosa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${esc(last.charAt(0).toUpperCase())}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(last)}</div>
-        <div style="font-size:10px;color:var(--muted);">${pts} pts · ${st.gOk&&st.eOk?'✅ completo':'⚠ incompleto'}</div>
+        <div style="font-size:10px;color:var(--muted);">${pts} pts · ${st.completo?'✅ completo':st.gOk&&st.tOk?'paso 3/3':st.gOk?'paso 2/3':'paso 1/3'}</div>
       </div>
     </div>
-    <div style="display:flex;gap:6px;margin-top:8px;">
-      <button class="btn btn-rosa" style="flex:1;font-size:12px;padding:7px;" data-pn="${esc(last)}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
-      <button class="btn" style="flex:1;font-size:12px;padding:7px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>
-    </div>`;
+    ${!st.completo?`<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;">
+      <button class="btn btn-rosa" style="flex:1;font-size:11px;padding:6px;" data-pn="${esc(last)}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
+      <button class="btn" style="flex:1;font-size:11px;padding:6px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irATerceros(this.dataset.pn)">3️⃣ 3ros</button>
+      <button class="btn" style="flex:1;font-size:11px;padding:6px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>
+    </div>`:'<div style="font-size:11px;color:var(--verde);margin-top:8px;">🔒 Pronóstico completo</div>'}`;
 }
 
 function renderInscJugadores(){
@@ -1590,12 +1690,14 @@ function renderInscJugadores(){
         <div style="font-weight:600;font-size:13px;">${en}</div>
         <div class="rank-status">
           <span class="rank-badge ${st.gOk?'ok':'pend'}">${st.gOk?'✓ Grupos':'✗ Grupos'}</span>
+          <span class="rank-badge ${st.tOk?'ok':'pend'}">${st.tOk?'✓ 3ros':'✗ 3ros'}</span>
           <span class="rank-badge ${st.eOk?'ok':'pend'}">${st.eOk?'✓ Llaves':'✗ Llaves'}</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;">
         <button class="rank-ver" data-pn="${en}" onclick="openPronModal(this.dataset.pn)" style="font-size:10px;padding:2px 6px;">👁 Ver</button>
-        ${!cerrado?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)" style="font-size:11px;">✏️ Grupos</button>
+        ${!cerrado&&!estadoPron(j.nombre).completo?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)" style="font-size:11px;">✏️ Grupos</button>
+        <button class="rank-edit" data-pn="${en}" onclick="irATerceros(this.dataset.pn)" style="font-size:11px;">3️⃣ 3ros</button>
         <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)" style="font-size:11px;">🏆 Llaves</button>`:''}
       </div>
     </div>`;
@@ -1613,7 +1715,7 @@ function renderLeaderboard(){
   }
   const scores=state.jugadores.map(j=>{
     const st=estadoPron(j.nombre);
-    return {nombre:j.nombre, pts:calcPtsTotal(state.pronosticos[j.nombre], state.resultados), completo:st.gOk&&st.eOk};
+    return {nombre:j.nombre, pts:calcPtsTotal(state.pronosticos[j.nombre], state.resultados), completo:st.completo};
   }).sort((a,b)=>b.pts-a.pts);
 
   const rk=['r1','r2','r3'];
@@ -1888,12 +1990,23 @@ async function guardarPronostico(){
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
     // Actualizar estado local para que initCuadro use los grupos recién guardados
     state.pronosticos[jugador]=pron;
-    actualizarSelector(); actualizarSelectorElim();
-    invalidarCache(); cargarDatos(true); // sin await — navegar de inmediato
+    actualizarSelector(); actualizarSelectorElim(); actualizarSelectorTerc();
+    invalidarCache(); cargarDatos(true);
     const banner=$id('pron-onboard-banner'); if(banner) banner.style.display='none';
-    irAEliminatorias(jugador);
+    irATerceros(jugador);
   }catch(e){setMsg('msg-pron',e.message,'err');}
   finally{setLoad('btn-save-pron',false);}
+}
+
+function irATerceros(nombre){
+  localStorage.setItem('p2026_last',nombre);
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn,.mobile-nav-btn').forEach(x=>x.classList.remove('active'));
+  $id('view-terceros').classList.add('active');
+  document.querySelectorAll('[onclick*="showView(\'terceros\'"]').forEach(x=>x.classList.add('active'));
+  const sel=$id('sel-jugador-terc');
+  if(sel){ sel.value=nombre; cargarTerceros(); }
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function irAEliminatorias(nombre){
@@ -1906,6 +2019,251 @@ function irAEliminatorias(nombre){
   if(sel){ sel.value=nombre; cargarElim(); }
   const banner=$id('elim-onboard-banner'); if(banner) banner.style.display='';
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════════════════
+// TERCEROS
+// ══════════════════════════════════════════════════════════
+function actualizarSelectorTerc(){
+  const sel=$id('sel-jugador-terc'); if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- Elige tu nombre --</option>'+
+    state.jugadores.map(j=>`<option value="${esc(j.nombre)}"${j.nombre===cur?' selected':''}>${esc(j.nombre)}</option>`).join('');
+}
+
+function cargarTerceros(){
+  const jugador=$id('sel-jugador-terc').value;
+  const cont=$id('terceros-container');
+  const btn=$id('btn-save-terceros');
+  const aviso=$id('terceros-aviso');
+  if(!jugador){cont.innerHTML='';if(btn)btn.style.display='none';if(aviso)aviso.innerHTML='';return;}
+
+  const pron=state.pronosticos[jugador]||{};
+  const st=estadoPron(jugador);
+
+  if(st.completo){
+    if(btn)btn.style.display='none';
+    if(aviso)aviso.innerHTML='<div class="lock-banner">🔒 Tus pronósticos ya están completos y guardados. Ya no puedes modificarlos.</div>';
+    renderTercerosReadonly(jugador);
+    return;
+  }
+  if(!st.gOk){
+    if(btn)btn.style.display='none';
+    if(aviso)aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:10px;padding:12px 15px;font-size:13px;color:#b8860b;margin-bottom:10px;">⚠️ Primero completa los 12 grupos. <button class="rank-edit" onclick="showView(\'pronosticos\')">Ir a Grupos →</button></div>';
+    cont.innerHTML=''; return;
+  }
+  if(aviso)aviso.innerHTML='';
+  renderTerceros(jugador);
+  if(btn)btn.style.display='block';
+}
+
+function renderTerceros(jugador){
+  const cont=$id('terceros-container');
+  const pron=state.pronosticos[jugador]||{};
+  const grupos=pron.grupos||{};
+  const savedTerc=pron.terceros||[];
+
+  // Calcular equipos disponibles (no elegidos como 1° o 2°)
+  const picked=new Set();
+  Object.values(grupos).forEach(g=>{if(g.p1)picked.add(g.p1);if(g.p2)picked.add(g.p2);});
+
+  // También excluir los ya seleccionados en otros slots (live)
+  function getAvailable(exceptIdx){
+    const usados=new Set();
+    TERCEROS_3RO_SLOTS.forEach((_,i)=>{
+      if(i===exceptIdx)return;
+      const v=$id(`terc-${i}`)?.value;
+      if(v)usados.add(v);
+    });
+    return TODOS_EQUIPOS.filter(t=>!picked.has(t)&&!usados.has(t));
+  }
+
+  cont.innerHTML=`<div class="tercero-grid">${
+    TERCEROS_3RO_SLOTS.map((slot,i)=>{
+      const oponent=resolveSlot(slot.oponent,grupos);
+      const cur=savedTerc[i]||'';
+      const available=TODOS_EQUIPOS.filter(t=>!picked.has(t));
+      const opts=`<option value="">— Elige tercero —</option>`+
+        available.map(t=>`<option value="${esc(t)}"${t===cur?' selected':''}>${flag(t)} ${esc(t)}</option>`).join('');
+      return `<div class="tercero-card">
+        <div class="tercero-oponent">${fi(oponent)}<span>${esc(oponent)}</span><span class="vs">vs</span></div>
+        <div class="tercero-select-wrap">
+          <select id="terc-${i}" onchange="actualizarSelects3ro()">
+            ${opts}
+          </select>
+        </div>
+      </div>`;
+    }).join('')
+  }</div>`;
+}
+
+function actualizarSelects3ro(){
+  const usados=new Set();
+  TERCEROS_3RO_SLOTS.forEach((_,i)=>{
+    const v=$id(`terc-${i}`)?.value; if(v)usados.add(v);
+  });
+  // Deshabilitar opciones ya usadas en los otros selects
+  TERCEROS_3RO_SLOTS.forEach((_,i)=>{
+    const sel=$id(`terc-${i}`); if(!sel)return;
+    const cur=sel.value;
+    Array.from(sel.options).forEach(opt=>{
+      if(!opt.value) return;
+      opt.disabled=usados.has(opt.value)&&opt.value!==cur;
+    });
+  });
+}
+
+function renderTercerosReadonly(jugador){
+  const cont=$id('terceros-container');
+  const pron=state.pronosticos[jugador]||{};
+  const terceros=pron.terceros||[];
+  const grupos=pron.grupos||{};
+  cont.innerHTML=`<div class="tercero-grid">${
+    TERCEROS_3RO_SLOTS.map((slot,i)=>{
+      const oponent=resolveSlot(slot.oponent,grupos);
+      const team=terceros[i]||'—';
+      return `<div class="tercero-card">
+        <div class="tercero-oponent">${fi(oponent)}<span>${esc(oponent)}</span><span class="vs">vs</span></div>
+        <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;padding:6px 0;">${fi(team)} ${esc(team)}</div>
+      </div>`;
+    }).join('')
+  }</div>`;
+}
+
+async function guardarTerceros(){
+  const jugador=$id('sel-jugador-terc').value; if(!jugador)return;
+  const terceros=TERCEROS_3RO_SLOTS.map((_,i)=>$id(`terc-${i}`)?.value||'');
+  const incompletos=terceros.filter(t=>!t).length;
+  if(incompletos>0){
+    if(!confirm(`Faltan ${incompletos} slot(s) de tercero sin elegir. ¿Guardar de todos modos?`))return;
+  }
+  const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
+  pron.terceros=terceros;
+  setLoad('btn-save-terceros',true);
+  try{
+    await api({action:'guardarPron',nombre:jugador,pronostico:pron});
+    state.pronosticos[jugador]=pron;
+    actualizarSelectorElim();
+    invalidarCache(); cargarDatos(true);
+    const banner=$id('elim-onboard-banner'); if(banner) banner.style.display='';
+    irAEliminatorias(jugador);
+  }catch(e){setMsg('msg-terceros',e.message,'err');}
+  finally{setLoad('btn-save-terceros',false);}
+}
+
+// ══════════════════════════════════════════════════════════
+// COMPROBANTE
+// ══════════════════════════════════════════════════════════
+function mostrarComprobante(nombre){
+  const pron=state.pronosticos[nombre]||{};
+  const grupos=pron.grupos||{};
+  const terceros=pron.terceros||[];
+  const elim=pron.elim||{};
+  const pts=calcPtsTotal(pron,state.resultados);
+
+  $id('comprobante-sub').innerHTML=`<strong>${esc(nombre)}</strong> · ${new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'})} · ${pts} pts`;
+  $id('comprobante-fecha').textContent=new Date().toLocaleString('es-CL');
+
+  // Grupos
+  const gruposHtml=`<div class="comprobante-section">
+    <div class="comprobante-section-title">⚽ Grupos (1° y 2° de cada grupo)</div>
+    <div class="comprobante-grupos">${
+      Object.entries(GRUPOS).map(([g])=>{
+        const p=grupos[g]||{};
+        return `<div class="comprobante-grupo">
+          <div class="comprobante-grupo-label">Grupo ${g}</div>
+          <div class="comprobante-grupo-pick">
+            🥇 ${fi(p.p1||'')}${esc(p.p1||'—')}<br>
+            🥈 ${fi(p.p2||'')}${esc(p.p2||'—')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Terceros
+  const tercerosHtml=`<div class="comprobante-section">
+    <div class="comprobante-section-title">3️⃣ Terceros que Avanzan</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      ${TERCEROS_3RO_SLOTS.map((slot,i)=>{
+        const t=terceros[i]||'—';
+        const op=resolveSlot(slot.oponent,grupos);
+        return `<div class="comprobante-team">${fi(t)}${esc(t)}<span style="font-size:9px;color:var(--muted);margin-left:3px;">vs ${esc(op)}</span></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Bracket
+  const oct=elim.oct||[],qua=elim.qua||[],sem=elim.sem||[];
+  const fin=[elim.f1,elim.f2].filter(Boolean), camp=elim.campeon||'';
+  const bracketHtml=`<div class="comprobante-section">
+    <div class="comprobante-section-title">🏆 Eliminatorias</div>
+    <div class="comprobante-rounds">
+      ${[['16avos',oct],['Cuartos',qua],['Semis',sem],['Finalistas',fin]].map(([lbl,teams])=>`
+        <div class="comprobante-round">
+          <div class="comprobante-round-title">${lbl}</div>
+          ${teams.length?teams.map(t=>`<div class="comprobante-team">${fi(t)}${esc(t)}</div>`).join(''):'<div style="color:var(--muted);font-size:11px;">—</div>'}
+        </div>`).join('')}
+      <div class="comprobante-round">
+        <div class="comprobante-round-title">🏆 Campeón</div>
+        ${camp?`<div class="comprobante-team campeon">${fi(camp)}${esc(camp)}</div>`:'<div style="color:var(--muted);font-size:11px;">—</div>'}
+      </div>
+    </div>
+  </div>`;
+
+  $id('comprobante-body').innerHTML=gruposHtml+tercerosHtml+bracketHtml;
+  $id('comprobante-modal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function cerrarComprobante(){
+  $id('comprobante-modal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function compartirComprobante(){
+  const sub=$id('comprobante-sub')?.textContent||'';
+  const pron=state.pronosticos[sub.split('·')[0]?.trim()]||{};
+  const camp=(pron.elim||{}).campeon||'';
+  let txt=`🏆 *Polla Mundialera 2026 — Mi Pronóstico*\n\n`;
+  if(camp) txt+=`🥇 Campeón: ${camp}\n`;
+  const pts=calcPtsTotal(pron,state.resultados);
+  if(pts>0) txt+=`📊 Puntos: ${pts} pts\n`;
+  txt+='\n¡A ver quién gana! 🎉';
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
+function renderCuadroReadonly(){
+  const cont=$id('elim-container'); if(!cont)return;
+  const rounds=[
+    {key:'r32',label:'16avos',matches:cuadro.r32},
+    {key:'r16',label:'Octavos',matches:cuadro.r16},
+    {key:'qf', label:'Cuartos',matches:cuadro.qf},
+    {key:'sf', label:'Semis',  matches:cuadro.sf},
+    {key:'fin',label:'Final',  matches:[cuadro.fin]},
+  ];
+  function roMatch(m){
+    if(!m||(!m.a&&!m.b)) return `<div class="bm bx"></div>`;
+    return `<div class="bm">
+      <div class="bt${m.w==='a'?' bw':''}">${fi(m.a)}<span class="bt-name">${esc(m.a||'—')}</span>${m.w==='a'?'<span style="color:var(--verde);margin-left:auto;font-size:10px;">▶</span>':''}</div>
+      <div class="bt${m.w==='b'?' bw':''}">${fi(m.b)}<span class="bt-name">${esc(m.b||'—')}</span>${m.w==='b'?'<span style="color:var(--verde);margin-left:auto;font-size:10px;">▶</span>':''}</div>
+    </div>`;
+  }
+  function roPairs(matches){
+    if(matches.length===1)return roMatch(matches[0]);
+    let h='';
+    for(let i=0;i<matches.length;i+=2){
+      h+=`<div class="br-group">${roMatch(matches[i])}${i+1<matches.length?roMatch(matches[i+1]):''}</div>`;
+    }
+    return h;
+  }
+  const champ=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
+  cont.innerHTML=`<div class="bracket-scroll"><div class="br-rounds">${
+    rounds.map(r=>`<div class="br-col">
+      <div class="br-col-title">${r.label}</div>
+      <div class="br-col-matches">${roPairs(r.matches)}${r.key==='fin'&&champ?`<div class="br-champion"><div class="br-champion-crown">🏆</div><div class="br-champion-name">${fi(champ)} ${esc(champ)}</div></div>`:''}</div>
+    </div>`).join('')}
+  </div></div>`;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1923,6 +2281,13 @@ const CUADRO_R32_SLOTS = [
   ['1J','2G'],  ['2D','2H'],    // → R16[6]
   ['1K','3ro'], ['1L','3ro'],   // → R16[7]
 ];
+// Slots de tercero en R32 (índice, oponente 1°)
+const TERCEROS_3RO_SLOTS = CUADRO_R32_SLOTS.reduce((acc,[a,b],i)=>{
+  if(b==='3ro') acc.push({matchIdx:i,oponent:a,side:'b'});
+  else if(a==='3ro') acc.push({matchIdx:i,oponent:b,side:'a'});
+  return acc;
+},[]);
+
 // Estado del cuadro: r32[16], r16[8], qf[4], sf[2], fin
 // Cada match: {a, b, w: 'a'|'b'|null}
 let cuadro = {r32:[],r16:[],qf:[],sf:[],fin:null};
@@ -1936,7 +2301,13 @@ function resolveSlot(slot, grupos){
 function initCuadro(nombre){
   const pron=state.pronosticos[nombre]||{};
   const grupos=pron.grupos||{};
-  cuadro.r32=CUADRO_R32_SLOTS.map(([a,b])=>({a:resolveSlot(a,grupos),b:resolveSlot(b,grupos),w:null}));
+  const terceros=pron.terceros||[];
+  let ti=0;
+  cuadro.r32=CUADRO_R32_SLOTS.map(([a,b])=>{
+    const ra=a==='3ro'?(terceros[ti++]||'3ro'):resolveSlot(a,grupos);
+    const rb=b==='3ro'?(terceros[ti++]||'3ro'):resolveSlot(b,grupos);
+    return {a:ra,b:rb,w:null};
+  });
   cuadro.r16=Array(8).fill(null).map(()=>({a:'',b:'',w:null}));
   cuadro.qf =Array(4).fill(null).map(()=>({a:'',b:'',w:null}));
   cuadro.sf =Array(2).fill(null).map(()=>({a:'',b:'',w:null}));
@@ -2131,15 +2502,23 @@ function cargarElim(){
     cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong></div>';
     if(btn)btn.style.display='none'; return;
   }
-  const tieneElim=!!(state.pronosticos[jugador]?.elim?.campeon);
-  initCuadro(jugador);
-  const noGrupos=Object.keys((state.pronosticos[jugador]||{}).grupos||{}).length<12;
+  const st=estadoPron(jugador);
   const aviso=$id('elim-aviso');
+  if(st.completo){
+    if(aviso) aviso.innerHTML='<div class="lock-banner">🔒 Tus pronósticos están completos y guardados. Ya no puedes modificarlos.</div>';
+    initCuadro(jugador);
+    renderCuadroReadonly();
+    const btn=$id('btn-save-elim'); if(btn)btn.style.display='none';
+    return;
+  }
+  initCuadro(jugador);
   if(aviso){
-    if(tieneElim){
-      aviso.innerHTML='<div style="background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;padding:8px 13px;font-size:12px;color:var(--verde);margin-bottom:10px;">✅ Tienes llaves guardadas — puedes editarlas abajo.</div>';
-    } else if(noGrupos){
-      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Completa primero los grupos para que el cuadro se llene automáticamente. Los slots en amarillo los puedes editar manualmente.</div>';
+    if(st.eOk){
+      aviso.innerHTML='<div style="background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;padding:8px 13px;font-size:12px;color:var(--verde);margin-bottom:10px;">✅ Tienes llaves guardadas — puedes editarlas hasta el inicio del torneo.</div>';
+    } else if(!st.gOk){
+      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Completa primero los grupos y los terceros para que el cuadro se llene automáticamente.</div>';
+    } else if(!st.tOk){
+      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Falta elegir los terceros. <button class="rank-edit" onclick="irATerceros(\''+jugador.replace(/'/g,"\\'")+'\')" style="font-size:11px;">Ir a Terceros →</button></div>';
     } else {
       aviso.innerHTML='';
     }
@@ -2154,23 +2533,21 @@ async function guardarElim(){
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
   const d=getCuadroData();
   pron.elim={oct:d.oct,qua:d.qua,sem:d.sem,fin:d.fin,f1:d.f1,f2:d.f2,campeon:d.campeon};
+  const st=estadoPron(jugador);
+  const ahoraCompleto=st.gOk&&st.tOk&&!!d.campeon;
+  if(ahoraCompleto) pron.completo=true;
   setLoad('btn-save-elim',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
-    invalidarCache(); await cargarDatos(true);
+    state.pronosticos[jugador]=pron;
+    invalidarCache(); cargarDatos(true);
     const banner=$id('elim-onboard-banner'); if(banner) banner.style.display='none';
-    // Ir al ranking mostrando mensaje de éxito
-    showView('ranking');
-    setTimeout(()=>{
-      const rc=$id('ranking-container');
-      if(rc){
-        const ok=document.createElement('div');
-        ok.style.cssText='background:rgba(0,200,83,0.1);border:1px solid rgba(0,200,83,0.3);border-radius:12px;padding:14px 16px;margin-bottom:1rem;font-size:14px;color:var(--verde);line-height:1.6;text-align:center;';
-        ok.innerHTML='🎉 <strong>¡Pronósticos guardados completamente!</strong><br><span style="font-size:12px;color:var(--muted);">Puedes modificarlos hasta el inicio del torneo (11 jun 2026).</span>';
-        rc.prepend(ok);
-        setTimeout(()=>ok.remove(),6000);
-      }
-    },300);
+    if(ahoraCompleto){
+      mostrarComprobante(jugador);
+    } else {
+      // guardado parcial
+      setMsg('msg-elim','✅ Llaves guardadas. Completa los terceros y elige el campeón para finalizar.','ok');
+    }
   }catch(e){setMsg('msg-elim',e.message,'err');}
   finally{setLoad('btn-save-elim',false);}
 }
@@ -2180,9 +2557,11 @@ async function guardarElim(){
 // ══════════════════════════════════════════════════════════
 function estadoPron(nombre){
   const p=state.pronosticos[nombre]||{};
-  const gOk=p.grupos&&Object.keys(p.grupos).length>=12;
+  const gOk=!!(p.grupos&&Object.keys(p.grupos).length>=12&&Object.values(p.grupos).every(g=>g.p1&&g.p2));
+  const tOk=!!(p.terceros&&p.terceros.length>=8&&p.terceros.every(t=>t&&!isSlotLabel(t)));
   const eOk=!!(p.elim&&p.elim.campeon);
-  return {gOk,eOk};
+  const completo=!!(p.completo);
+  return {gOk,tOk,eOk,completo};
 }
 
 function renderRanking(){
@@ -2228,11 +2607,13 @@ function renderRanking(){
                     <div class="rank-name">${en}</div>
                     <div class="rank-status">
                       <span class="rank-badge ${r.gOk?'ok':'pend'}">${r.gOk?'✓ Grupos':'✗ Grupos'}</span>
+                      <span class="rank-badge ${r.tOk?'ok':'pend'}">${r.tOk?'✓ 3ros':'✗ 3ros'}</span>
                       <span class="rank-badge ${r.eOk?'ok':'pend'}">${r.eOk?'✓ Llaves':'✗ Llaves'}</span>
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;">
                       <button class="rank-ver" data-pn="${en}" onclick="openPronModal(this.dataset.pn)">👁 Ver</button>
-                      ${!cerrado?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
+                      ${!cerrado&&!r.completo?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
+                      <button class="rank-edit" data-pn="${en}" onclick="irATerceros(this.dataset.pn)">3️⃣ 3ros</button>
                       <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>`:''}
                     </div>
                   </div>
@@ -2519,6 +2900,7 @@ function renderAdminPlayers(){
         <div class="player-row-date">📅 ${esc(j.fecha||'')} · 💰 ${fmtCLP(j.monto||0)}</div>
         <div class="rank-status" style="margin-top:3px;">
           <span class="rank-badge ${st.gOk?'ok':'pend'}">${st.gOk?'✓ Grupos':'✗ Grupos'}</span>
+          <span class="rank-badge ${st.tOk?'ok':'pend'}">${st.tOk?'✓ 3ros':'✗ 3ros'}</span>
           <span class="rank-badge ${st.eOk?'ok':'pend'}">${st.eOk?'✓ Llaves':'✗ Llaves'}</span>
         </div>
       </div>
@@ -2600,6 +2982,27 @@ if(SCRIPT_URL){
 const savedToken=localStorage.getItem('p2026_token');
 if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
 </script>
+
+<!-- ══ MODAL: COMPROBANTE ══ -->
+<div id="comprobante-modal" class="comprobante-overlay">
+  <div class="comprobante-box">
+    <div class="comprobante-header no-print">
+      <div>
+        <div class="comprobante-title">🏆 Comprobante de Pronósticos</div>
+        <div class="comprobante-sub" id="comprobante-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn" style="font-size:12px;padding:8px 14px;" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-wa" style="font-size:12px;padding:8px 14px;" onclick="compartirComprobante()">📲 WhatsApp</button>
+        <button class="btn" style="font-size:12px;padding:8px 14px;background:var(--card);border:1px solid var(--border);" onclick="cerrarComprobante()">✕ Cerrar</button>
+      </div>
+    </div>
+    <div id="comprobante-body"></div>
+    <div style="margin-top:1.5rem;text-align:center;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;">
+      Polla Mundialera 2026 · Pronóstico registrado el <span id="comprobante-fecha"></span>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODAL: VER PRONÓSTICO ══ -->
 <div id="pron-modal" class="pron-modal-overlay" onclick="closePronModal(event)">
