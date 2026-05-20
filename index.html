@@ -989,7 +989,8 @@ select option { background:#fff; }
 // ══════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════
-let SCRIPT_URL = localStorage.getItem('polla2026_url') || '';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7nEAOOnzNj1JvU9SOHgaveW7NDGBN4KegtE9uJ3gHyIOD3KMJ9FB3esflX-qOvZfO/exec';
+let SCRIPT_URL = localStorage.getItem('polla2026_url') || DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
