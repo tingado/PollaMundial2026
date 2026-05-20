@@ -665,7 +665,11 @@ select option { background:#fff; }
     <!-- ══ VIEW: PRONÓSTICOS ══ -->
     <div id="view-pronosticos" class="view">
       <div class="view-header">
-        <div class="view-title">🎯 Mis Pronósticos</div>
+        <div class="view-title">🎯 Pronósticos de Grupos</div>
+      </div>
+      <div id="pron-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
+        ✅ <strong style="color:var(--verde);">¡Inscripción exitosa!</strong> Ahora predice el 1° y 2° lugar de cada grupo.<br>
+        <span style="font-size:12px;">Paso 1 de 2 — grupos → después harás las eliminatorias.</span>
       </div>
       <div class="form-card">
         <label>Selecciona tu nombre</label>
@@ -676,7 +680,7 @@ select option { background:#fff; }
       <div id="pronosticos-lista"></div>
       <div id="msg-pron"></div>
       <button class="btn btn-rosa btn-full" id="btn-save-pron" onclick="guardarPronostico()" style="display:none;">
-        💾 Guardar pronósticos de grupos
+        💾 Guardar grupos y continuar →
       </button>
     </div>
 
@@ -684,6 +688,10 @@ select option { background:#fff; }
     <div id="view-eliminatorias" class="view">
       <div class="view-header">
         <div class="view-title">🏆 Eliminatorias</div>
+      </div>
+      <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
+        ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Ahora predice las eliminatorias.<br>
+        <span style="font-size:12px;">Paso 2 de 2 — elige los equipos que avanzan en cada ronda y guarda.</span>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+2</strong>, cuartos <strong style="color:var(--verde);">+4</strong>, semis <strong style="color:var(--verde);">+6</strong>, finalistas <strong style="color:var(--dorado);">+8 c/u</strong>, campeón <strong style="color:var(--dorado);">+10</strong>
@@ -1567,11 +1575,26 @@ async function inscribir(){
   try{
     await api({action:'inscribir',nombre,monto:MONTO_ENTRADA});
     $id('inp-nombre').value='';
-    setMsg('msg-inscripcion',`✅ ${nombre} inscrito correctamente.`);
     invalidarCache(); await cargarDatos(true);
-    setTimeout(()=>clearMsg('msg-inscripcion'),4000);
+    // Llevar directo a pronósticos de grupos con el nombre pre-seleccionado
+    irAPronósticos(nombre);
   }catch(e){setMsg('msg-inscripcion',e.message,'err');}
   finally{setLoad('btn-inscribir',false);}
+}
+
+function irAPronósticos(nombre){
+  // Activar vista pronósticos en nav
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn,.mobile-nav-btn').forEach(x=>x.classList.remove('active'));
+  $id('view-pronosticos').classList.add('active');
+  document.querySelectorAll('[onclick*="showView(\'pronosticos\'"]').forEach(x=>x.classList.add('active'));
+  // Pre-seleccionar nombre y cargar formulario
+  const sel=$id('sel-jugador');
+  if(sel){ sel.value=nombre; cargarPronostico(); }
+  // Banner guía
+  const banner=$id('pron-onboard-banner');
+  if(banner) banner.style.display='';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1640,11 +1663,23 @@ async function guardarPronostico(){
   setLoad('btn-save-pron',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
-    setMsg('msg-pron','✅ Pronósticos de grupos guardados correctamente.');
     invalidarCache(); await cargarDatos(true);
-    setTimeout(()=>clearMsg('msg-pron'),4000);
+    // Ocultar banner onboarding y navegar a eliminatorias con el mismo nombre
+    const banner=$id('pron-onboard-banner'); if(banner) banner.style.display='none';
+    irAEliminatorias(jugador);
   }catch(e){setMsg('msg-pron',e.message,'err');}
   finally{setLoad('btn-save-pron',false);}
+}
+
+function irAEliminatorias(nombre){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn,.mobile-nav-btn').forEach(x=>x.classList.remove('active'));
+  $id('view-eliminatorias').classList.add('active');
+  document.querySelectorAll('[onclick*="showView(\'eliminatorias\'"]').forEach(x=>x.classList.add('active'));
+  const sel=$id('sel-jugador-elim');
+  if(sel){ sel.value=nombre; cargarElim(); }
+  const banner=$id('elim-onboard-banner'); if(banner) banner.style.display='';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1793,9 +1828,20 @@ async function guardarElim(){
   setLoad('btn-save-elim',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
-    setMsg('msg-elim','✅ Pronósticos de eliminatorias guardados.');
     invalidarCache(); await cargarDatos(true);
-    setTimeout(()=>clearMsg('msg-elim'),4000);
+    const banner=$id('elim-onboard-banner'); if(banner) banner.style.display='none';
+    // Ir al ranking mostrando mensaje de éxito
+    showView('ranking');
+    setTimeout(()=>{
+      const rc=$id('ranking-container');
+      if(rc){
+        const ok=document.createElement('div');
+        ok.style.cssText='background:rgba(0,200,83,0.1);border:1px solid rgba(0,200,83,0.3);border-radius:12px;padding:14px 16px;margin-bottom:1rem;font-size:14px;color:var(--verde);line-height:1.6;text-align:center;';
+        ok.innerHTML='🎉 <strong>¡Pronósticos guardados completamente!</strong><br><span style="font-size:12px;color:var(--muted);">Puedes modificarlos hasta el inicio del torneo (11 jun 2026).</span>';
+        rc.prepend(ok);
+        setTimeout(()=>ok.remove(),6000);
+      }
+    },300);
   }catch(e){setMsg('msg-elim',e.message,'err');}
   finally{setLoad('btn-save-elim',false);}
 }
