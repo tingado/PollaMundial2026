@@ -385,6 +385,16 @@ select option { background:#fff; }
 .bt-pick { padding:0; overflow:visible; }
 .bt-pick select { border:none; background:transparent; font-size:11px; width:100%;
   padding:5px 7px; cursor:pointer; color:var(--text); outline:none; }
+.bt-open { background:rgba(245,188,0,0.06); border-left:2px solid rgba(245,188,0,0.35); }
+/* Bracket connectors */
+.br-group { flex:1; display:flex; flex-direction:column; position:relative; padding-right:10px; }
+.br-group::after { content:''; position:absolute; right:0; top:calc(25% + 1px);
+  height:calc(50% - 2px); width:9px;
+  border-top:2px solid rgba(255,255,255,0.13); border-right:2px solid rgba(255,255,255,0.13);
+  border-bottom:2px solid rgba(255,255,255,0.13); border-radius:0 5px 5px 0; }
+.br-col:not(:first-child) .bm { position:relative; margin-left:8px; }
+.br-col:not(:first-child) .bm::before { content:''; position:absolute; left:-9px; top:50%;
+  transform:translateY(-50%); width:9px; height:2px; background:rgba(255,255,255,0.13); }
 .br-champion { display:flex; align-items:center; justify-content:center; flex-direction:column;
   gap:6px; padding:12px 4px; text-align:center; }
 .br-champion-crown { font-size:2rem; }
@@ -1851,9 +1861,10 @@ function renderCuadro(){
     function slot(t,side){
       const won=m.w===side;
       if(isSlotLabel(t)){
-        return `<div class="bt bt-pick">
+        const label=t==='3ro'?'Mejor 3ro 📋':t;
+        return `<div class="bt bt-pick bt-open">
           <select onchange="setBrTeam('${round}',${idx},'${side}',this.value)" style="width:100%;border:none;background:transparent;font-size:11px;padding:5px 7px;color:var(--muted);cursor:pointer;">
-            <option value="">${t||'3ro'}</option>${todos}
+            <option value="">${label}</option>${todos}
           </select>
         </div>`;
       }
@@ -1868,12 +1879,24 @@ function renderCuadro(){
     </div>`;
   }
 
+  function renderPairs(matches,key){
+    if(matches.length===1) return renderMatch(matches[0],key,0);
+    let h='';
+    for(let i=0;i<matches.length;i+=2){
+      h+=`<div class="br-group">
+        ${renderMatch(matches[i],key,i)}
+        ${i+1<matches.length?renderMatch(matches[i+1],key,i+1):''}
+      </div>`;
+    }
+    return h;
+  }
+
   const rounds=[
     {key:'r32',label:'16avos',pts:'+2',matches:cuadro.r32},
-    {key:'r16',label:'Octavos',pts:'',matches:cuadro.r16},
-    {key:'qf', label:'Cuartos',pts:'+4',matches:cuadro.qf},
-    {key:'sf', label:'Semis',  pts:'+6',matches:cuadro.sf},
-    {key:'fin',label:'Final',  pts:'+8/+10',matches:[cuadro.fin]},
+    {key:'r16',label:'Octavos',pts:'+4',matches:cuadro.r16},
+    {key:'qf', label:'Cuartos',pts:'+6',matches:cuadro.qf},
+    {key:'sf', label:'Semis',  pts:'+8',matches:cuadro.sf},
+    {key:'fin',label:'Final',  pts:'+10',matches:[cuadro.fin]},
   ];
 
   const champion=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
@@ -1885,7 +1908,7 @@ function renderCuadro(){
           <div class="br-col">
             <div class="br-col-title">${r.label}${r.pts?` <span class="br-pts">${r.pts} pts</span>`:''}</div>
             <div class="br-col-matches">
-              ${r.matches.map((m,i)=>renderMatch(m,r.key,i)).join('')}
+              ${renderPairs(r.matches,r.key)}
               ${r.key==='fin'&&champion?`<div class="br-champion">
                 <div class="br-champion-crown">🏆</div>
                 <div class="br-champion-name">${flag(champion)} ${champion}</div>
