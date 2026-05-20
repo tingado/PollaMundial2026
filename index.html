@@ -1602,8 +1602,12 @@ async function inscribir(){
   try{
     await api({action:'inscribir',nombre,monto:MONTO_ENTRADA});
     $id('inp-nombre').value='';
-    invalidarCache(); await cargarDatos(true);
-    // Llevar directo a pronósticos de grupos con el nombre pre-seleccionado
+    // Actualizar estado local para que el selector funcione de inmediato
+    if(!state.jugadores.find(j=>j.nombre===nombre)){
+      state.jugadores.push({nombre,monto:MONTO_ENTRADA});
+    }
+    actualizarSelector(); actualizarSelectorElim();
+    invalidarCache(); cargarDatos(true); // sin await — navegar de inmediato
     irAPronósticos(nombre);
   }catch(e){setMsg('msg-inscripcion',e.message,'err');}
   finally{setLoad('btn-inscribir',false);}
@@ -1690,8 +1694,10 @@ async function guardarPronostico(){
   setLoad('btn-save-pron',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
-    invalidarCache(); await cargarDatos(true);
-    // Ocultar banner onboarding y navegar a eliminatorias con el mismo nombre
+    // Actualizar estado local para que initCuadro use los grupos recién guardados
+    state.pronosticos[jugador]=pron;
+    actualizarSelector(); actualizarSelectorElim();
+    invalidarCache(); cargarDatos(true); // sin await — navegar de inmediato
     const banner=$id('pron-onboard-banner'); if(banner) banner.style.display='none';
     irAEliminatorias(jugador);
   }catch(e){setMsg('msg-pron',e.message,'err');}
@@ -1735,12 +1741,52 @@ function resolveSlot(slot, grupos){
 }
 
 function initCuadro(nombre){
-  const grupos=(state.pronosticos[nombre]||{}).grupos||{};
+  const pron=state.pronosticos[nombre]||{};
+  const grupos=pron.grupos||{};
   cuadro.r32=CUADRO_R32_SLOTS.map(([a,b])=>({a:resolveSlot(a,grupos),b:resolveSlot(b,grupos),w:null}));
   cuadro.r16=Array(8).fill(null).map(()=>({a:'',b:'',w:null}));
   cuadro.qf =Array(4).fill(null).map(()=>({a:'',b:'',w:null}));
   cuadro.sf =Array(2).fill(null).map(()=>({a:'',b:'',w:null}));
   cuadro.fin={a:'',b:'',w:null};
+  restoreCuadroFromElim(pron.elim);
+}
+
+function restoreCuadroFromElim(elim){
+  if(!elim) return;
+  const oct=elim.oct||[], qua=elim.qua||[], sem=elim.sem||[];
+  const f1=elim.f1||'', f2=elim.f2||'', campeon=elim.campeon||'';
+
+  cuadro.r32.forEach((m,i)=>{
+    const w=oct.includes(m.a)?'a':oct.includes(m.b)?'b':null;
+    if(!w) return;
+    m.w=w;
+    const team=w==='a'?m.a:m.b, ni=Math.floor(i/2);
+    if(i%2===0) cuadro.r16[ni].a=team; else cuadro.r16[ni].b=team;
+  });
+  cuadro.r16.forEach((m,i)=>{
+    const w=qua.includes(m.a)?'a':qua.includes(m.b)?'b':null;
+    if(!w) return;
+    m.w=w;
+    const team=w==='a'?m.a:m.b, ni=Math.floor(i/2);
+    if(i%2===0) cuadro.qf[ni].a=team; else cuadro.qf[ni].b=team;
+  });
+  cuadro.qf.forEach((m,i)=>{
+    const w=sem.includes(m.a)?'a':sem.includes(m.b)?'b':null;
+    if(!w) return;
+    m.w=w;
+    const team=w==='a'?m.a:m.b, ni=Math.floor(i/2);
+    if(i%2===0) cuadro.sf[ni].a=team; else cuadro.sf[ni].b=team;
+  });
+  cuadro.sf.forEach((m,i)=>{
+    const expected=i===0?f1:f2; if(!expected) return;
+    const w=m.a===expected?'a':m.b===expected?'b':null;
+    if(!w) return;
+    m.w=w;
+    if(i===0) cuadro.fin.a=expected; else cuadro.fin.b=expected;
+  });
+  if(campeon&&cuadro.fin.a&&cuadro.fin.b){
+    cuadro.fin.w=cuadro.fin.a===campeon?'a':cuadro.fin.b===campeon?'b':null;
+  }
 }
 
 function isSlotLabel(t){ return !t || t==='3ro' || /^[12][A-L]$/.test(t); }
@@ -1786,7 +1832,7 @@ function clearCuadroDown(round,idx){
 }
 
 function getCuadroData(){
-  const oct=cuadro.r32.flatMap(m=>[m.a,m.b]).filter(t=>t&&!isSlotLabel(t));
+  const oct=cuadro.r32.map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
   const qua=cuadro.r16.map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
   const sem=cuadro.qf .map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
   const f1=cuadro.sf[0]?.w?(cuadro.sf[0].w==='a'?cuadro.sf[0].a:cuadro.sf[0].b):'';
@@ -1853,7 +1899,7 @@ function renderCuadro(){
     </p>`;
 
   const btn=$id('btn-save-elim');
-  if(btn) btn.style.display=champion?'':'none';
+  if(btn) btn.style.display='block';
 }
 
 function actualizarSelectorElim(){
