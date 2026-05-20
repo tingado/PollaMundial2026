@@ -168,6 +168,16 @@ body {
 }
 
 @media (max-width: 1100px) { .right-panel { display: none; } }
+.mobile-facts { display: none; }
+@media (max-width: 1100px) {
+  .mobile-facts {
+    display: block;
+    padding: 0 1rem 80px;
+  }
+  .mobile-facts-inner {
+    max-width: 600px; margin: 0 auto;
+  }
+}
 
 /* VIEWS */
 .view { display:none; }
@@ -932,6 +942,21 @@ select option { background:#fff; }
   </div>
 </div>
 
+<!-- MOBILE FACTS (solo visible en móvil) -->
+<div class="mobile-facts" id="mobile-facts">
+  <div class="mobile-facts-inner">
+    <div class="facts-widget" style="margin-bottom:10px;">
+      <div class="facts-label">📖 Historia del Mundial</div>
+      <div class="hist-cards" id="hist-cards-m"></div>
+      <div class="fact-dots" id="hist-dots-m"></div>
+    </div>
+    <div class="facts-widget-2026">
+      <div class="facts-label-2026">⭐ Mundial 2026</div>
+      <div class="fact-text-2026" id="fact-2026-m">Cargando...</div>
+    </div>
+  </div>
+</div>
+
 <!-- MOBILE NAV -->
 <nav class="mobile-nav" id="mobile-nav">
   <button class="mobile-nav-btn active" onclick="showView('partidos',this)">
@@ -969,7 +994,7 @@ const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
 const MONTO_ENTRADA = 5000;
-const APP_URL = 'https://lapollamundial2026.netlify.app';
+const APP_URL = 'https://tingado.github.io/PollaMundial2026';
 
 // ══════════════════════════════════════════════════════════
 // FLAGS
@@ -1175,8 +1200,9 @@ function initCountdown(){
 // FACTS WIDGET
 // ══════════════════════════════════════════════════════════
 function initFacts(){
-  const histCont=$id('hist-cards'), histDots=$id('hist-dots');
-  if(histCont && DATOS_HISTORIA.length){
+  function initHist(contId, dotsId){
+    const histCont=$id(contId), histDots=$id(dotsId);
+    if(!histCont || !DATOS_HISTORIA.length) return;
     const PAGE=3;
     const pages=Math.ceil(DATOS_HISTORIA.length/PAGE);
     let histPage=0;
@@ -1194,16 +1220,21 @@ function initFacts(){
     showHistPage(0);
     setInterval(()=>{ histPage=(histPage+1)%pages; showHistPage(histPage); },8000);
   }
-  const el2026=$id('fact-2026');
-  if(el2026 && DATOS_2026.length){
-    let idx2026=0;
-    function show2026(i){
-      el2026.style.opacity='0';
-      setTimeout(()=>{ el2026.textContent=DATOS_2026[i]; el2026.style.opacity='1'; },500);
+  function init2026(elId){
+    const el=$id(elId);
+    if(!el || !DATOS_2026.length) return;
+    let idx=0;
+    function show(i){
+      el.style.opacity='0';
+      setTimeout(()=>{ el.textContent=DATOS_2026[i]; el.style.opacity='1'; },500);
     }
-    show2026(0);
-    setInterval(()=>{ idx2026=(idx2026+1)%DATOS_2026.length; show2026(idx2026); },10000);
+    show(0);
+    setInterval(()=>{ idx=(idx+1)%DATOS_2026.length; show(idx); },10000);
   }
+  initHist('hist-cards','hist-dots');
+  initHist('hist-cards-m','hist-dots-m');
+  init2026('fact-2026');
+  init2026('fact-2026-m');
 }
 
 // ══════════════════════════════════════════════════════════
