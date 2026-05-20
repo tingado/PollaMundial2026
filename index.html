@@ -1789,8 +1789,8 @@ function getCuadroData(){
   const oct=cuadro.r32.flatMap(m=>[m.a,m.b]).filter(t=>t&&!isSlotLabel(t));
   const qua=cuadro.r16.map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
   const sem=cuadro.qf .map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
-  const f1=(cuadro.sf[0]?.w?(cuadro.sf[0].w==='a'?cuadro.sf[0].a:cuadro.sf[0].b))||'';
-  const f2=(cuadro.sf[1]?.w?(cuadro.sf[1].w==='a'?cuadro.sf[1].a:cuadro.sf[1].b))||'';
+  const f1=cuadro.sf[0]?.w?(cuadro.sf[0].w==='a'?cuadro.sf[0].a:cuadro.sf[0].b):'';
+  const f2=cuadro.sf[1]?.w?(cuadro.sf[1].w==='a'?cuadro.sf[1].a:cuadro.sf[1].b):'';
   const campeon=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
   return {oct,qua,sem,fin:[f1,f2].filter(Boolean),f1,f2,campeon};
 }
