@@ -364,7 +364,34 @@ select option { background:#fff; }
 }
 .elim-counter strong { color:var(--rosa); }
 
-/* RANKING DETALLADO */
+/* BRACKET VISUAL */
+.bracket-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:1rem; }
+.br-rounds { display:flex; align-items:stretch; min-width:820px; height:calc(16 * 58px); gap:2px; }
+.br-col { flex:1; display:flex; flex-direction:column; min-width:130px; }
+.br-col-title { font-size:9px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--rosa); text-align:center; padding:5px 2px; border-bottom:1px solid var(--border);
+  margin-bottom:0; flex-shrink:0; }
+.br-pts { color:var(--verde); }
+.br-col-matches { flex:1; display:flex; flex-direction:column; }
+.bm { flex:1; display:flex; flex-direction:column; justify-content:center; margin:1px 2px;
+  border-radius:8px; overflow:hidden; border:1px solid var(--border); background:var(--card); }
+.bt { padding:5px 7px; cursor:pointer; display:flex; align-items:center; gap:4px;
+  font-size:11px; line-height:1.2; transition:background 0.12s; min-height:26px; }
+.bt:hover:not(.bx) { background:rgba(233,30,140,0.09); }
+.bt.bw { background:rgba(0,200,83,0.13); font-weight:700; }
+.bx { opacity:0.38; pointer-events:none; font-style:italic; }
+.bt + .bt { border-top:1px solid var(--border); }
+.bt-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bt-pick { padding:0; overflow:visible; }
+.bt-pick select { border:none; background:transparent; font-size:11px; width:100%;
+  padding:5px 7px; cursor:pointer; color:var(--text); outline:none; }
+.br-champion { display:flex; align-items:center; justify-content:center; flex-direction:column;
+  gap:6px; padding:12px 4px; text-align:center; }
+.br-champion-crown { font-size:2rem; }
+.br-champion-name { font-size:13px; font-weight:800; color:var(--dorado); }
+@media (max-width:700px) { .br-rounds { min-width:700px; height:calc(16 * 52px); } .bt { font-size:10px; padding:4px 5px; } }
+
+
 .ranking-wrap {
   background:#fff;
   border:1px solid var(--border); border-radius:16px; overflow:hidden;
@@ -1685,12 +1712,149 @@ function irAEliminatorias(nombre){
 // ══════════════════════════════════════════════════════════
 // ELIMINATORIAS
 // ══════════════════════════════════════════════════════════
-const ELIM_RONDAS = [
-  { key:'oct', label:'16avos de Final',    pts:2, max:32, desc:'Selecciona los 32 equipos que crees que clasifican de grupos (los mejores 3ros también pasan)' },
-  { key:'qua', label:'Cuartos de Final',   pts:4, max:8,  desc:'Selecciona los 8 equipos que crees que llegan a cuartos' },
-  { key:'sem', label:'Semifinales',        pts:6, max:4,  desc:'Selecciona los 4 equipos que crees que llegan a semis' },
-  { key:'fin', label:'Final (Finalistas)', pts:8, max:2,  desc:'Selecciona los 2 finalistas — cada finalista correcto = +8 pts' },
+// WC 2026 – 16 partidos de 16avos (R32)
+// Formato: [slotA, slotB] donde '1X'=1°Grupo X, '2X'=2°Grupo X, '3ro'=mejor 3ro
+const CUADRO_R32_SLOTS = [
+  ['1E','3ro'], ['1I','3ro'],   // → R16[0]
+  ['2A','2B'],  ['1F','2C'],    // → R16[1]
+  ['2K','2L'],  ['1H','2J'],    // → R16[2]
+  ['1D','3ro'], ['1G','3ro'],   // → R16[3]
+  ['1C','2F'],  ['2E','2I'],    // → R16[4]
+  ['1A','3ro'], ['1B','3ro'],   // → R16[5]
+  ['1J','2G'],  ['2D','2H'],    // → R16[6]
+  ['1K','3ro'], ['1L','3ro'],   // → R16[7]
 ];
+// Estado del cuadro: r32[16], r16[8], qf[4], sf[2], fin
+// Cada match: {a, b, w: 'a'|'b'|null}
+let cuadro = {r32:[],r16:[],qf:[],sf:[],fin:null};
+
+function resolveSlot(slot, grupos){
+  const m=slot.match(/^([12])([A-L])$/);
+  if(!m) return slot;
+  return (grupos[m[2]]||{})[m[1]==='1'?'p1':'p2'] || slot;
+}
+
+function initCuadro(nombre){
+  const grupos=(state.pronosticos[nombre]||{}).grupos||{};
+  cuadro.r32=CUADRO_R32_SLOTS.map(([a,b])=>({a:resolveSlot(a,grupos),b:resolveSlot(b,grupos),w:null}));
+  cuadro.r16=Array(8).fill(null).map(()=>({a:'',b:'',w:null}));
+  cuadro.qf =Array(4).fill(null).map(()=>({a:'',b:'',w:null}));
+  cuadro.sf =Array(2).fill(null).map(()=>({a:'',b:'',w:null}));
+  cuadro.fin={a:'',b:'',w:null};
+}
+
+function isSlotLabel(t){ return !t || t==='3ro' || /^[12][A-L]$/.test(t); }
+
+function setBrTeam(round,idx,side,team){
+  const m=round==='fin'?cuadro.fin:cuadro[round][idx];
+  if(!m||!team)return;
+  if(side==='a')m.a=team; else m.b=team;
+  m.w=null;
+  renderCuadro();
+}
+
+function cuadroPickWinner(round,idx,side){
+  const m=round==='fin'?cuadro.fin:cuadro[round][idx];
+  if(!m)return;
+  const team=side==='a'?m.a:m.b;
+  if(isSlotLabel(team))return;
+  m.w = m.w===side ? null : side;
+  const winner = m.w ? team : '';
+  // Propagar al siguiente round
+  const next={r32:'r16',r16:'qf',qf:'sf',sf:'fin'}[round];
+  if(next){
+    const ni=Math.floor(idx/2), isTop=idx%2===0;
+    const nm=next==='fin'?cuadro.fin:cuadro[next][ni];
+    if(nm){
+      const prev=isTop?nm.a:nm.b;
+      if(isTop)nm.a=winner; else nm.b=winner;
+      if(prev!==winner){nm.w=null;clearCuadroDown(next,next==='fin'?0:ni);}
+    }
+  }
+  renderCuadro();
+}
+
+function clearCuadroDown(round,idx){
+  const next={r16:'qf',qf:'sf',sf:'fin'}[round];
+  if(!next)return;
+  const ni=Math.floor(idx/2),isTop=idx%2===0;
+  const nm=next==='fin'?cuadro.fin:cuadro[next][ni];
+  if(!nm)return;
+  if(isTop)nm.a=''; else nm.b='';
+  nm.w=null;
+  clearCuadroDown(next,next==='fin'?0:ni);
+}
+
+function getCuadroData(){
+  const oct=cuadro.r32.flatMap(m=>[m.a,m.b]).filter(t=>t&&!isSlotLabel(t));
+  const qua=cuadro.r16.map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
+  const sem=cuadro.qf .map(m=>m.w?(m.w==='a'?m.a:m.b):null).filter(Boolean);
+  const f1=(cuadro.sf[0]?.w?(cuadro.sf[0].w==='a'?cuadro.sf[0].a:cuadro.sf[0].b))||'';
+  const f2=(cuadro.sf[1]?.w?(cuadro.sf[1].w==='a'?cuadro.sf[1].a:cuadro.sf[1].b))||'';
+  const campeon=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
+  return {oct,qua,sem,fin:[f1,f2].filter(Boolean),f1,f2,campeon};
+}
+
+function renderCuadro(){
+  const cont=$id('elim-container');
+  if(!cont)return;
+  const todos=['<option value=""></option>',
+    ...TODOS_EQUIPOS.map(eq=>`<option value="${eq}">${flag(eq)} ${eq}</option>`)].join('');
+
+  function renderMatch(m,round,idx){
+    function slot(t,side){
+      const won=m.w===side;
+      if(isSlotLabel(t)){
+        return `<div class="bt bt-pick">
+          <select onchange="setBrTeam('${round}',${idx},'${side}',this.value)" style="width:100%;border:none;background:transparent;font-size:11px;padding:5px 7px;color:var(--muted);cursor:pointer;">
+            <option value="">${t||'3ro'}</option>${todos}
+          </select>
+        </div>`;
+      }
+      return `<div class="bt${won?' bw':''}" onclick="cuadroPickWinner('${round}',${idx},'${side}')">
+        <span>${flag(t)}</span><span class="bt-name">${t}</span>
+        ${won?'<span style="color:var(--verde);margin-left:auto;font-size:10px;">▶</span>':''}
+      </div>`;
+    }
+    const empty=!m.a&&!m.b;
+    return `<div class="bm${empty?' bx':''}">
+      ${slot(m.a,'a')}${slot(m.b,'b')}
+    </div>`;
+  }
+
+  const rounds=[
+    {key:'r32',label:'16avos',pts:'+2',matches:cuadro.r32},
+    {key:'r16',label:'Octavos',pts:'',matches:cuadro.r16},
+    {key:'qf', label:'Cuartos',pts:'+4',matches:cuadro.qf},
+    {key:'sf', label:'Semis',  pts:'+6',matches:cuadro.sf},
+    {key:'fin',label:'Final',  pts:'+8/+10',matches:[cuadro.fin]},
+  ];
+
+  const champion=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
+
+  cont.innerHTML=`
+    <div class="bracket-scroll">
+      <div class="br-rounds">
+        ${rounds.map(r=>`
+          <div class="br-col">
+            <div class="br-col-title">${r.label}${r.pts?` <span class="br-pts">${r.pts} pts</span>`:''}</div>
+            <div class="br-col-matches">
+              ${r.matches.map((m,i)=>renderMatch(m,r.key,i)).join('')}
+              ${r.key==='fin'&&champion?`<div class="br-champion">
+                <div class="br-champion-crown">🏆</div>
+                <div class="br-champion-name">${flag(champion)} ${champion}</div>
+              </div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">
+      Haz click en un equipo para marcarlo como ganador del partido. Los 3ros y slots desconocidos son editables.
+    </p>`;
+
+  const btn=$id('btn-save-elim');
+  if(btn) btn.style.display=champion?'':'none';
+}
 
 function actualizarSelectorElim(){
   const sel=$id('sel-jugador-elim'); if(!sel)return;
@@ -1703,128 +1867,23 @@ function cargarElim(){
   const jugador=$id('sel-jugador-elim').value;
   const cont=$id('elim-container');
   const btn=$id('btn-save-elim');
-  if(!jugador){cont.innerHTML='';btn.style.display='none';return;}
-  btn.style.display='block';
+  if(!jugador){cont.innerHTML='';if(btn)btn.style.display='none';return;}
   const cerrado=new Date()>=FECHA_CIERRE;
   if(cerrado){
     cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong></div>';
-    btn.style.display='none'; return;
+    if(btn)btn.style.display='none'; return;
   }
-  const pron=state.pronosticos[jugador]||{};
-  const elim=pron.elim||{};
-  cont.innerHTML = ELIM_RONDAS.map(ronda=>renderElimRonda(ronda, elim)).join('') + renderElimCampeon(elim);
+  initCuadro(jugador);
+  renderCuadro();
 }
 
-function renderElimRonda(ronda, elim){
-  const selected = new Set(elim[ronda.key]||[]);
-  const equipos = TODOS_EQUIPOS;
-  return `
-    <div class="elim-round-card">
-      <div class="elim-round-title">${ronda.label} <span style="color:var(--verde);font-size:1rem;">+${ronda.pts} pts</span></div>
-      <div class="elim-round-meta">${ronda.desc}</div>
-      <div class="elim-counter" id="counter-${ronda.key}">
-        Seleccionados: <strong>${selected.size}</strong> / ${ronda.max}
-      </div>
-      <div class="elim-teams-grid">
-        ${equipos.map(eq=>{
-          const sel=selected.has(eq);
-          return `<div class="team-toggle${sel?' selected':''}" id="tog-${ronda.key}-${eq.replace(/\s/g,'_')}"
-            onclick="toggleTeam('${ronda.key}',${ronda.max},'${eq.replace(/'/g,"\\'")}')">
-            <span class="team-toggle-flag">${flag(eq)}</span>
-            <span class="team-toggle-name">${eq}</span>
-            <span class="team-toggle-check">✓</span>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-}
-
-function renderElimCampeon(elim){
-  const f1=elim.f1||'';
-  const f2=elim.f2||'';
-  const campeon=elim.campeon||'';
-  const opts=TODOS_EQUIPOS.map(eq=>`<option value="${eq}"${eq===campeon?' selected':''}>${flag(eq)} ${eq}</option>`).join('');
-  return `
-    <div class="elim-round-card" style="border-color:rgba(245,188,0,0.3);">
-      <div class="elim-round-title">🏆 Campeón <span style="color:var(--dorado);font-size:1rem;">+10 pts</span></div>
-      <div class="elim-round-meta">¿Quién gana el Mundial 2026?</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div>
-          <label>Finalista 1</label>
-          <select id="elim-f1" style="margin-bottom:0;" onchange="syncCampeonOpts()">
-            <option value="">-- País --</option>
-            ${TODOS_EQUIPOS.map(eq=>`<option value="${eq}"${eq===f1?' selected':''}>${flag(eq)} ${eq}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <label>Finalista 2</label>
-          <select id="elim-f2" style="margin-bottom:0;" onchange="syncCampeonOpts()">
-            <option value="">-- País --</option>
-            ${TODOS_EQUIPOS.map(eq=>`<option value="${eq}"${eq===f2?' selected':''}>${flag(eq)} ${eq}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <label>Campeón del Mundo</label>
-      <select id="elim-campeon">
-        <option value="">-- Selecciona el campeón --</option>
-        ${opts}
-      </select>
-    </div>`;
-}
-
-function syncCampeonOpts(){
-  const f1=$id('elim-f1')?.value||'';
-  const f2=$id('elim-f2')?.value||'';
-  const cur=$id('elim-campeon')?.value||'';
-  const valid=[f1,f2].filter(Boolean);
-  if(!valid.length) return;
-  const opts='<option value="">-- Selecciona el campeón --</option>'+
-    valid.map(eq=>`<option value="${eq}"${eq===cur?' selected':''}>${flag(eq)} ${eq}</option>`).join('');
-  $id('elim-campeon').innerHTML=opts;
-}
-
-function toggleTeam(ronda, max, equipo){
-  const id='tog-'+ronda+'-'+equipo.replace(/\s/g,'_');
-  const el=document.getElementById(id); if(!el)return;
-  const selected=el.classList.contains('selected');
-  if(!selected){
-    const count=document.querySelectorAll(`[id^="tog-${ronda}-"].selected`).length;
-    if(count>=max){
-      el.style.animation='none';
-      setTimeout(()=>el.style.animation='',10);
-      return;
-    }
-    el.classList.add('selected');
-  } else {
-    el.classList.remove('selected');
-  }
-  const newCount=document.querySelectorAll(`[id^="tog-${ronda}-"].selected`).length;
-  const counterEl=$id('counter-'+ronda);
-  if(counterEl) counterEl.innerHTML=`Seleccionados: <strong>${newCount}</strong> / ${max}`;
-}
-
-function getElimSeleccionados(ronda){
-  return Array.from(document.querySelectorAll(`[id^="tog-${ronda}-"].selected`))
-    .map(el=>{
-      const raw=el.id.replace('tog-'+ronda+'-','').replace(/_/g,' ');
-      return TODOS_EQUIPOS.find(eq=>eq.replace(/\s/g,'_')===el.id.replace('tog-'+ronda+'-','')) || raw;
-    });
-}
 
 async function guardarElim(){
   const jugador=$id('sel-jugador-elim').value;
   if(!jugador)return;
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
-  const f1v=$id('elim-f1')?.value||'', f2v=$id('elim-f2')?.value||'';
-  pron.elim={
-    oct: getElimSeleccionados('oct'),
-    qua: getElimSeleccionados('qua'),
-    sem: getElimSeleccionados('sem'),
-    fin: [f1v,f2v].filter(Boolean),
-    f1:  f1v,
-    f2:  f2v,
-    campeon: $id('elim-campeon')?.value||'',
-  };
+  const d=getCuadroData();
+  pron.elim={oct:d.oct,qua:d.qua,sem:d.sem,fin:d.fin,f1:d.f1,f2:d.f2,campeon:d.campeon};
   setLoad('btn-save-elim',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
