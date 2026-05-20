@@ -585,6 +585,7 @@ select option { background:#fff; }
       <button class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
       <button class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
       <button class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
+      <button class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
       <button class="nav-btn" onclick="showView('admin',this)">⚙️ Admin</button>
     </div>
 
@@ -923,6 +924,82 @@ select option { background:#fff; }
       </div>
     </div>
 
+    <!-- ══ VIEW: BASES ══ -->
+    <div id="view-bases" class="view">
+      <div class="view-header">
+        <div class="view-title">📜 Bases y Condiciones</div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-title">🏆 Premios</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;">
+          Solo los <strong>dos primeros lugares</strong> del ranking final reciben premio. El pozo se reparte así:
+        </p>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+          <div class="score-row" style="background:rgba(245,188,0,0.08);">
+            <span>🥇 1° lugar</span><span style="color:var(--dorado);font-weight:700;">60% del pozo</span>
+          </div>
+          <div class="score-row" style="background:rgba(200,200,200,0.05);">
+            <span>🥈 2° lugar</span><span style="color:#ccc;font-weight:700;">40% del pozo</span>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;">
+          El pozo total se calcula sumando los montos de inscripción de todos los participantes ($5.000 por persona).
+        </p>
+      </div>
+
+      <div class="form-card">
+        <div class="form-title">⚖️ Resolución de Empates</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;">
+          En caso de empate en puntaje se aplican los siguientes criterios <strong>en orden de prioridad</strong>:
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="background:var(--rosa);color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Campeón correcto</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Quien haya acertado el campeón queda por encima.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="background:var(--rosa);color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Mayor puntaje en eliminatorias</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Se suman los puntos obtenidos solo en 16avos, cuartos, semis y final.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="background:var(--rosa);color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Mayor puntaje en grupos</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Se suman los puntos obtenidos en la fase de grupos (1° y 2° de cada grupo).</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;">
+            <div style="background:var(--rosa);color:#fff;font-weight:800;font-size:12px;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Decisión del administrador</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.5;">Si persiste el empate tras los criterios anteriores, el administrador resuelve (ej. sorteo).</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-title">📋 Reglas Generales</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted);line-height:1.7;">
+          <div>• La inscripción tiene un costo de <strong style="color:var(--text);">$5.000 CLP</strong> por persona. El pago se coordina directamente con el administrador.</div>
+          <div>• Cada participante debe guardar sus pronósticos <strong style="color:var(--text);">antes del 11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.</div>
+          <div>• Los pronósticos de grupos (1° y 2° de cada grupo A–L) y de eliminatorias deben guardarse por separado usando los botones correspondientes.</div>
+          <div>• Los resultados oficiales se ingresan por el administrador. En caso de error en el ingreso, el administrador puede corregirlos antes del cómputo final.</div>
+          <div>• El ranking se actualiza automáticamente cada vez que el administrador ingresa nuevos resultados.</div>
+          <div>• Solo participan en el reparto quienes hayan pagado su entrada y tengan pronósticos guardados.</div>
+          <div>• Cualquier situación no contemplada en estas bases la resuelve el administrador de forma definitiva.</div>
+        </div>
+      </div>
+
+    </div>
+
   </main>
 
   <!-- RIGHT PANEL -->
@@ -979,6 +1056,9 @@ select option { background:#fff; }
   </button>
   <button class="mobile-nav-btn" onclick="showView('calculos',this)">
     <span>🧮</span>Cálculo
+  </button>
+  <button class="mobile-nav-btn" onclick="showView('bases',this)">
+    <span>📜</span>Bases
   </button>
   <button class="mobile-nav-btn" onclick="showView('admin',this)">
     <span>⚙️</span>Admin
@@ -1242,7 +1322,7 @@ function initFacts(){
 // WHATSAPP
 // ══════════════════════════════════════════════════════════
 function compartirWhatsApp(){
-  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $5.000\n🥇 1° lugar → 50% del pozo\n🥈 2° lugar → 30% del pozo\n🥉 3° lugar → 20% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica 1° y 2° de cada grupo (A–L)\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
+  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $5.000\n🥇 1° lugar → 60% del pozo\n🥈 2° lugar → 40% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica 1° y 2° de cada grupo (A–L)\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1364,9 +1444,8 @@ function renderPozo(){
       <div class="pozo-label" style="margin-top:4px;">${n} participante${n!==1?'s':''}</div>
     </div>
     <div class="prize-split">
-      <div class="prize-card p1"><div class="prize-pct">🥇 50%</div><div class="prize-val">${fmtCLP(total*.5)}</div></div>
-      <div class="prize-card p2"><div class="prize-pct">🥈 30%</div><div class="prize-val">${fmtCLP(total*.3)}</div></div>
-      <div class="prize-card p3"><div class="prize-pct">🥉 20%</div><div class="prize-val">${fmtCLP(total*.2)}</div></div>
+      <div class="prize-card p1"><div class="prize-pct">🥇 60%</div><div class="prize-val">${fmtCLP(total*.6)}</div></div>
+      <div class="prize-card p2"><div class="prize-pct">🥈 40%</div><div class="prize-val">${fmtCLP(total*.4)}</div></div>
     </div>`;
   ['pozo-widget','pozo-mini'].forEach(id=>{const el=$id(id);if(el)el.innerHTML=html;});
 }
