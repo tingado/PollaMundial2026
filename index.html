@@ -289,6 +289,24 @@ body {
 .group-table tr.clasif td:first-child { border-left:3px solid var(--verde); }
 .team-cell { display:flex; align-items:center; gap:8px; }
 
+/* PRONÓSTICOS GROUP STANDINGS */
+.pron-grupo-card { background:#fff; border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:10px; }
+.pron-grupo-header { background:linear-gradient(135deg,var(--rosa),#c2006e); padding:7px 14px; display:flex; align-items:center; gap:10px; }
+.pron-grupo-header .g-label { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:1px; color:#fff; }
+.pron-standing-table { width:100%; border-collapse:collapse; }
+.pron-standing-table tr { cursor:pointer; transition:background 0.12s; }
+.pron-standing-table tr:hover { background:rgba(233,30,140,0.05); }
+.pron-standing-table tr:not(:last-child) td { border-bottom:1px solid var(--border); }
+.pron-standing-table td { padding:9px 14px; font-size:13px; }
+.pron-standing-table tr.pst-p1 { background:rgba(245,188,0,0.08); }
+.pron-standing-table tr.pst-p2 { background:rgba(180,180,180,0.07); }
+.pos-badge { display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; border-radius:50%; font-size:11px; font-weight:800;
+  background:#f3f4f6; color:var(--muted); border:1px solid var(--border); }
+.pos-badge.gold { background:rgba(245,188,0,0.2); color:#b07d00; border-color:rgba(245,188,0,0.5); }
+.pos-badge.silver { background:rgba(180,180,180,0.18); color:#666; border-color:rgba(180,180,180,0.4); }
+.pst-team { display:flex; align-items:center; gap:8px; }
+
 /* FORM */
 .form-card {
   background:#ffffff;
@@ -1922,31 +1940,52 @@ function cargarPronostico(){
     '<div id="pron-progress" style="margin-bottom:12px;"></div>' +
     Object.entries(GRUPOS).map(([g,equipos])=>{
       const gg=gp[g]||{};
-      const o1=equipos.map(eq=>`<option value="${eq}"${gg.p1===eq?' selected':''}>${flag(eq)} ${eq}</option>`).join('');
-      const o2=equipos.map(eq=>`<option value="${eq}"${gg.p2===eq?' selected':''}>${flag(eq)} ${eq}</option>`).join('');
       return `
-        <div class="form-card" style="margin-bottom:10px;padding:1rem;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-            <div style="background:var(--rosa);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;padding:4px 10px;border-radius:8px;letter-spacing:1px;">Grupo ${g}</div>
-            <div style="font-size:12px;color:var(--muted);">${equipos.map(eq=>flag(eq)+' '+eq).join(' · ')}</div>
+        <div class="pron-grupo-card">
+          <div class="pron-grupo-header">
+            <span class="g-label">Grupo ${g}</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.75);">Elige 1° y 2° lugar</span>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <label style="color:var(--dorado);">🥇 1° Lugar</label>
-              <select id="pron-g${g}-p1" style="margin-bottom:0;" onchange="actualizarProgresoPron()">
-                <option value="">-- Elige --</option>${o1}
-              </select>
-            </div>
-            <div>
-              <label style="color:var(--plata);">🥈 2° Lugar</label>
-              <select id="pron-g${g}-p2" style="margin-bottom:0;" onchange="actualizarProgresoPron()">
-                <option value="">-- Elige --</option>${o2}
-              </select>
-            </div>
-          </div>
+          <table class="pron-standing-table">
+            <tbody id="pron-g${g}-tbody"></tbody>
+          </table>
+          <input type="hidden" id="pron-g${g}-p1" value="${esc(gg.p1||'')}">
+          <input type="hidden" id="pron-g${g}-p2" value="${esc(gg.p2||'')}">
         </div>`;
     }).join('');
-  setTimeout(actualizarProgresoPron, 0);
+  setTimeout(()=>{
+    Object.keys(GRUPOS).forEach(g=>renderPronGrupoRows(g));
+    actualizarProgresoPron();
+  }, 0);
+}
+
+function renderPronGrupoRows(g){
+  const tbody=$id(`pron-g${g}-tbody`); if(!tbody) return;
+  const p1=$id(`pron-g${g}-p1`)?.value||'';
+  const p2=$id(`pron-g${g}-p2`)?.value||'';
+  tbody.innerHTML=GRUPOS[g].map(eq=>{
+    const isP1=p1===eq, isP2=p2===eq;
+    const cls=isP1?'pst-p1':isP2?'pst-p2':'';
+    const badgeCls=isP1?'pos-badge gold':isP2?'pos-badge silver':'pos-badge';
+    const badgeTxt=isP1?'1°':isP2?'2°':'';
+    return `<tr class="${cls}" onclick="togglePronTeam('${g}','${esc(eq)}')">
+      <td style="width:32px;text-align:center;"><span class="${badgeCls}">${badgeTxt}</span></td>
+      <td><div class="pst-team">${fi(eq)}<span>${esc(eq)}</span></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function togglePronTeam(g, eq){
+  const p1el=$id(`pron-g${g}-p1`), p2el=$id(`pron-g${g}-p2`);
+  if(!p1el||!p2el) return;
+  let p1=p1el.value, p2=p2el.value;
+  if(p1===eq){ p1=p2; p2=''; }
+  else if(p2===eq){ p2=''; }
+  else if(!p1){ p1=eq; }
+  else if(!p2 && p1!==eq){ p2=eq; }
+  p1el.value=p1; p2el.value=p2;
+  renderPronGrupoRows(g);
+  actualizarProgresoPron();
 }
 
 function actualizarProgresoPron(){
