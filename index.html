@@ -511,10 +511,10 @@ select option { background:#fff; }
   margin-bottom:4px; white-space:nowrap; overflow:hidden;
   text-overflow:ellipsis; background:#f9fafb;
 }
-.modal-br-team.hit  { background:rgba(0,200,83,0.09); border-color:rgba(0,200,83,0.3); color:#15803d; }
-.modal-br-team.miss { background:rgba(239,68,68,0.07); border-color:rgba(239,68,68,0.25); color:#b91c1c; }
+.modal-br-team.hit  { background:rgba(0,200,83,0.09); border-color:rgba(0,200,83,0.3); color:var(--verde); }
+.modal-br-team.miss { background:rgba(239,68,68,0.07); border-color:rgba(239,68,68,0.25); color:var(--rosa); }
 .modal-br-team.campeon { background:rgba(245,188,0,0.1); border-color:rgba(245,188,0,0.4); font-weight:700; font-size:12px; }
-.modal-br-team.campeon.hit { background:rgba(245,188,0,0.18); border-color:#d97706; color:#92400e; }
+.modal-br-team.campeon.hit { background:rgba(245,188,0,0.18); border-color:var(--dorado); color:var(--bronce); }
 .modal-pts-pill {
   display:inline-block; font-size:11px; font-weight:700;
   padding:2px 8px; border-radius:20px;
@@ -1236,6 +1236,7 @@ const FLAGS = {
   'Inglaterra':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Croacia':'🇭🇷','Ghana':'🇬🇭','Panamá':'🇵🇦',
 };
 function flag(t){ return FLAGS[t]||'🏳️'; }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 const TODOS_EQUIPOS = Object.keys(FLAGS).sort((a,b)=>a.localeCompare(b,'es'));
 
@@ -1558,19 +1559,18 @@ function restoreLastPlayer(){
   if(!existe){ chip.style.display='none'; return; }
   const st=estadoPron(last);
   const pts=calcPtsTotal(state.pronosticos[last],state.resultados);
-  const nombre=last.replace(/'/g,"\\'");
   chip.style.display='';
   chip.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Último acceso:</div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div style="width:28px;height:28px;border-radius:50%;background:var(--rosa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${last.charAt(0).toUpperCase()}</div>
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--rosa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${esc(last.charAt(0).toUpperCase())}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${last}</div>
+        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(last)}</div>
         <div style="font-size:10px;color:var(--muted);">${pts} pts · ${st.gOk&&st.eOk?'✅ completo':'⚠ incompleto'}</div>
       </div>
     </div>
     <div style="display:flex;gap:6px;margin-top:8px;">
-      <button class="btn btn-rosa" style="flex:1;font-size:12px;padding:7px;" onclick="irAPronósticos('${nombre}')">✏️ Grupos</button>
-      <button class="btn" style="flex:1;font-size:12px;padding:7px;background:var(--card);border:1px solid var(--border);" onclick="irAEliminatorias('${nombre}')">🏆 Llaves</button>
+      <button class="btn btn-rosa" style="flex:1;font-size:12px;padding:7px;" data-pn="${esc(last)}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
+      <button class="btn" style="flex:1;font-size:12px;padding:7px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>
     </div>`;
 }
 
@@ -1583,20 +1583,20 @@ function renderInscJugadores(){
   const cerrado=new Date()>=FECHA_CIERRE;
   list.innerHTML=state.jugadores.map(j=>{
     const st=estadoPron(j.nombre);
-    const nombre=j.nombre.replace(/'/g,"\\'");
+    const en=esc(j.nombre);
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--rosa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${j.nombre.charAt(0).toUpperCase()}</div>
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--rosa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${esc(j.nombre.charAt(0).toUpperCase())}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:13px;">${j.nombre}</div>
+        <div style="font-weight:600;font-size:13px;">${en}</div>
         <div class="rank-status">
           <span class="rank-badge ${st.gOk?'ok':'pend'}">${st.gOk?'✓ Grupos':'✗ Grupos'}</span>
           <span class="rank-badge ${st.eOk?'ok':'pend'}">${st.eOk?'✓ Llaves':'✗ Llaves'}</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <button class="rank-ver" onclick="openPronModal('${nombre}')" style="font-size:10px;padding:2px 6px;">👁 Ver</button>
-        ${!cerrado?`<button class="rank-edit" onclick="irAPronósticos('${nombre}')" style="font-size:11px;">✏️ Grupos</button>
-        <button class="rank-edit" onclick="irAEliminatorias('${nombre}')" style="font-size:11px;">🏆 Llaves</button>`:''}
+        <button class="rank-ver" data-pn="${en}" onclick="openPronModal(this.dataset.pn)" style="font-size:10px;padding:2px 6px;">👁 Ver</button>
+        ${!cerrado?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)" style="font-size:11px;">✏️ Grupos</button>
+        <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)" style="font-size:11px;">🏆 Llaves</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1619,10 +1619,10 @@ function renderLeaderboard(){
   const rk=['r1','r2','r3'];
   const mk=['🥇','🥈','🥉'];
   cont.innerHTML=scores.map((s,i)=>`
-    <div class="lb-item" style="cursor:pointer;" onclick="openPronModal('${s.nombre.replace(/'/g,"\\'")}')">
+    <div class="lb-item" style="cursor:pointer;" data-pn="${esc(s.nombre)}" onclick="openPronModal(this.dataset.pn)">
       <div class="lb-rank ${rk[i]||''}">${i<3?mk[i]:i+1}</div>
-      <div class="lb-avatar">${s.nombre.charAt(0).toUpperCase()}</div>
-      <div class="lb-name">${s.nombre}${s.completo?'':' <span style="font-size:9px;color:rgba(255,188,0,0.85);" title="Pronósticos incompletos">⚠</span>'}</div>
+      <div class="lb-avatar">${esc(s.nombre.charAt(0).toUpperCase())}</div>
+      <div class="lb-name">${esc(s.nombre)}${s.completo?'':' <span style="font-size:9px;color:rgba(255,188,0,0.85);" title="Pronósticos incompletos">⚠</span>'}</div>
       <div class="lb-pts">${s.pts}</div>
     </div>`).join('');
 }
@@ -2218,22 +2218,22 @@ function renderRanking(){
           </tr>
         </thead>
         <tbody>
-          ${rows.map((r,i)=>`
+          ${rows.map((r,i)=>{const en=esc(r.nombre);return`
             <tr>
               <td class="rank-medal">${i<3?medals[i]:i+1}</td>
               <td>
                 <div class="rank-player">
-                  <div class="rank-avatar" style="${!r.gOk||!r.eOk?'background:rgba(255,188,0,0.15);color:#b8860b;':''}">${r.nombre.charAt(0).toUpperCase()}</div>
+                  <div class="rank-avatar" style="${!r.gOk||!r.eOk?'background:rgba(255,188,0,0.15);color:#b8860b;':''}">${esc(r.nombre.charAt(0).toUpperCase())}</div>
                   <div>
-                    <div class="rank-name">${r.nombre}</div>
+                    <div class="rank-name">${en}</div>
                     <div class="rank-status">
                       <span class="rank-badge ${r.gOk?'ok':'pend'}">${r.gOk?'✓ Grupos':'✗ Grupos'}</span>
                       <span class="rank-badge ${r.eOk?'ok':'pend'}">${r.eOk?'✓ Llaves':'✗ Llaves'}</span>
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;">
-                      <button class="rank-ver" onclick="openPronModal('${r.nombre.replace(/'/g,"\\'")}')">👁 Ver</button>
-                      ${!cerrado?`<button class="rank-edit" onclick="irAPronósticos('${r.nombre.replace(/'/g,"\\'")}')">✏️ Grupos</button>
-                      <button class="rank-edit" onclick="irAEliminatorias('${r.nombre.replace(/'/g,"\\'")}')">🏆 Llaves</button>`:''}
+                      <button class="rank-ver" data-pn="${en}" onclick="openPronModal(this.dataset.pn)">👁 Ver</button>
+                      ${!cerrado?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
+                      <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>`:''}
                     </div>
                   </div>
                 </div>
@@ -2244,7 +2244,7 @@ function renderRanking(){
                 ${r.total}
                 <div class="pts-bar"><div class="pts-bar-fill" style="width:${maxPts?Math.round(r.total/maxPts*100):0}%"></div></div>
               </td>
-            </tr>`).join('')}
+            </tr>`;}).join('')}
         </tbody>
       </table>
     </div>`;
@@ -2282,10 +2282,10 @@ function openPronModal(nombre){
         const res1=rg[g]?.p1||''; const res2=rg[g]?.p2||'';
         const h1=res1&&pick.p1===res1, h2=res2&&pick.p2===res2;
         const m1=res1&&pick.p1&&pick.p1!==res1, m2=res2&&pick.p2&&pick.p2!==res2;
-        const p1txt=pick.p1?`${flag(pick.p1)} ${pick.p1}`:'<span style="color:var(--muted)">—</span>';
-        const p2txt=pick.p2?`${flag(pick.p2)} ${pick.p2}`:'<span style="color:var(--muted)">—</span>';
-        const s1=h1?'color:var(--verde);font-weight:700;':m1?'color:#b91c1c;':'' ;
-        const s2=h2?'color:var(--verde);font-weight:700;':m2?'color:#b91c1c;':'';
+        const p1txt=pick.p1?`${flag(pick.p1)} ${esc(pick.p1)}`:'<span style="color:var(--muted)">—</span>';
+        const p2txt=pick.p2?`${flag(pick.p2)} ${esc(pick.p2)}`:'<span style="color:var(--muted)">—</span>';
+        const s1=h1?'color:var(--verde);font-weight:700;':m1?'color:var(--rosa2);':'' ;
+        const s2=h2?'color:var(--verde);font-weight:700;':m2?'color:var(--rosa2);':'';
         return `<div class="modal-grupo-item">
           <div class="modal-grupo-label">Grupo ${g}</div>
           <div class="modal-grupo-pick">
@@ -2303,7 +2303,7 @@ function openPronModal(nombre){
     return teams.map(t=>{
       const isHit=refArr.length&&refArr.includes(t);
       const isMiss=refArr.length&&!isHit;
-      return `<div class="modal-br-team${isHit?' hit':isMiss?' miss':''}">${flag(t)} ${t}${isHit?' ✓':isMiss?' ✗':''}</div>`;
+      return `<div class="modal-br-team${isHit?' hit':isMiss?' miss':''}">${flag(t)} ${esc(t)}${isHit?' ✓':isMiss?' ✗':''}</div>`;
     }).join('');
   }
   const oct=elim.oct||[], qua=elim.qua||[], sem=elim.sem||[];
@@ -2333,7 +2333,7 @@ function openPronModal(nombre){
       </div>
       <div class="modal-br-round">
         <div class="modal-br-round-title">🏆 Campeón · +10</div>
-        ${campeon?`<div class="modal-br-team campeon${campHit?' hit':campMiss?' miss':''}">${flag(campeon)} ${campeon}${campHit?' ✓':campMiss?' ✗':''}</div>`:'<div style="color:var(--muted);font-size:11px;font-style:italic;">Sin elegir</div>'}
+        ${campeon?`<div class="modal-br-team campeon${campHit?' hit':campMiss?' miss':''}">${flag(campeon)} ${esc(campeon)}${campHit?' ✓':campMiss?' ✗':''}</div>`:'<div style="color:var(--muted);font-size:11px;font-style:italic;">Sin elegir</div>'}
       </div>
     </div>
     ${hasRes?'<div style="font-size:10px;color:var(--muted);margin-top:6px;">✓ correcto · ✗ incorrecto (según resultados actuales)</div>':''}
@@ -2341,7 +2341,7 @@ function openPronModal(nombre){
 
   // ── SHARE ──
   const shareHtml=`<div style="display:flex;gap:8px;margin-top:0.5rem;">
-    <button class="btn btn-wa" style="font-size:13px;padding:8px 16px;" onclick="compartirPronModal('${nombre.replace(/'/g,"\\'")}')">
+    <button class="btn btn-wa" style="font-size:13px;padding:8px 16px;" data-pn="${esc(nombre)}" onclick="compartirPronModal(this.dataset.pn)">
       📲 Compartir por WhatsApp
     </button>
   </div>`;
@@ -2510,18 +2510,19 @@ function renderAdminPlayers(){
   }
   cont.innerHTML=state.jugadores.map(j=>{
     const st=estadoPron(j.nombre);
+    const en=esc(j.nombre);
     return `
     <div class="player-row">
-      <div class="player-row-avatar">${j.nombre.charAt(0).toUpperCase()}</div>
+      <div class="player-row-avatar">${esc(j.nombre.charAt(0).toUpperCase())}</div>
       <div class="player-row-info">
-        <div class="player-row-name">${j.nombre}</div>
-        <div class="player-row-date">📅 ${j.fecha||''} · 💰 ${fmtCLP(j.monto||0)}</div>
+        <div class="player-row-name">${en}</div>
+        <div class="player-row-date">📅 ${esc(j.fecha||'')} · 💰 ${fmtCLP(j.monto||0)}</div>
         <div class="rank-status" style="margin-top:3px;">
           <span class="rank-badge ${st.gOk?'ok':'pend'}">${st.gOk?'✓ Grupos':'✗ Grupos'}</span>
           <span class="rank-badge ${st.eOk?'ok':'pend'}">${st.eOk?'✓ Llaves':'✗ Llaves'}</span>
         </div>
       </div>
-      <button class="player-row-del" onclick="eliminarJugador('${j.nombre.replace(/'/g,"\\'")}')">🗑️</button>
+      <button class="player-row-del" data-pn="${en}" onclick="eliminarJugador(this.dataset.pn)">🗑️</button>
     </div>`;}).join('');
 }
 
