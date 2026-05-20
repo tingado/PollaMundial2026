@@ -434,6 +434,11 @@ select option { background:#fff; }
 .rank-pts-sub { font-size:11px; color:var(--muted); text-align:center; }
 .pts-bar { height:3px; border-radius:2px; background:#e5e7eb; margin-top:5px; overflow:hidden; min-width:60px; }
 .pts-bar-fill { height:100%; background:linear-gradient(90deg,var(--rosa),var(--rosa2)); border-radius:2px; }
+.rank-status { display:flex; gap:3px; margin-top:3px; }
+.rank-badge { font-size:9px; font-weight:700; padding:1px 5px; border-radius:4px; letter-spacing:.4px; }
+.rank-badge.ok { background:rgba(0,200,83,0.12); color:#00c853; }
+.rank-badge.pend { background:rgba(255,61,90,0.1); color:var(--rosa2); }
+.rank-edit { font-size:10px; color:var(--rosa); cursor:pointer; background:none; border:none; padding:0; text-decoration:underline; margin-top:2px; display:block; }
 
 /* ADMIN */
 .admin-card {
@@ -1460,10 +1465,10 @@ function renderLeaderboard(){
     cont.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 10px;">Sin participantes aún</div>';
     return;
   }
-  const scores=state.jugadores.map(j=>({
-    nombre:j.nombre,
-    pts:calcPtsTotal(state.pronosticos[j.nombre], state.resultados)
-  })).sort((a,b)=>b.pts-a.pts);
+  const scores=state.jugadores.map(j=>{
+    const st=estadoPron(j.nombre);
+    return {nombre:j.nombre, pts:calcPtsTotal(state.pronosticos[j.nombre], state.resultados), completo:st.gOk&&st.eOk};
+  }).sort((a,b)=>b.pts-a.pts);
 
   const rk=['r1','r2','r3'];
   const mk=['🥇','🥈','🥉'];
@@ -1471,7 +1476,7 @@ function renderLeaderboard(){
     <div class="lb-item">
       <div class="lb-rank ${rk[i]||''}">${i<3?mk[i]:i+1}</div>
       <div class="lb-avatar">${s.nombre.charAt(0).toUpperCase()}</div>
-      <div class="lb-name">${s.nombre}</div>
+      <div class="lb-name">${s.nombre}${s.completo?'':' <span style="font-size:9px;color:rgba(255,188,0,0.85);" title="Pronósticos incompletos">⚠</span>'}</div>
       <div class="lb-pts">${s.pts}</div>
     </div>`).join('');
 }
@@ -1977,6 +1982,13 @@ async function guardarElim(){
 // ══════════════════════════════════════════════════════════
 // RANKING DETALLADO
 // ══════════════════════════════════════════════════════════
+function estadoPron(nombre){
+  const p=state.pronosticos[nombre]||{};
+  const gOk=p.grupos&&Object.keys(p.grupos).length>=12;
+  const eOk=!!(p.elim&&p.elim.campeon);
+  return {gOk,eOk};
+}
+
 function renderRanking(){
   const cont=$id('ranking-container');
   if(!state.jugadores.length){
@@ -1984,14 +1996,20 @@ function renderRanking(){
     return;
   }
   const medals=['🥇','🥈','🥉'];
+  const cerrado=new Date()>=FECHA_CIERRE;
   const rows=state.jugadores.map(j=>{
     const d=calcPtsDetalle(state.pronosticos[j.nombre], state.resultados);
-    return {...j, ...d};
+    const st=estadoPron(j.nombre);
+    return {...j, ...d, ...st};
   }).sort((a,b)=>b.total-a.total);
 
   const maxPts=rows[0]?.total||1;
+  const pendientes=rows.filter(r=>!r.gOk||!r.eOk).length;
 
   cont.innerHTML=`
+    ${!cerrado&&pendientes?`<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#b8860b;">
+      ⚠️ <strong>${pendientes} participante${pendientes>1?'s':''}</strong> aún no ${pendientes>1?'han':'ha'} completado todos sus pronósticos.
+    </div>`:''}
     <div class="ranking-wrap">
       <table class="ranking-table">
         <thead>
@@ -2009,10 +2027,14 @@ function renderRanking(){
               <td class="rank-medal">${i<3?medals[i]:i+1}</td>
               <td>
                 <div class="rank-player">
-                  <div class="rank-avatar">${r.nombre.charAt(0).toUpperCase()}</div>
+                  <div class="rank-avatar" style="${!r.gOk||!r.eOk?'background:rgba(255,188,0,0.15);color:#b8860b;':''}">${r.nombre.charAt(0).toUpperCase()}</div>
                   <div>
                     <div class="rank-name">${r.nombre}</div>
-                    <div class="pts-bar"><div class="pts-bar-fill" style="width:${Math.round(r.total/maxPts*100)}%"></div></div>
+                    <div class="rank-status">
+                      <span class="rank-badge ${r.gOk?'ok':'pend'}">${r.gOk?'✓ Grupos':'✗ Grupos'}</span>
+                      <span class="rank-badge ${r.eOk?'ok':'pend'}">${r.eOk?'✓ Llaves':'✗ Llaves'}</span>
+                    </div>
+                    ${!cerrado?`<button class="rank-edit" onclick="irAPronósticos('${r.nombre.replace(/'/g,"\\'")}')">✏️ Editar grupos</button>`:''}
                   </div>
                 </div>
               </td>
@@ -2156,15 +2178,21 @@ function renderAdminPlayers(){
     cont.innerHTML='<div style="color:var(--muted);font-size:13px;">Sin participantes inscritos</div>';
     return;
   }
-  cont.innerHTML=state.jugadores.map(j=>`
+  cont.innerHTML=state.jugadores.map(j=>{
+    const st=estadoPron(j.nombre);
+    return `
     <div class="player-row">
       <div class="player-row-avatar">${j.nombre.charAt(0).toUpperCase()}</div>
       <div class="player-row-info">
         <div class="player-row-name">${j.nombre}</div>
         <div class="player-row-date">📅 ${j.fecha||''} · 💰 ${fmtCLP(j.monto||0)}</div>
+        <div class="rank-status" style="margin-top:3px;">
+          <span class="rank-badge ${st.gOk?'ok':'pend'}">${st.gOk?'✓ Grupos':'✗ Grupos'}</span>
+          <span class="rank-badge ${st.eOk?'ok':'pend'}">${st.eOk?'✓ Llaves':'✗ Llaves'}</span>
+        </div>
       </div>
-      <button class="player-row-del" onclick="eliminarJugador('${j.nombre.replace(/'/g,"\\'")}')">🗑️ Eliminar</button>
-    </div>`).join('');
+      <button class="player-row-del" onclick="eliminarJugador('${j.nombre.replace(/'/g,"\\'")}')">🗑️</button>
+    </div>`;}).join('');
 }
 
 async function eliminarJugador(nombre){
