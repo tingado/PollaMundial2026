@@ -681,16 +681,66 @@ select option { background:#fff; }
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:100;
   background:rgba(255,255,255,0.97);
   border-top:1px solid var(--border);
-  padding:6px 2px; gap:1px;
+  padding:6px 4px; gap:2px;
 }
 .mobile-nav-btn {
   flex:1; padding:6px 2px; border:none; background:transparent;
-  color:var(--muted); font-family:'Outfit',sans-serif; font-size:9px; font-weight:600;
+  color:var(--muted); font-family:'Outfit',sans-serif; font-size:9.5px; font-weight:600;
   border-radius:8px; cursor:pointer; display:flex; flex-direction:column;
   align-items:center; gap:2px; transition:all 0.2s; min-width:0;
 }
 .mobile-nav-btn.active { color:var(--rosa); background:rgba(233,30,140,0.1); }
-.mobile-nav-btn span { font-size:17px; }
+.mobile-nav-btn span { font-size:20px; }
+
+/* MORE SHEET */
+.more-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; }
+.more-overlay.open { display:block; }
+.more-sheet {
+  position:absolute; bottom:0; left:0; right:0;
+  background:#fff; border-radius:20px 20px 0 0;
+  padding:12px 16px 30px; transform:translateY(100%);
+  transition:transform 0.25s cubic-bezier(.32,.72,0,1);
+}
+.more-overlay.open .more-sheet { transform:translateY(0); }
+.more-sheet-handle { width:36px; height:4px; background:#e5e7eb; border-radius:2px; margin:0 auto 14px; }
+.more-sheet-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.msb { padding:14px 4px; border:none; background:#f9fafb; border-radius:12px;
+  font-size:11px; font-weight:600; color:var(--text); cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:5px; }
+.msb span { font-size:24px; }
+.msb:active { background:rgba(233,30,140,0.08); color:var(--rosa); }
+
+/* HOME VIEW */
+.home-hero {
+  background:linear-gradient(135deg,var(--rosa) 0%,#9b0058 100%);
+  border-radius:18px; padding:2rem 1.5rem 1.75rem; margin-bottom:1rem;
+  text-align:center; color:#fff; position:relative; overflow:hidden;
+}
+.home-hero::before { content:'⚽'; font-size:8rem; position:absolute; right:-1rem; top:-1.5rem; opacity:0.1; pointer-events:none; }
+.home-hero-eyebrow { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; opacity:0.8; margin-bottom:8px; }
+.home-hero-title { font-family:'Bebas Neue',sans-serif; font-size:3.8rem; line-height:1; margin-bottom:4px; }
+.home-hero-sub { font-size:14px; opacity:0.88; margin-bottom:1.5rem; }
+.home-hero-days { display:inline-block; background:rgba(255,255,255,0.2); border-radius:30px; padding:6px 18px; font-size:13px; font-weight:700; backdrop-filter:blur(4px); }
+.home-stats-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:1rem; }
+.home-stat-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px 12px; text-align:center; }
+.home-stat-val { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:var(--rosa); line-height:1; }
+.home-stat-lbl { font-size:11px; color:var(--muted); margin-top:3px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
+.home-cta { width:100%; padding:16px; font-size:16px; font-weight:800;
+  background:linear-gradient(135deg,var(--rosa),#9b0058); color:#fff;
+  border:none; border-radius:14px; cursor:pointer; margin-bottom:10px;
+  letter-spacing:0.3px; box-shadow:0 4px 14px rgba(233,30,140,0.35); }
+.home-cta-sec { width:100%; padding:13px; font-size:14px; font-weight:700;
+  background:#fff; color:var(--rosa); border:2px solid var(--rosa);
+  border-radius:14px; cursor:pointer; margin-bottom:8px; }
+.home-section-lbl { font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:1.25rem 0 0.7rem; }
+.home-steps-list { display:flex; flex-direction:column; gap:8px; margin-bottom:1.25rem; }
+.home-step-row { display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+.home-step-num { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--rosa),#9b0058); color:#fff; font-family:'Bebas Neue',sans-serif; font-size:1.3rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.home-step-body strong { font-size:13px; font-weight:700; display:block; margin-bottom:2px; }
+.home-step-body span { font-size:12px; color:var(--muted); }
+.home-quick-links { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:1rem; }
+.home-quick-btn { padding:14px 10px; border:1px solid var(--border); background:#fff; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:5px; color:var(--text); }
+.home-quick-btn:hover { background:rgba(233,30,140,0.04); border-color:var(--rosa); }
 
 /* URL BANNER */
 .url-banner {
@@ -770,16 +820,17 @@ select option { background:#fff; }
     </div>
 
     <div class="sidebar-nav">
-      <button class="nav-btn active" onclick="showView('partidos',this)">📅 Partidos</button>
-      <button class="nav-btn" onclick="showView('grupos',this)">🏟️ Grupos</button>
-      <button class="nav-btn" onclick="showView('pronosticos',this)">🎯 Grupos</button>
-      <button class="nav-btn" onclick="showView('terceros',this)">3️⃣ Terceros</button>
-      <button class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Llaves</button>
-      <button class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
-      <button class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
-      <button class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
-      <button class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
-      <button class="nav-btn" onclick="showView('admin',this)">⚙️ Admin</button>
+      <button id="nav-inicio"       class="nav-btn active" onclick="showView('inicio',this)">🏠 Inicio</button>
+      <button id="nav-partidos"     class="nav-btn" onclick="showView('partidos',this)">📅 Partidos</button>
+      <button id="nav-grupos"       class="nav-btn" onclick="showView('grupos',this)">🏟️ Grupos</button>
+      <button id="nav-pronosticos"  class="nav-btn" onclick="showView('pronosticos',this)">🎯 Pronósticos</button>
+      <button id="nav-terceros"     class="nav-btn" onclick="showView('terceros',this)">3️⃣ Terceros</button>
+      <button id="nav-eliminatorias" class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Llaves</button>
+      <button id="nav-ranking"      class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
+      <button id="nav-inscripcion"  class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
+      <button id="nav-calculos"     class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
+      <button id="nav-bases"        class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
+      <button id="nav-admin"        class="nav-btn" onclick="showView('admin',this)">⚙️ Admin</button>
     </div>
 
     <div class="sidebar-section-title">🏆 Leaderboard</div>
@@ -828,8 +879,84 @@ select option { background:#fff; }
       <div id="msg-url" style="margin-top:6px;"></div>
     </div>
 
+    <!-- ══ VIEW: INICIO ══ -->
+    <div id="view-inicio" class="view active">
+      <div class="home-hero">
+        <div class="home-hero-eyebrow">⚽ USA · MX · CAN</div>
+        <div class="home-hero-title">POLLA<br>MUNDIALERA</div>
+        <div class="home-hero-sub">Predice el Mundial 2026 y compite con tus amigos</div>
+        <div class="home-hero-days" id="home-days-badge">Cargando...</div>
+      </div>
+
+      <div class="home-stats-row">
+        <div class="home-stat-card">
+          <div class="home-stat-val" id="home-stat-n">—</div>
+          <div class="home-stat-lbl">Participantes</div>
+        </div>
+        <div class="home-stat-card">
+          <div class="home-stat-val" id="home-stat-pozo">—</div>
+          <div class="home-stat-lbl">Pozo total</div>
+        </div>
+      </div>
+
+      <button class="home-cta" onclick="showView('inscripcion', $id('nav-inscripcion'))">
+        📋 Inscríbete ahora — $5.000
+      </button>
+      <button class="home-cta-sec" id="home-btn-pronos" style="display:none;" onclick="irAMisPronos()">
+        🎯 Continuar mis pronósticos
+      </button>
+
+      <div class="home-section-lbl">¿Cómo participar?</div>
+      <div class="home-steps-list">
+        <div class="home-step-row">
+          <div class="home-step-num">1</div>
+          <div class="home-step-body">
+            <strong>Inscríbete</strong>
+            <span>Paga $5.000 y queda registrado con tu nombre</span>
+          </div>
+        </div>
+        <div class="home-step-row">
+          <div class="home-step-num">2</div>
+          <div class="home-step-body">
+            <strong>Predice los grupos</strong>
+            <span>Elige 1° y 2° de cada uno de los 12 grupos</span>
+          </div>
+        </div>
+        <div class="home-step-row">
+          <div class="home-step-num">3</div>
+          <div class="home-step-body">
+            <strong>Completa las llaves</strong>
+            <span>Elige los terceros que pasan, los octavos, cuartos, semis y el campeón</span>
+          </div>
+        </div>
+        <div class="home-step-row">
+          <div class="home-step-num">4</div>
+          <div class="home-step-body">
+            <strong>¡A ganar!</strong>
+            <span>El mejor pronóstico se lleva el 60% del pozo. 2° lugar lleva 40%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-section-lbl">Explorar</div>
+      <div class="home-quick-links">
+        <button class="home-quick-btn" onclick="showView('partidos', $id('nav-partidos'))">
+          <span style="font-size:24px;">📅</span>Ver partidos
+        </button>
+        <button class="home-quick-btn" onclick="showView('ranking', $id('nav-ranking'))">
+          <span style="font-size:24px;">📊</span>Ver ranking
+        </button>
+        <button class="home-quick-btn" onclick="showView('grupos', $id('nav-grupos'))">
+          <span style="font-size:24px;">🏟️</span>Tabla grupos
+        </button>
+        <button class="home-quick-btn" onclick="showView('calculos', $id('nav-calculos'))">
+          <span style="font-size:24px;">🧮</span>Cómo se calcula
+        </button>
+      </div>
+    </div>
+
     <!-- ══ VIEW: PARTIDOS ══ -->
-    <div id="view-partidos" class="view active">
+    <div id="view-partidos" class="view">
       <div class="view-header">
         <div class="view-title">📅 Partidos</div>
         <div class="view-tabs">
@@ -1268,37 +1395,38 @@ select option { background:#fff; }
 
 <!-- MOBILE NAV -->
 <nav class="mobile-nav" id="mobile-nav">
-  <button class="mobile-nav-btn active" onclick="showView('partidos',this)">
+  <button class="mobile-nav-btn active" onclick="showView('inicio',this)">
+    <span>🏠</span>Inicio
+  </button>
+  <button class="mobile-nav-btn" onclick="showView('partidos',this)">
     <span>📅</span>Partidos
   </button>
-  <button class="mobile-nav-btn" onclick="showView('grupos',this)">
-    <span>🏟️</span>Grupos
-  </button>
   <button class="mobile-nav-btn" onclick="showView('pronosticos',this)">
-    <span>🎯</span>Grupos
-  </button>
-  <button class="mobile-nav-btn" onclick="showView('terceros',this)">
-    <span>3️⃣</span>3ros
-  </button>
-  <button class="mobile-nav-btn" onclick="showView('eliminatorias',this)">
-    <span>🏆</span>Llaves
+    <span>🎯</span>Pronos
   </button>
   <button class="mobile-nav-btn" onclick="showView('ranking',this)">
     <span>📊</span>Ranking
   </button>
-  <button class="mobile-nav-btn" onclick="showView('inscripcion',this)">
-    <span>📋</span>Inscr.
-  </button>
-  <button class="mobile-nav-btn" onclick="showView('calculos',this)">
-    <span>🧮</span>Cálculo
-  </button>
-  <button class="mobile-nav-btn" onclick="showView('bases',this)">
-    <span>📜</span>Bases
-  </button>
-  <button class="mobile-nav-btn" onclick="showView('admin',this)">
-    <span>⚙️</span>Admin
+  <button class="mobile-nav-btn" onclick="openMoreSheet()">
+    <span>☰</span>Más
   </button>
 </nav>
+
+<!-- More sheet -->
+<div class="more-overlay" id="more-overlay" onclick="closeMoreSheet()">
+  <div class="more-sheet" onclick="event.stopPropagation()">
+    <div class="more-sheet-handle"></div>
+    <div class="more-sheet-grid">
+      <button class="msb" onclick="closeMoreSheet();showView('grupos',null)"><span>🏟️</span>Grupos</button>
+      <button class="msb" onclick="closeMoreSheet();showView('terceros',null)"><span>3️⃣</span>3ros</button>
+      <button class="msb" onclick="closeMoreSheet();showView('eliminatorias',null)"><span>🏆</span>Llaves</button>
+      <button class="msb" onclick="closeMoreSheet();showView('inscripcion',null)"><span>📋</span>Inscripción</button>
+      <button class="msb" onclick="closeMoreSheet();showView('calculos',null)"><span>🧮</span>Cálculo</button>
+      <button class="msb" onclick="closeMoreSheet();showView('bases',null)"><span>📜</span>Bases</button>
+      <button class="msb" onclick="closeMoreSheet();showView('admin',null)"><span>⚙️</span>Admin</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -1587,6 +1715,42 @@ function compartirWhatsApp(){
 // ══════════════════════════════════════════════════════════
 // NAVEGACIÓN
 // ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// HOME VIEW
+// ══════════════════════════════════════════════════════════
+function renderHome(){
+  // Days badge
+  const badge=$id('home-days-badge');
+  if(badge){
+    const ms=FECHA_INICIO-new Date();
+    const dias=Math.max(0,Math.ceil(ms/86400000));
+    badge.textContent=dias>0?`⏰ ${dias} días para el inicio`:'🏆 ¡El Mundial ha comenzado!';
+  }
+  // Stats
+  const n=state.jugadores.length;
+  const el_n=$id('home-stat-n'); if(el_n) el_n.textContent=n||'—';
+  const total=n*5000;
+  const el_p=$id('home-stat-pozo'); if(el_p) el_p.textContent=n?fmtCLP(total):'—';
+  // Show "Continuar" button if last player exists
+  const last=localStorage.getItem('p2026_last');
+  const btn=$id('home-btn-pronos');
+  if(btn) btn.style.display=(last&&state.jugadores.find(j=>j.nombre===last))?'block':'none';
+}
+
+function irAMisPronos(){
+  const last=localStorage.getItem('p2026_last');
+  if(!last) return;
+  const pron=state.pronosticos[last]||{};
+  const st=estadoPron(last);
+  if(st.completo){showView('eliminatorias',null);}
+  else if(st.gOk&&st.tOk){showView('eliminatorias',null);}
+  else if(st.gOk){irATerceros(last);}
+  else{showView('pronosticos',null);}
+}
+
+function openMoreSheet(){ $id('more-overlay').classList.add('open'); }
+function closeMoreSheet(){ $id('more-overlay').classList.remove('open'); }
+
 function showView(v, el){
   if(v==='admin'){
     const ok=sessionStorage.getItem('adminOk')==='1';
@@ -1654,6 +1818,7 @@ function applyState(d){
   state.resultados=d.resultados||{};
   renderLeaderboard();
   renderPozo();
+  renderHome();
   renderMatches();
   renderGroups();
   actualizarSelector();
@@ -3009,6 +3174,7 @@ async function sincronizar(){
 // ══════════════════════════════════════════════════════════
 initFacts();
 initCountdown();
+renderHome();
 renderMatches();
 renderGroups();
 
