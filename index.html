@@ -300,12 +300,23 @@ body {
 .pron-standing-table td { padding:9px 14px; font-size:13px; }
 .pron-standing-table tr.pst-p1 { background:rgba(245,188,0,0.08); }
 .pron-standing-table tr.pst-p2 { background:rgba(180,180,180,0.07); }
+.pron-standing-table tr.pst-p3 { background:rgba(180,100,30,0.05); }
+.pron-standing-table tr.pst-p4 { opacity:0.45; }
 .pos-badge { display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; border-radius:50%; font-size:11px; font-weight:800;
   background:#f3f4f6; color:var(--muted); border:1px solid var(--border); }
-.pos-badge.gold { background:rgba(245,188,0,0.2); color:#b07d00; border-color:rgba(245,188,0,0.5); }
-.pos-badge.silver { background:rgba(180,180,180,0.18); color:#666; border-color:rgba(180,180,180,0.4); }
+.pos-badge.gold   { background:rgba(245,188,0,0.2);  color:#b07d00; border-color:rgba(245,188,0,0.5); }
+.pos-badge.silver { background:rgba(180,180,180,0.18); color:#666;   border-color:rgba(180,180,180,0.4); }
+.pos-badge.bronze { background:rgba(180,100,30,0.15); color:#a05a1a; border-color:rgba(180,100,30,0.4); }
 .pst-team { display:flex; align-items:center; gap:8px; }
+/* Terceros pick */
+.terc-pick-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin-top:10px; }
+.terc-pick-card { background:#fff; border:2px solid var(--border); border-radius:12px; padding:12px 10px; cursor:pointer; transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:5px; text-align:center; }
+.terc-pick-card:hover { border-color:var(--rosa); background:rgba(233,30,140,0.03); }
+.terc-pick-card.selected { border-color:var(--verde); background:rgba(0,200,83,0.07); }
+.terc-pick-card .tc-group { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+.terc-pick-card .tc-team { font-size:12px; font-weight:700; }
+.terc-pick-card .tc-check { font-size:20px; line-height:1; }
 
 /* FORM */
 .form-card {
@@ -2100,7 +2111,7 @@ function cargarPronostico(){
   const gp = p.grupos || {};
   const tieneGuardados = p.grupos && Object.keys(p.grupos).length > 0;
   cont.innerHTML =
-    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">🏆 Predice quién termina <strong>1° y 2°</strong> en cada grupo.</div>' +
+    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">🏆 Predice el orden final de cada grupo: toca los equipos para asignar <strong>1°, 2°, 3° y 4°</strong> lugar. Los terceros elegirás cuáles 8 pasan en la siguiente etapa.</div>' +
     (tieneGuardados?'<div style="margin-bottom:10px;padding:8px 13px;background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;font-size:12px;color:var(--verde);">✅ Tienes pronósticos guardados — puedes editarlos abajo.</div>':'')+
     '<div id="pron-progress" style="margin-bottom:12px;"></div>' +
     Object.entries(GRUPOS).map(([g,equipos])=>{
@@ -2109,13 +2120,14 @@ function cargarPronostico(){
         <div class="pron-grupo-card">
           <div class="pron-grupo-header">
             <span class="g-label">Grupo ${g}</span>
-            <span style="font-size:11px;color:rgba(255,255,255,0.75);">Elige 1° y 2° lugar</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.75);">Toca para ordenar 1° a 4°</span>
           </div>
           <table class="pron-standing-table">
             <tbody id="pron-g${g}-tbody"></tbody>
           </table>
           <input type="hidden" id="pron-g${g}-p1" value="${esc(gg.p1||'')}">
           <input type="hidden" id="pron-g${g}-p2" value="${esc(gg.p2||'')}">
+          <input type="hidden" id="pron-g${g}-p3" value="${esc(gg.p3||'')}">
         </div>`;
     }).join('');
   setTimeout(()=>{
@@ -2128,27 +2140,31 @@ function renderPronGrupoRows(g){
   const tbody=$id(`pron-g${g}-tbody`); if(!tbody) return;
   const p1=$id(`pron-g${g}-p1`)?.value||'';
   const p2=$id(`pron-g${g}-p2`)?.value||'';
+  const p3=$id(`pron-g${g}-p3`)?.value||'';
+  const p4=GRUPOS[g].find(eq=>eq!==p1&&eq!==p2&&eq!==p3&&p1&&p2&&p3)||'';
   tbody.innerHTML=GRUPOS[g].map(eq=>{
-    const isP1=p1===eq, isP2=p2===eq;
-    const cls=isP1?'pst-p1':isP2?'pst-p2':'';
-    const badgeCls=isP1?'pos-badge gold':isP2?'pos-badge silver':'pos-badge';
-    const badgeTxt=isP1?'1°':isP2?'2°':'';
-    return `<tr class="${cls}" onclick="togglePronTeam('${g}','${esc(eq)}')">
-      <td style="width:32px;text-align:center;"><span class="${badgeCls}">${badgeTxt}</span></td>
+    const pos=p1===eq?1:p2===eq?2:p3===eq?3:p4===eq?4:0;
+    const rowCls=pos===1?'pst-p1':pos===2?'pst-p2':pos===3?'pst-p3':pos===4?'pst-p4':'';
+    const bdgCls=pos===1?'pos-badge gold':pos===2?'pos-badge silver':pos===3?'pos-badge bronze':'pos-badge';
+    const bdgTxt=pos?pos+'°':'';
+    return `<tr class="${rowCls}" onclick="togglePronTeam('${g}','${esc(eq)}')">
+      <td style="width:32px;text-align:center;"><span class="${bdgCls}">${bdgTxt}</span></td>
       <td><div class="pst-team">${fi(eq)}<span>${esc(eq)}</span></div></td>
     </tr>`;
   }).join('');
 }
 
 function togglePronTeam(g, eq){
-  const p1el=$id(`pron-g${g}-p1`), p2el=$id(`pron-g${g}-p2`);
-  if(!p1el||!p2el) return;
-  let p1=p1el.value, p2=p2el.value;
-  if(p1===eq){ p1=p2; p2=''; }
-  else if(p2===eq){ p2=''; }
-  else if(!p1){ p1=eq; }
-  else if(!p2 && p1!==eq){ p2=eq; }
-  p1el.value=p1; p2el.value=p2;
+  const p1el=$id(`pron-g${g}-p1`), p2el=$id(`pron-g${g}-p2`), p3el=$id(`pron-g${g}-p3`);
+  if(!p1el||!p2el||!p3el) return;
+  let p1=p1el.value, p2=p2el.value, p3=p3el.value;
+  if(p1===eq){      p1=p2; p2=p3; p3=''; }
+  else if(p2===eq){ p2=p3; p3=''; }
+  else if(p3===eq){ p3=''; }
+  else if(!p1){     p1=eq; }
+  else if(!p2){     p2=eq; }
+  else if(!p3){     p3=eq; }
+  p1el.value=p1; p2el.value=p2; p3el.value=p3;
   renderPronGrupoRows(g);
   actualizarProgresoPron();
 }
@@ -2159,7 +2175,8 @@ function actualizarProgresoPron(){
   const done=grupos.filter(g=>{
     const p1=$id(`pron-g${g}-p1`)?.value||'';
     const p2=$id(`pron-g${g}-p2`)?.value||'';
-    return p1&&p2&&p1!==p2;
+    const p3=$id(`pron-g${g}-p3`)?.value||'';
+    return p1&&p2&&p3&&new Set([p1,p2,p3]).size===3;
   }).length;
   const total=grupos.length;
   const pct=Math.round(done/total*100);
@@ -2182,11 +2199,12 @@ async function guardarPronostico(){
   Object.keys(GRUPOS).forEach(g=>{
     const p1=$id(`pron-g${g}-p1`)?.value||'';
     const p2=$id(`pron-g${g}-p2`)?.value||'';
-    if(p1||p2) pron.grupos[g]={p1,p2};
-    if(!p1||!p2) incompletos.push(g);
+    const p3=$id(`pron-g${g}-p3`)?.value||'';
+    if(p1||p2||p3) pron.grupos[g]={p1,p2,p3};
+    if(!p1||!p2||!p3) incompletos.push(g);
   });
   if(incompletos.length>0){
-    const ok=confirm(`⚠️ Te faltan ${incompletos.length} grupo(s) incompleto(s): ${incompletos.map(g=>'Grupo '+g).join(', ')}.\n\n¿Guardar de todos modos?`);
+    const ok=confirm(`⚠️ Te faltan ${incompletos.length} grupo(s) incompleto(s): ${incompletos.map(g=>'Grupo '+g).join(', ')}.\n\nNecesitas elegir 1°, 2° y 3° de cada grupo.\n\n¿Guardar de todos modos?`);
     if(!ok)return;
   }
   setLoad('btn-save-pron',true);
@@ -2261,61 +2279,66 @@ function cargarTerceros(){
   if(btn)btn.style.display='block';
 }
 
+function getTercerosDisponibles(jugador){
+  // Returns the 12 predicted p3 teams (one per group) for this player
+  const pron=state.pronosticos[jugador]||{};
+  const grupos=pron.grupos||{};
+  return Object.entries(GRUPOS).map(([g])=>{
+    const gg=grupos[g]||{};
+    return {grupo:g, equipo:gg.p3||''};
+  });
+}
+
 function renderTerceros(jugador){
   const cont=$id('terceros-container');
   const pron=state.pronosticos[jugador]||{};
-  const grupos=pron.grupos||{};
-  const savedTerc=pron.terceros||[];
+  const savedTerc=new Set(pron.terceros||[]);
+  const tercDisp=getTercerosDisponibles(jugador);
+  const sinP3=tercDisp.filter(t=>!t.equipo).length;
 
-  // Calcular equipos disponibles (no elegidos como 1° o 2°)
-  const picked=new Set();
-  Object.values(grupos).forEach(g=>{if(g.p1)picked.add(g.p1);if(g.p2)picked.add(g.p2);});
-
-  // También excluir los ya seleccionados en otros slots (live)
-  function getAvailable(exceptIdx){
-    const usados=new Set();
-    TERCEROS_3RO_SLOTS.forEach((_,i)=>{
-      if(i===exceptIdx)return;
-      const v=$id(`terc-${i}`)?.value;
-      if(v)usados.add(v);
-    });
-    return TODOS_EQUIPOS.filter(t=>!picked.has(t)&&!usados.has(t));
+  let aviso='';
+  if(sinP3>0){
+    aviso=`<div style="margin-bottom:12px;padding:10px 14px;background:rgba(255,61,90,0.07);border:1px solid rgba(255,61,90,0.2);border-radius:10px;font-size:12px;color:#e53e3e;">
+      ⚠️ Te faltan ${sinP3} grupo(s) sin 3° lugar elegido. Vuelve a Pronósticos de Grupos y asigna el 3° de cada grupo primero.
+    </div>`;
   }
 
-  cont.innerHTML=`<div class="tercero-grid">${
-    TERCEROS_3RO_SLOTS.map((slot,i)=>{
-      const oponent=resolveSlot(slot.oponent,grupos);
-      const cur=savedTerc[i]||'';
-      const available=TODOS_EQUIPOS.filter(t=>!picked.has(t));
-      const opts=`<option value="">— Elige tercero —</option>`+
-        available.map(t=>`<option value="${esc(t)}"${t===cur?' selected':''}>${flag(t)} ${esc(t)}</option>`).join('');
-      return `<div class="tercero-card">
-        <div class="tercero-oponent">${fi(oponent)}<span>${esc(oponent)}</span><span class="vs">vs</span></div>
-        <div class="tercero-select-wrap">
-          <select id="terc-${i}" onchange="actualizarSelects3ro()">
-            ${opts}
-          </select>
-        </div>
-      </div>`;
-    }).join('')
-  }</div>`;
+  const selCount=tercDisp.filter(t=>t.equipo&&savedTerc.has(t.equipo)).length;
+
+  cont.innerHTML=aviso+`
+    <div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">
+      🏅 De los <strong>12 terceros</strong> de grupo, solo <strong>8 avanzan</strong> a las llaves. Selecciona cuáles 8 crees que pasarán.
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <span style="font-size:13px;font-weight:700;">Seleccionados:</span>
+      <span id="terc-count" style="font-size:15px;font-weight:800;color:${selCount===8?'var(--verde)':'var(--dorado)'};">${selCount}/8</span>
+    </div>
+    <div class="terc-pick-grid">
+      ${tercDisp.map(({grupo,equipo})=>{
+        const sel=equipo&&savedTerc.has(equipo);
+        const isEmpty=!equipo;
+        return `<div class="terc-pick-card${sel?' selected':''}${isEmpty?' bx':''}" onclick="toggleTercero('${jugador}','${esc(equipo)}')">
+          <span class="tc-check">${sel?'✅':isEmpty?'❓':'⬜'}</span>
+          <span class="tc-group">Grupo ${grupo}</span>
+          ${equipo?`<div style="display:flex;align-items:center;gap:4px;">${fi(equipo)}</div>
+          <span class="tc-team">${esc(equipo)}</span>`:'<span class="tc-team" style="color:var(--muted);font-size:11px;">Sin 3° elegido</span>'}
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
-function actualizarSelects3ro(){
-  const usados=new Set();
-  TERCEROS_3RO_SLOTS.forEach((_,i)=>{
-    const v=$id(`terc-${i}`)?.value; if(v)usados.add(v);
-  });
-  // Deshabilitar opciones ya usadas en los otros selects
-  TERCEROS_3RO_SLOTS.forEach((_,i)=>{
-    const sel=$id(`terc-${i}`); if(!sel)return;
-    const cur=sel.value;
-    Array.from(sel.options).forEach(opt=>{
-      if(!opt.value) return;
-      opt.disabled=usados.has(opt.value)&&opt.value!==cur;
-    });
-  });
+function toggleTercero(jugador, equipo){
+  if(!equipo) return;
+  const pron=state.pronosticos[jugador]||(state.pronosticos[jugador]={});
+  const set=new Set(pron.terceros||[]);
+  if(set.has(equipo)){ set.delete(equipo); }
+  else if(set.size<8){ set.add(equipo); }
+  else { return; } // ya hay 8
+  pron.terceros=[...set];
+  renderTerceros(jugador);
 }
+
+function actualizarSelects3ro(){} // mantener por compatibilidad
 
 function renderTercerosReadonly(jugador){
   const cont=$id('terceros-container');
@@ -2336,12 +2359,12 @@ function renderTercerosReadonly(jugador){
 
 async function guardarTerceros(){
   const jugador=$id('sel-jugador-terc').value; if(!jugador)return;
-  const terceros=TERCEROS_3RO_SLOTS.map((_,i)=>$id(`terc-${i}`)?.value||'');
-  const incompletos=terceros.filter(t=>!t).length;
-  if(incompletos>0){
-    if(!confirm(`Faltan ${incompletos} slot(s) de tercero sin elegir. ¿Guardar de todos modos?`))return;
-  }
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
+  const terceros=[...(state.pronosticos[jugador]?.terceros||[])];
+  const sel=terceros.filter(Boolean).length;
+  if(sel<8){
+    if(!confirm(`Has elegido ${sel}/8 terceros. ¿Guardar de todos modos?`))return;
+  }
   pron.terceros=terceros;
   setLoad('btn-save-terceros',true);
   try{
@@ -2370,7 +2393,7 @@ function mostrarComprobante(nombre){
 
   // Grupos
   const gruposHtml=`<div class="comprobante-section">
-    <div class="comprobante-section-title">⚽ Grupos (1° y 2° de cada grupo)</div>
+    <div class="comprobante-section-title">⚽ Grupos (1°, 2° y 3° de cada grupo)</div>
     <div class="comprobante-grupos">${
       Object.entries(GRUPOS).map(([g])=>{
         const p=grupos[g]||{};
@@ -2378,7 +2401,8 @@ function mostrarComprobante(nombre){
           <div class="comprobante-grupo-label">Grupo ${g}</div>
           <div class="comprobante-grupo-pick">
             🥇 ${fi(p.p1||'')}${esc(p.p1||'—')}<br>
-            🥈 ${fi(p.p2||'')}${esc(p.p2||'—')}
+            🥈 ${fi(p.p2||'')}${esc(p.p2||'—')}<br>
+            🥉 ${fi(p.p3||'')}${esc(p.p3||'—')}
           </div>
         </div>`;
       }).join('')}
@@ -2387,13 +2411,11 @@ function mostrarComprobante(nombre){
 
   // Terceros
   const tercerosHtml=`<div class="comprobante-section">
-    <div class="comprobante-section-title">3️⃣ Terceros que Avanzan</div>
+    <div class="comprobante-section-title">3️⃣ Terceros que Avanzan (8 de 12)</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;">
-      ${TERCEROS_3RO_SLOTS.map((slot,i)=>{
-        const t=terceros[i]||'—';
-        const op=resolveSlot(slot.oponent,grupos);
-        return `<div class="comprobante-team">${fi(t)}${esc(t)}<span style="font-size:9px;color:var(--muted);margin-left:3px;">vs ${esc(op)}</span></div>`;
-      }).join('')}
+      ${terceros.filter(Boolean).map(t=>{
+        return `<div class="comprobante-team">${fi(t)}${esc(t)}</div>`;
+      }).join('')||'<span style="color:var(--muted);font-size:12px;">Sin terceros guardados</span>'}
     </div>
   </div>`;
 
@@ -2761,7 +2783,7 @@ async function guardarElim(){
 // ══════════════════════════════════════════════════════════
 function estadoPron(nombre){
   const p=state.pronosticos[nombre]||{};
-  const gOk=!!(p.grupos&&Object.keys(p.grupos).length>=12&&Object.values(p.grupos).every(g=>g.p1&&g.p2));
+  const gOk=!!(p.grupos&&Object.keys(p.grupos).length>=12&&Object.values(p.grupos).every(g=>g.p1&&g.p2&&g.p3));
   const tOk=!!(p.terceros&&p.terceros.length>=8&&p.terceros.every(t=>t&&!isSlotLabel(t)));
   const eOk=!!(p.elim&&p.elim.campeon);
   const completo=!!(p.completo);
