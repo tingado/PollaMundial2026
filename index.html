@@ -289,14 +289,23 @@ body {
 .group-table tr.clasif td:first-child { border-left:3px solid var(--verde); }
 .team-cell { display:flex; align-items:center; gap:8px; }
 
-/* PRONÓSTICOS GROUP STANDINGS */
+/* PRONÓSTICOS GROUP MATCH ENTRY */
 .pron-grupo-card { background:#fff; border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:10px; }
 .pron-grupo-header { background:linear-gradient(135deg,var(--rosa),#c2006e); padding:7px 14px; display:flex; align-items:center; gap:10px; }
 .pron-grupo-header .g-label { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:1px; color:#fff; }
-.pron-standing-table { width:100%; border-collapse:collapse; }
-.pron-standing-table tr { cursor:pointer; transition:background 0.12s; }
-.pron-standing-table tr:hover { background:rgba(233,30,140,0.05); }
-.pron-standing-table tr:not(:last-child) td { border-bottom:1px solid var(--border); }
+.gmp-row { display:flex; align-items:center; gap:6px; padding:9px 12px; border-bottom:1px solid var(--border); }
+.gmp-team { flex:1; display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; min-width:0; overflow:hidden; }
+.gmp-team.right { flex-direction:row-reverse; text-align:right; }
+.gmp-team span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gmp-score-wrap { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.gmp-dash { color:var(--muted); font-weight:800; font-size:13px; }
+.gmp-standings { border-top:2px solid var(--border); background:#f9fafb; }
+.gmp-stand-row { display:flex; align-items:center; gap:7px; padding:6px 12px; font-size:12px; border-bottom:1px solid var(--border); }
+.gmp-stand-row:last-child { border-bottom:none; }
+.gmp-pos { width:16px; font-weight:800; text-align:center; flex-shrink:0; }
+.gmp-pos.p1 { color:var(--dorado); } .gmp-pos.p2 { color:#888; } .gmp-pos.p3 { color:#a05a1a; } .gmp-pos.p4 { color:#ccc; }
+.gmp-stat { color:var(--muted); font-size:11px; min-width:22px; text-align:right; flex-shrink:0; }
+.gmp-pts { font-weight:800; font-size:12px; min-width:22px; text-align:right; flex-shrink:0; }
 .pron-standing-table td { padding:9px 14px; font-size:13px; }
 .pron-standing-table tr.pst-p1 { background:rgba(245,188,0,0.08); }
 .pron-standing-table tr.pst-p2 { background:rgba(180,180,180,0.07); }
@@ -2154,6 +2163,52 @@ function actualizarSelector(){
     state.jugadores.map(j=>`<option value="${j.nombre}"${j.nombre===cur?' selected':''}>${j.nombre}${state.pronosticos[j.nombre]?' ✅':''}</option>`).join('');
 }
 
+// ── Calcula standings de un grupo a partir de predicciones de marcadores ──
+function calcStandingsFromGrupo(g, partidos_pron){
+  const eq=GRUPOS[g];
+  const tbl={};
+  eq.forEach(e=>{ tbl[e]={pts:0,gf:0,gc:0,pj:0}; });
+  PARTIDOS.filter(p=>p.grupo===g).forEach(p=>{
+    const pred=partidos_pron?.[p.id];
+    if(!pred) return;
+    const g1=parseInt(pred.g1), g2=parseInt(pred.g2);
+    if(isNaN(g1)||isNaN(g2)) return;
+    if(tbl[p.local]){ tbl[p.local].pj++; tbl[p.local].gf+=g1; tbl[p.local].gc+=g2; }
+    if(tbl[p.visita]){ tbl[p.visita].pj++; tbl[p.visita].gf+=g2; tbl[p.visita].gc+=g1; }
+    if(g1>g2){ if(tbl[p.local]) tbl[p.local].pts+=3; }
+    else if(g1<g2){ if(tbl[p.visita]) tbl[p.visita].pts+=3; }
+    else{ if(tbl[p.local]) tbl[p.local].pts+=1; if(tbl[p.visita]) tbl[p.visita].pts+=1; }
+  });
+  return eq.map(e=>({eq:e,...tbl[e],gd:tbl[e].gf-tbl[e].gc}))
+    .sort((a,b)=>b.pts-a.pts||(b.gd-a.gd)||(b.gf-a.gf)||a.eq.localeCompare(b.eq));
+}
+
+function getGrupoPreds(g){
+  const preds={};
+  PARTIDOS.filter(p=>p.grupo===g).forEach(p=>{
+    const g1el=$id(`gp-${p.id}-g1`), g2el=$id(`gp-${p.id}-g2`);
+    if(!g1el||!g2el) return;
+    const g1=parseInt(g1el.value), g2=parseInt(g2el.value);
+    if(!isNaN(g1)&&!isNaN(g2)) preds[p.id]={g1,g2};
+  });
+  return preds;
+}
+
+function updateStandingsLive(g){
+  const el=$id(`live-st-${g}`); if(!el) return;
+  const allPreds=getGrupoPreds(g);
+  const st=calcStandingsFromGrupo(g,allPreds);
+  const posCls=['p1','p2','p3','p4'];
+  el.innerHTML=st.map((row,i)=>`
+    <div class="gmp-stand-row">
+      <span class="gmp-pos ${posCls[i]}">${i+1}°</span>
+      ${fi(row.eq)}<span style="flex:1;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(row.eq)}</span>
+      <span class="gmp-stat">${row.pj>0?`${row.gf>row.gc?'+':''}${row.gd}`:''}</span>
+      <span class="gmp-pts" style="color:${i<2?'var(--verde)':i===2?'var(--dorado)':'var(--muted)'};">${row.pj?row.pts+'pts':'—'}</span>
+    </div>`).join('');
+  actualizarProgresoPron();
+}
+
 function cargarPronostico(){
   const jugador=$id('sel-jugador').value;
   const cont=$id('pronosticos-lista');
@@ -2166,109 +2221,87 @@ function cargarPronostico(){
     cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong><br><span style="color:var(--muted);font-size:13px;">El plazo terminó el 11 de junio.</span></div>';
     btn.style.display='none'; return;
   }
-  const gp = p.grupos || {};
-  const tieneGuardados = p.grupos && Object.keys(p.grupos).length > 0;
-  cont.innerHTML =
-    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">🏆 Predice el orden final de cada grupo: toca los equipos para asignar <strong>1°, 2°, 3° y 4°</strong> lugar. Los terceros elegirás cuáles 8 pasan en la siguiente etapa.</div>' +
-    (tieneGuardados?'<div style="margin-bottom:10px;padding:8px 13px;background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;font-size:12px;color:var(--verde);">✅ Tienes pronósticos guardados — puedes editarlos abajo.</div>':'')+
-    '<div id="pron-progress" style="margin-bottom:12px;"></div>' +
-    Object.entries(GRUPOS).map(([g,equipos])=>{
-      const gg=gp[g]||{};
-      return `
-        <div class="pron-grupo-card">
-          <div class="pron-grupo-header">
-            <span class="g-label">Grupo ${g}</span>
-            <span style="font-size:11px;color:rgba(255,255,255,0.75);">Toca para ordenar 1° a 4°</span>
+  const savedParts=p.partidos||{};
+  const tieneGuardados=p.grupos&&Object.keys(p.grupos).length>0;
+  cont.innerHTML=
+    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">⚽ Ingresa el <strong>marcador exacto</strong> de cada partido. La tabla de posiciones se calcula automáticamente. Los marcadores también dan <strong>+1 pt</strong> si aciertas el resultado exacto.</div>'+
+    (tieneGuardados?'<div style="margin-bottom:10px;padding:8px 13px;background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;font-size:12px;color:var(--verde);">✅ Tienes predicciones guardadas — puedes editarlas abajo.</div>':'')+
+    '<div id="pron-progress" style="margin-bottom:12px;"></div>'+
+    Object.entries(GRUPOS).map(([g])=>{
+      const matches=PARTIDOS.filter(pm=>pm.grupo===g);
+      const rows=matches.map(pm=>{
+        const sv=savedParts[pm.id]||{};
+        return `<div class="gmp-row">
+          <div class="gmp-team">${fi(pm.local)}<span>${esc(pm.local)}</span></div>
+          <div class="gmp-score-wrap">
+            <input class="pron-score-input" type="number" min="0" max="20" id="gp-${pm.id}-g1" value="${sv.g1??''}" placeholder="0" oninput="updateStandingsLive('${g}')">
+            <span class="gmp-dash">–</span>
+            <input class="pron-score-input" type="number" min="0" max="20" id="gp-${pm.id}-g2" value="${sv.g2??''}" placeholder="0" oninput="updateStandingsLive('${g}')">
           </div>
-          <table class="pron-standing-table">
-            <tbody id="pron-g${g}-tbody"></tbody>
-          </table>
-          <input type="hidden" id="pron-g${g}-p1" value="${esc(gg.p1||'')}">
-          <input type="hidden" id="pron-g${g}-p2" value="${esc(gg.p2||'')}">
-          <input type="hidden" id="pron-g${g}-p3" value="${esc(gg.p3||'')}">
+          <div class="gmp-team right"><span>${esc(pm.visita)}</span>${fi(pm.visita)}</div>
         </div>`;
+      }).join('');
+      return `<div class="pron-grupo-card">
+        <div class="pron-grupo-header">
+          <span class="g-label">Grupo ${g}</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.75);">Predice los marcadores</span>
+        </div>
+        ${rows}
+        <div class="gmp-standings" id="live-st-${g}"><div style="padding:10px 14px;font-size:11px;color:var(--muted);">Ingresa marcadores para ver la tabla calculada →</div></div>
+      </div>`;
     }).join('');
   setTimeout(()=>{
-    Object.keys(GRUPOS).forEach(g=>renderPronGrupoRows(g));
+    Object.keys(GRUPOS).forEach(g=>updateStandingsLive(g));
     actualizarProgresoPron();
-  }, 0);
-}
-
-function renderPronGrupoRows(g){
-  const tbody=$id(`pron-g${g}-tbody`); if(!tbody) return;
-  const p1=$id(`pron-g${g}-p1`)?.value||'';
-  const p2=$id(`pron-g${g}-p2`)?.value||'';
-  const p3=$id(`pron-g${g}-p3`)?.value||'';
-  const p4=GRUPOS[g].find(eq=>eq!==p1&&eq!==p2&&eq!==p3&&p1&&p2&&p3)||'';
-  tbody.innerHTML=GRUPOS[g].map(eq=>{
-    const pos=p1===eq?1:p2===eq?2:p3===eq?3:p4===eq?4:0;
-    const rowCls=pos===1?'pst-p1':pos===2?'pst-p2':pos===3?'pst-p3':pos===4?'pst-p4':'';
-    const bdgCls=pos===1?'pos-badge gold':pos===2?'pos-badge silver':pos===3?'pos-badge bronze':'pos-badge';
-    const bdgTxt=pos?pos+'°':'';
-    return `<tr class="${rowCls}" onclick="togglePronTeam('${g}','${esc(eq)}')">
-      <td style="width:32px;text-align:center;"><span class="${bdgCls}">${bdgTxt}</span></td>
-      <td><div class="pst-team">${fi(eq)}<span>${esc(eq)}</span></div></td>
-    </tr>`;
-  }).join('');
-}
-
-function togglePronTeam(g, eq){
-  const p1el=$id(`pron-g${g}-p1`), p2el=$id(`pron-g${g}-p2`), p3el=$id(`pron-g${g}-p3`);
-  if(!p1el||!p2el||!p3el) return;
-  let p1=p1el.value, p2=p2el.value, p3=p3el.value;
-  if(p1===eq){      p1=p2; p2=p3; p3=''; }
-  else if(p2===eq){ p2=p3; p3=''; }
-  else if(p3===eq){ p3=''; }
-  else if(!p1){     p1=eq; }
-  else if(!p2){     p2=eq; }
-  else if(!p3){     p3=eq; }
-  p1el.value=p1; p2el.value=p2; p3el.value=p3;
-  renderPronGrupoRows(g);
-  actualizarProgresoPron();
+  },0);
 }
 
 function actualizarProgresoPron(){
-  const el=$id('pron-progress'); if(!el)return;
+  const el=$id('pron-progress'); if(!el) return;
   const grupos=Object.keys(GRUPOS);
   const done=grupos.filter(g=>{
-    const p1=$id(`pron-g${g}-p1`)?.value||'';
-    const p2=$id(`pron-g${g}-p2`)?.value||'';
-    const p3=$id(`pron-g${g}-p3`)?.value||'';
-    return p1&&p2&&p3&&new Set([p1,p2,p3]).size===3;
+    const ms=PARTIDOS.filter(p=>p.grupo===g);
+    return ms.every(p=>{
+      const g1=$id(`gp-${p.id}-g1`)?.value;
+      const g2=$id(`gp-${p.id}-g2`)?.value;
+      return g1!==''&&g1!==undefined&&g1!==null&&g2!==''&&g2!==undefined&&g2!==null&&!isNaN(parseInt(g1))&&!isNaN(parseInt(g2));
+    });
   }).length;
   const total=grupos.length;
   const pct=Math.round(done/total*100);
   const color=done===total?'var(--verde)':done>0?'var(--dorado)':'var(--muted)';
-  el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div style="flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s;"></div>
-      </div>
-      <span style="font-size:12px;color:${color};font-weight:700;white-space:nowrap;">${done}/${total} grupos</span>
-    </div>`;
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;">
+    <div style="flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s;"></div>
+    </div>
+    <span style="font-size:12px;color:${color};font-weight:700;white-space:nowrap;">${done}/${total} grupos</span>
+  </div>`;
 }
 
 async function guardarPronostico(){
-  const jugador=$id('sel-jugador').value;
-  if(!jugador)return;
+  const jugador=$id('sel-jugador').value; if(!jugador) return;
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
+  pron.partidos=pron.partidos||{};
   pron.grupos={};
   const incompletos=[];
   Object.keys(GRUPOS).forEach(g=>{
-    const p1=$id(`pron-g${g}-p1`)?.value||'';
-    const p2=$id(`pron-g${g}-p2`)?.value||'';
-    const p3=$id(`pron-g${g}-p3`)?.value||'';
-    if(p1||p2||p3) pron.grupos[g]={p1,p2,p3};
-    if(!p1||!p2||!p3) incompletos.push(g);
+    const preds=getGrupoPreds(g);
+    const matches=PARTIDOS.filter(p=>p.grupo===g);
+    const completo=matches.every(p=>preds[p.id]!=null);
+    if(!completo) incompletos.push(g);
+    // Store match scores in pron.partidos
+    Object.assign(pron.partidos, preds);
+    // Derive group standings
+    const st=calcStandingsFromGrupo(g,preds);
+    if(st.length===4) pron.grupos[g]={p1:st[0].eq,p2:st[1].eq,p3:st[2].eq,p4:st[3].eq};
   });
   if(incompletos.length>0){
-    const ok=confirm(`⚠️ Te faltan ${incompletos.length} grupo(s) incompleto(s): ${incompletos.map(g=>'Grupo '+g).join(', ')}.\n\nNecesitas elegir 1°, 2° y 3° de cada grupo.\n\n¿Guardar de todos modos?`);
-    if(!ok)return;
+    const ok=confirm(`⚠️ ${incompletos.length} grupo(s) sin todos los marcadores: ${incompletos.map(g=>'Grupo '+g).join(', ')}.\n\nLa tabla se calculará con los partidos ingresados.\n\n¿Guardar de todos modos?`);
+    if(!ok) return;
   }
   setLoad('btn-save-pron',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
-    // Actualizar estado local para que initCuadro use los grupos recién guardados
     state.pronosticos[jugador]=pron;
     actualizarSelector(); actualizarSelectorElim(); actualizarSelectorTerc();
     invalidarCache(); cargarDatos(true);
