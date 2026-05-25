@@ -802,33 +802,6 @@ select option { background:#fff; }
   padding:7px 11px; background:#f9fafb; border-radius:7px;
 }
 
-/* ── Cómo se calcula – Flujo 3 etapas ── */
-.calc-flow { display:flex; gap:8px; align-items:stretch; margin-top:4px; }
-.calc-step { flex:1; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 10px 12px; text-align:center; position:relative; }
-.calc-step-num { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--rosa); color:#fff; font-weight:900; font-size:11px; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-.calc-step-icon { font-size:1.6rem; margin-bottom:6px; }
-.calc-step-label { font-weight:800; font-size:13px; margin-bottom:5px; color:var(--text); }
-.calc-step-desc { font-size:11px; color:var(--muted); line-height:1.5; margin-bottom:8px; }
-.calc-step-pts { font-size:11px; font-weight:800; color:var(--rosa); background:rgba(233,30,140,0.08); border-radius:20px; padding:3px 8px; display:inline-block; }
-.calc-arrow { display:flex; align-items:center; color:var(--muted); font-size:18px; flex-shrink:0; padding-top:20px; }
-
-/* ── Bracket funnel ── */
-.bf-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:9px; margin-bottom:3px; }
-.bf-icon { font-size:1.1rem; width:28px; text-align:center; flex-shrink:0; }
-.bf-teams { font-weight:800; font-size:15px; min-width:70px; flex-shrink:0; }
-.bf-label { flex:1; font-size:12px; color:var(--muted); }
-.bf-pts { font-weight:800; font-size:13px; min-width:60px; text-align:right; flex-shrink:0; }
-.bf-connector { width:2px; height:10px; background:var(--border); margin-left:14px; border-radius:2px; }
-
-/* ── Ejemplo de cálculo ── */
-.calc-ex-row { border-radius:11px; padding:12px 14px; border:1px solid var(--border); margin-bottom:8px; }
-.calc-ex-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; font-weight:700; font-size:13px; }
-.calc-ex-pts { margin-left:auto; font-weight:900; font-size:15px; }
-.calc-ex-detail { font-size:12px; color:var(--muted); line-height:1.6; padding-left:26px; }
-.calc-ex-total { background:linear-gradient(135deg,var(--rosa) 0%,#c2006e 100%); border-radius:12px; padding:16px; text-align:center; color:#fff; margin-top:4px; }
-.calc-ex-total-label { font-size:12px; opacity:.85; margin-bottom:4px; }
-.calc-ex-total-num { font-size:2rem; font-weight:900; font-family:'Bebas Neue',sans-serif; letter-spacing:2px; }
-
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .sidebar { display:none; }
@@ -837,8 +810,6 @@ select option { background:#fff; }
   .groups-grid { grid-template-columns:1fr; }
   .prize-split { grid-template-columns:1fr; }
   .steps { grid-template-columns:1fr; }
-  .calc-flow { flex-direction:column; }
-  .calc-arrow { padding-top:0; transform:rotate(90deg); align-self:center; }
   .mobile-nav { display:flex; }
   .view-title { font-size:1.6rem; }
   .countdown-bar { padding:0.75rem 1rem; gap:0.5rem; }
@@ -1019,7 +990,7 @@ select option { background:#fff; }
         <select id="sel-jugador-partidos" onchange="renderMatches()" style="margin-bottom:0;font-size:13px;">
           <option value="">— Selecciona tu nombre para predecir marcadores —</option>
         </select>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;">✓ +1 pt resultado correcto · ⚽ +2 pts marcador exacto</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">✅ +1 punto por cada marcador exacto que aciertes</div>
       </div>
       <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;">
         <strong style="color:var(--rosa);">📺 ¿Dónde ver en Chile?</strong>
@@ -1116,7 +1087,7 @@ select option { background:#fff; }
         <span style="font-size:12px;">Etapa 3 de 3 — elige quién gana en octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+10</strong>, cuartos <strong style="color:var(--verde);">+20</strong>, semis <strong style="color:var(--verde);">+30</strong>, finalistas <strong style="color:var(--dorado);">+40 c/u</strong>, campeón <strong style="color:var(--dorado);">+80</strong>
+        Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+2</strong>, cuartos <strong style="color:var(--verde);">+4</strong>, semis <strong style="color:var(--verde);">+6</strong>, finalistas <strong style="color:var(--dorado);">+8 c/u</strong>, campeón <strong style="color:var(--dorado);">+10</strong>
       </div>
       <div class="form-card" style="margin-bottom:1rem;">
         <label>Selecciona tu nombre</label>
@@ -1196,8 +1167,7 @@ select option { background:#fff; }
         <div class="form-title">📊 Sistema de Puntaje</div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Predicciones de Partidos</div>
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
-          <div class="score-row"><span>✓ Resultado correcto (W/E/L)</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
-          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>⚽ Marcador exacto (ej: 2–1)</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
+          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>⚽ Marcador exacto (ej: 2–1)</span><span style="color:var(--verde);font-weight:700;">+1 pt</span></div>
         </div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase de Grupos</div>
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
@@ -1206,13 +1176,13 @@ select option { background:#fff; }
         </div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase Eliminatoria</div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <div class="score-row"><span>Equipo en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
-          <div class="score-row"><span>Finalista (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
+          <div class="score-row"><span>Equipo en 16avos</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
+          <div class="score-row"><span>Equipo en Cuartos</span><span style="color:var(--verde);font-weight:700;">+4 pts</span></div>
+          <div class="score-row"><span>Equipo en Semis</span><span style="color:var(--verde);font-weight:700;">+6 pts</span></div>
+          <div class="score-row"><span>Finalista</span><span style="color:var(--dorado);font-weight:700;">+8 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);">
             <span>🏆 Campeón correcto</span>
-            <span style="color:var(--dorado);font-weight:700;">+80 pts</span>
+            <span style="color:var(--dorado);font-weight:700;">+10 pts</span>
           </div>
         </div>
       </div>
@@ -1224,239 +1194,73 @@ select option { background:#fff; }
         <div class="view-title">🧮 Cómo se calcula</div>
       </div>
 
-      <!-- ① FLUJO DE INSCRIPCIÓN -->
       <div class="form-card">
-        <div class="form-title">📝 Flujo de Participación — 3 Etapas</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:1.2rem;line-height:1.6;">Debes completar las 3 etapas <strong>antes del 11 de junio</strong>. Cada etapa se guarda por separado.</p>
-        <div class="calc-flow">
-          <div class="calc-step">
-            <div class="calc-step-num">1</div>
-            <div class="calc-step-icon">⚽</div>
-            <div class="calc-step-label">Marcadores</div>
-            <div class="calc-step-desc">Predice el resultado exacto de los <strong>72 partidos</strong> de la fase de grupos. La tabla de posiciones se calcula automáticamente.</div>
-            <div class="calc-step-pts">hasta +144 pts</div>
+        <div class="form-title">📋 Sistema de Pronósticos</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:1rem;">
+          La Polla Mundialera 2026 funciona en <strong>dos etapas</strong>: predecir quién termina
+          1° y 2° en cada grupo, y luego predecir qué equipos avanzan en cada ronda eliminatoria.
+        </p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1️⃣</div>
+            <div class="step-title">Fase de Grupos</div>
+            <div class="step-desc">Predice el 1° y 2° lugar de cada uno de los 12 grupos (A–L)</div>
           </div>
-          <div class="calc-arrow">→</div>
-          <div class="calc-step">
-            <div class="calc-step-num">2</div>
-            <div class="calc-step-icon">🔢</div>
-            <div class="calc-step-label">Terceros</div>
-            <div class="calc-step-desc">De los <strong>12 equipos</strong> que quedan terceros en su grupo, elige cuáles <strong>8 avanzan</strong> a las llaves.</div>
-            <div class="calc-step-pts" style="color:var(--dorado);background:rgba(245,188,0,0.1);">define el bracket</div>
+          <div class="step">
+            <div class="step-num">2️⃣</div>
+            <div class="step-title">Eliminatorias</div>
+            <div class="step-desc">Predice qué equipos llegan a 16avos, cuartos, semis, final y quién es campeón</div>
           </div>
-          <div class="calc-arrow">→</div>
-          <div class="calc-step">
-            <div class="calc-step-num">3</div>
-            <div class="calc-step-icon">🏆</div>
-            <div class="calc-step-label">Llaves</div>
-            <div class="calc-step-desc">Completa el bracket: elige ganadores desde <strong>16avos</strong> hasta el <strong>Campeón del Mundo</strong>.</div>
-            <div class="calc-step-pts">hasta +600 pts</div>
+          <div class="step">
+            <div class="step-num">3️⃣</div>
+            <div class="step-title">Ranking</div>
+            <div class="step-desc">Se suman los puntos a medida que avanza el torneo</div>
           </div>
         </div>
       </div>
 
-      <!-- ② FORMATO DEL TORNEO — BRACKET FUNNEL -->
       <div class="form-card">
-        <div class="form-title">🌍 Formato del Torneo — WC 2026</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.6;">El Mundial 2026 es el primero con <strong>48 selecciones</strong>. Así fluye el torneo:</p>
-
-        <div class="bf-row" style="background:rgba(233,30,140,0.08);border:1px solid rgba(233,30,140,0.15);">
-          <div class="bf-icon">🌐</div>
-          <div class="bf-teams" style="color:var(--rosa);">48 eq.</div>
-          <div class="bf-label"><strong>Fase de Grupos</strong> — 12 grupos de 4 equipos, 6 partidos c/u<br><span style="font-size:11px;">Clasifican: 1°, 2° de cada grupo + 8 mejores 3eros</span></div>
-          <div class="bf-pts" style="color:var(--rosa);"></div>
+        <div class="form-title">⚽ Fase de Grupos — Puntos</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Por cada grupo (A hasta L), predices qué equipo termina primero y segundo.</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);">
+            <span>🥇 1° lugar del grupo correcto</span>
+            <span style="color:var(--verde);font-weight:800;font-size:15px;">+2 pts</span>
+          </div>
+          <div class="score-row" style="background:rgba(16,163,74,0.05);border:1px solid rgba(16,163,74,0.15);">
+            <span>🥈 2° lugar del grupo correcto</span>
+            <span style="color:var(--verde);font-weight:800;font-size:15px;">+1 pt</span>
+          </div>
         </div>
-        <div class="bf-connector"></div>
-
-        <div class="bf-row" style="background:rgba(96,165,250,0.07);border:1px solid rgba(96,165,250,0.15);">
-          <div class="bf-icon">⚔️</div>
-          <div class="bf-teams" style="color:#60a5fa;">32 eq.</div>
-          <div class="bf-label"><strong>16avos de Final</strong> — 16 partidos de eliminación directa</div>
-          <div class="bf-pts" style="color:#60a5fa;">+10 pts c/u</div>
-        </div>
-        <div class="bf-connector"></div>
-
-        <div class="bf-row" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);">
-          <div class="bf-icon">⚔️</div>
-          <div class="bf-teams" style="color:#60a5fa;">16 eq.</div>
-          <div class="bf-label"><strong>Octavos de Final</strong> — 8 partidos</div>
-          <div class="bf-pts" style="color:#60a5fa;">+20 pts c/u</div>
-        </div>
-        <div class="bf-connector"></div>
-
-        <div class="bf-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.15);">
-          <div class="bf-icon">🏅</div>
-          <div class="bf-teams" style="color:var(--verde);">8 eq.</div>
-          <div class="bf-label"><strong>Cuartos de Final</strong> — 4 partidos</div>
-          <div class="bf-pts" style="color:var(--verde);">+30 pts c/u</div>
-        </div>
-        <div class="bf-connector"></div>
-
-        <div class="bf-row" style="background:rgba(16,163,74,0.1);border:1px solid rgba(16,163,74,0.2);">
-          <div class="bf-icon">🥊</div>
-          <div class="bf-teams" style="color:var(--verde);">4 eq.</div>
-          <div class="bf-label"><strong>Semifinales</strong> — 2 partidos</div>
-          <div class="bf-pts" style="color:var(--verde);">+40 pts c/u</div>
-        </div>
-        <div class="bf-connector"></div>
-
-        <div class="bf-row" style="background:rgba(245,188,0,0.08);border:1px solid rgba(245,188,0,0.2);">
-          <div class="bf-icon">🥈</div>
-          <div class="bf-teams" style="color:var(--dorado);">2 eq.</div>
-          <div class="bf-label"><strong>Final</strong> — Los dos finalistas</div>
-          <div class="bf-pts" style="color:var(--dorado);">+40 pts c/u</div>
-        </div>
-        <div class="bf-connector"></div>
-
-        <div class="bf-row" style="background:rgba(245,188,0,0.15);border:2px solid rgba(245,188,0,0.4);">
-          <div class="bf-icon">🏆</div>
-          <div class="bf-teams" style="color:var(--dorado);font-size:17px;">1 eq.</div>
-          <div class="bf-label" style="font-weight:700;color:var(--dorado);font-size:13px;">Campeón del Mundo</div>
-          <div class="bf-pts" style="color:var(--dorado);font-size:16px;">+80 pts</div>
+        <div style="margin-top:1rem;padding:10px 13px;background:#f9fafb;border-radius:9px;font-size:12px;color:var(--muted);">
+          Máximo en grupos: <strong style="color:var(--rosa);">12 grupos × 3 pts = 36 pts</strong>
         </div>
       </div>
 
-      <!-- ③ TABLA DE PUNTAJE COMPLETA -->
       <div class="form-card">
-        <div class="form-title">📊 Tabla de Puntaje Completa</div>
-
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">⚽ Partidos (72 partidos de grupos)</div>
-        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(245,188,0,0.12);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(245,188,0,0.25);">
-              ✓ Resultado correcto (W/D/L)
-            </div>
-            <div style="font-weight:900;font-size:16px;color:var(--dorado);min-width:52px;text-align:right;">+1 pt</div>
+        <div class="form-title">🏆 Fase Eliminatoria — Puntos</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="score-row"><span>Equipo correcto en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
+          <div class="score-row"><span>Equipo correcto en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+4 pts</span></div>
+          <div class="score-row"><span>Equipo correcto en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+6 pts</span></div>
+          <div class="score-row"><span>Finalista correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+8 pts</span></div>
+          <div class="score-row" style="background:rgba(245,188,0,0.08);border:1px solid rgba(245,188,0,0.25);">
+            <span>🏆 Campeón del Mundo correcto</span>
+            <span style="color:var(--dorado);font-weight:800;font-size:15px;">+10 pts</span>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(16,163,74,0.1);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(16,163,74,0.2);">
-              ⚽ Marcador exacto (ambos goles)
-            </div>
-            <div style="font-weight:900;font-size:16px;color:var(--verde);min-width:52px;text-align:right;">+2 pts</div>
-          </div>
-        </div>
-
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">🌍 Fase de Grupos (12 grupos)</div>
-        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(16,163,74,0.1);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(16,163,74,0.2);">
-              🥇 1° lugar del grupo correcto
-            </div>
-            <div style="font-weight:900;font-size:16px;color:var(--verde);min-width:52px;text-align:right;">+2 pts</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(16,163,74,0.07);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(16,163,74,0.15);">
-              🥈 2° lugar del grupo correcto
-            </div>
-            <div style="font-weight:900;font-size:16px;color:var(--verde);min-width:52px;text-align:right;">+1 pt</div>
-          </div>
-        </div>
-
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;">🏆 Fase Eliminatoria</div>
-        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(96,165,250,0.06);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(96,165,250,0.2);">16avos — por cada equipo correcto (×16)</div>
-            <div style="font-weight:900;font-size:16px;color:#60a5fa;min-width:56px;text-align:right;">+10 pts</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(96,165,250,0.08);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(96,165,250,0.25);">Octavos — por cada equipo correcto (×8)</div>
-            <div style="font-weight:900;font-size:16px;color:#60a5fa;min-width:56px;text-align:right;">+20 pts</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(16,163,74,0.08);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(16,163,74,0.2);">Cuartos — por cada equipo correcto (×4)</div>
-            <div style="font-weight:900;font-size:16px;color:var(--verde);min-width:56px;text-align:right;">+30 pts</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(245,188,0,0.07);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(245,188,0,0.2);">Finalista correcto (×2)</div>
-            <div style="font-weight:900;font-size:16px;color:var(--dorado);min-width:56px;text-align:right;">+40 pts</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;height:28px;background:rgba(245,188,0,0.12);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;border:1px solid rgba(245,188,0,0.3);font-weight:700;">🏆 Campeón del Mundo</div>
-            <div style="font-weight:900;font-size:16px;color:var(--dorado);min-width:56px;text-align:right;">+80 pts</div>
-          </div>
-        </div>
-
-        <div style="background:linear-gradient(135deg,rgba(233,30,140,0.08),rgba(194,0,110,0.08));border:1px solid rgba(233,30,140,0.2);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <div>
-            <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Puntaje máximo posible</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Partidos 144 + Grupos 36 + Eliminatorias 600</div>
-          </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--rosa);letter-spacing:2px;">780 pts</div>
         </div>
       </div>
 
-      <!-- ④ EJEMPLO DE CÁLCULO PASO A PASO -->
       <div class="form-card">
-        <div class="form-title">💡 Ejemplo: Cálculo de Puntaje</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;line-height:1.6;">Así se calcularían los puntos de un jugador hipotético al final del torneo:</p>
-
-        <div class="calc-ex-row" style="background:rgba(16,163,74,0.04);">
-          <div class="calc-ex-header">
-            <span style="background:rgba(16,163,74,0.15);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">⚽</span>
-            <span>Partidos — Marcadores</span>
-            <span class="calc-ex-pts" style="color:var(--verde);">+38 pts</span>
-          </div>
-          <div class="calc-ex-detail">
-            De 72 partidos predijo: 25 resultados correctos (+1 c/u) y 6 marcadores exactos (+2 c/u)<br>
-            <strong>25 × 1 + 6 × 2 = 25 + 12 = 37 pts</strong> → redondeado para este ejemplo: <strong style="color:var(--verde);">38 pts</strong>
-          </div>
+        <div class="form-title">💡 Ejemplo Práctico</div>
+        <div style="font-size:13px;line-height:1.8;color:var(--text);">
+          <p>Predices en el <strong>Grupo A</strong>: 1° México, 2° Corea del Sur.</p>
+          <p>Al terminar el grupo, México quedó 1° ✅ → <strong style="color:var(--verde);">+2 pts</strong></p>
+          <p>Corea del Sur quedó 3° ❌ → 0 pts</p><br>
+          <p>Predices que <strong>Argentina</strong> llega a Semis.</p>
+          <p>Argentina llega a Semis ✅ → <strong style="color:var(--verde);">+6 pts</strong></p><br>
+          <p style="color:var(--muted);font-size:12px;">💡 Los pronósticos cierran el 11 de junio. ¡Guarda antes!</p>
         </div>
-
-        <div class="calc-ex-row" style="background:rgba(16,163,74,0.04);">
-          <div class="calc-ex-header">
-            <span style="background:rgba(16,163,74,0.15);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">🌍</span>
-            <span>Grupos — Posiciones</span>
-            <span class="calc-ex-pts" style="color:var(--verde);">+22 pts</span>
-          </div>
-          <div class="calc-ex-detail">
-            Acertó 8 primeros lugares (+2 c/u) y 6 segundos lugares (+1 c/u) de 12 grupos<br>
-            <strong>8 × 2 + 6 × 1 = 16 + 6 = 22 pts</strong>
-          </div>
-        </div>
-
-        <div class="calc-ex-row" style="background:rgba(96,165,250,0.05);">
-          <div class="calc-ex-header">
-            <span style="background:rgba(96,165,250,0.15);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">⚔️</span>
-            <span>16avos y Octavos</span>
-            <span class="calc-ex-pts" style="color:#60a5fa;">+220 pts</span>
-          </div>
-          <div class="calc-ex-detail">
-            11 de 16 equipos correctos en 16avos (+10 c/u) y 7 de 8 en Octavos (+20 c/u)<br>
-            <strong>11 × 10 + 7 × 20 = 110 + 140 = 250 pts</strong> → para el ejemplo: <strong style="color:#60a5fa;">220 pts</strong>
-          </div>
-        </div>
-
-        <div class="calc-ex-row" style="background:rgba(16,163,74,0.05);">
-          <div class="calc-ex-header">
-            <span style="background:rgba(16,163,74,0.15);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">🏅</span>
-            <span>Cuartos y Semis</span>
-            <span class="calc-ex-pts" style="color:var(--verde);">+210 pts</span>
-          </div>
-          <div class="calc-ex-detail">
-            4 de 4 equipos en Cuartos (+30 c/u) y 3 de 4 en Semis (+40 c/u)<br>
-            <strong>4 × 30 + 3 × 40 = 120 + 120 = 240 pts</strong> → para el ejemplo: <strong style="color:var(--verde);">210 pts</strong>
-          </div>
-        </div>
-
-        <div class="calc-ex-row" style="background:rgba(245,188,0,0.06);">
-          <div class="calc-ex-header">
-            <span style="background:rgba(245,188,0,0.2);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">🏆</span>
-            <span>Final y Campeón</span>
-            <span class="calc-ex-pts" style="color:var(--dorado);">+120 pts</span>
-          </div>
-          <div class="calc-ex-detail">
-            Ambos finalistas correctos (+40 c/u) y acertó el Campeón del Mundo (+80)<br>
-            <strong>2 × 40 + 80 = 80 + 80 = 160 pts</strong> → para el ejemplo: <strong style="color:var(--dorado);">120 pts</strong>
-          </div>
-        </div>
-
-        <div class="calc-ex-total">
-          <div class="calc-ex-total-label">Puntaje Total del Jugador</div>
-          <div class="calc-ex-total-num">610 pts</div>
-          <div style="font-size:11px;opacity:.8;margin-top:4px;">38 + 22 + 220 + 210 + 120 = 610 pts</div>
-        </div>
-
-        <p style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center;">💡 El puntaje máximo posible es <strong>780 pts</strong>. ¡Los pronósticos cierran el 11 de junio!</p>
       </div>
     </div>
 
@@ -1595,12 +1399,9 @@ select option { background:#fff; }
       <div class="form-card">
         <div class="form-title">📋 Reglas Generales</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted);line-height:1.7;">
-          <div>• La inscripción tiene un costo de <strong style="color:var(--text);">$10.000 CLP</strong> por persona. El pago se coordina directamente con el administrador.</div>
-          <div>• Cada participante debe completar sus pronósticos en <strong style="color:var(--text);">3 etapas</strong> antes del <strong style="color:var(--text);">11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.<br>
-            <span style="font-size:12px;">— Etapa 1: marcadores exactos de los 72 partidos de grupos<br>
-            — Etapa 2: elegir cuáles 8 terceros avanzan a las llaves<br>
-            — Etapa 3: completar las llaves hasta el campeón</span></div>
-          <div>• Los pronósticos de cada etapa deben guardarse por separado usando los botones correspondientes.</div>
+          <div>• La inscripción tiene un costo de <strong style="color:var(--text);">$5.000 CLP</strong> por persona. El pago se coordina directamente con el administrador.</div>
+          <div>• Cada participante debe guardar sus pronósticos <strong style="color:var(--text);">antes del 11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.</div>
+          <div>• Los pronósticos de grupos (1° y 2° de cada grupo A–L) y de eliminatorias deben guardarse por separado usando los botones correspondientes.</div>
           <div>• Los resultados oficiales se ingresan por el administrador. En caso de error en el ingreso, el administrador puede corregirlos antes del cómputo final.</div>
           <div>• El ranking se actualiza automáticamente cada vez que el administrador ingresa nuevos resultados.</div>
           <div>• Solo participan en el reparto quienes hayan pagado su entrada y tengan pronósticos guardados.</div>
@@ -1959,7 +1760,7 @@ function initFacts(){
 // WHATSAPP
 // ══════════════════════════════════════════════════════════
 function compartirWhatsApp(){
-  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $10.000\n🥇 1° lugar → 75% del pozo\n🥈 2° lugar → 25% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Inscríbete con tu nombre y paga $10.000\n2️⃣ Predice el orden de los 12 grupos (1° al 4°)\n3️⃣ Elige cuáles 8 terceros avanzan a las llaves\n4️⃣ Completa las llaves hasta el campeón\n⚽ Bonus: predice marcadores (+1 pt resultado, +2 pts exacto)\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
+  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $10.000\n🥇 1° lugar → 75% del pozo\n🥈 2° lugar → 25% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Inscríbete con tu nombre y paga $10.000\n2️⃣ Predice el orden de los 12 grupos (1° al 4°)\n3️⃣ Elige cuáles 8 terceros avanzan a las llaves\n4️⃣ Completa las llaves hasta el campeón\n⚽ Bonus: predice el marcador exacto de cada partido (+1 pt)\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -2213,7 +2014,6 @@ function renderMatchCard(p){
   const predG1=pred!=null?pred.g1:'';
   const predG2=pred!=null?pred.g2:'';
   const esExacto=hasScore&&pred!=null&&pred.g1===gL&&pred.g2===gV;
-  const ptsPartido=hasScore&&pred!=null?calcPtsPartido(pred,{gL,gV}):0;
   const canPredict=jugador&&st==='upcoming';
   const cerrado=new Date()>=FECHA_CIERRE;
   let predHtml='';
@@ -2228,8 +2028,8 @@ function renderMatchCard(p){
     } else if(pred!=null){
       predHtml=`<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;">
         <span style="color:var(--muted);">Tu pronóstico:</span>
-        <strong style="color:${ptsPartido===2?'var(--verde)':ptsPartido===1?'var(--dorado)':'var(--text)'};">${pred.g1} – ${pred.g2}</strong>
-        ${ptsPartido===2?'<span style="color:var(--verde);font-weight:700;">✅ +2 pts</span>':ptsPartido===1?'<span style="color:var(--dorado);font-weight:700;">✓ +1 pt</span>':''}
+        <strong style="color:${esExacto?'var(--verde)':'var(--text)'};">${pred.g1} – ${pred.g2}</strong>
+        ${esExacto?'<span style="color:var(--verde);font-weight:700;">✅ +1 pt</span>':''}
       </div>`;
     }
   }
@@ -2424,7 +2224,7 @@ function cargarPronostico(){
   const savedParts=p.partidos||{};
   const tieneGuardados=p.grupos&&Object.keys(p.grupos).length>0;
   cont.innerHTML=
-    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">⚽ Ingresa el <strong>marcador exacto</strong> de cada partido. La tabla se calcula automáticamente. Puntaje: <strong>+1 pt</strong> resultado correcto · <strong>+2 pts</strong> marcador exacto.</div>'+
+    '<div style="margin-bottom:12px;padding:10px 14px;background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;font-size:12px;color:var(--muted);">⚽ Ingresa el <strong>marcador exacto</strong> de cada partido. La tabla de posiciones se calcula automáticamente. Los marcadores también dan <strong>+1 pt</strong> si aciertas el resultado exacto.</div>'+
     (tieneGuardados?'<div style="margin-bottom:10px;padding:8px 13px;background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;font-size:12px;color:var(--verde);">✅ Tienes predicciones guardadas — puedes editarlas abajo.</div>':'')+
     '<div id="pron-progress" style="margin-bottom:12px;"></div>'+
     Object.entries(GRUPOS).map(([g])=>{
@@ -2963,11 +2763,11 @@ function renderCuadro(){
   }
 
   const rounds=[
-    {key:'r32',label:'16avos',pts:'+10',matches:cuadro.r32},
-    {key:'r16',label:'Octavos',pts:'+20',matches:cuadro.r16},
-    {key:'qf', label:'Cuartos',pts:'+30',matches:cuadro.qf},
-    {key:'sf', label:'Semis',  pts:'+40',matches:cuadro.sf},
-    {key:'fin',label:'Final',  pts:'+80',matches:[cuadro.fin]},
+    {key:'r32',label:'16avos',pts:'+2',matches:cuadro.r32},
+    {key:'r16',label:'Octavos',pts:'+4',matches:cuadro.r16},
+    {key:'qf', label:'Cuartos',pts:'+6',matches:cuadro.qf},
+    {key:'sf', label:'Semis',  pts:'+8',matches:cuadro.sf},
+    {key:'fin',label:'Final',  pts:'+10',matches:[cuadro.fin]},
   ];
 
   const champion=cuadro.fin?.w?(cuadro.fin.w==='a'?cuadro.fin.a:cuadro.fin.b):'';
@@ -3251,23 +3051,23 @@ function openPronModal(nombre){
     <div class="pron-modal-section-title">🏆 Eliminatorias</div>
     <div class="modal-br-rounds">
       <div class="modal-br-round">
-        <div class="modal-br-round-title">16avos · +10</div>
+        <div class="modal-br-round-title">16avos · +2</div>
         ${brTeams(oct,rOct)}
       </div>
       <div class="modal-br-round">
-        <div class="modal-br-round-title">Cuartos · +20</div>
+        <div class="modal-br-round-title">Cuartos · +4</div>
         ${brTeams(qua,rQua)}
       </div>
       <div class="modal-br-round">
-        <div class="modal-br-round-title">Semis · +30</div>
+        <div class="modal-br-round-title">Semis · +6</div>
         ${brTeams(sem,rSem)}
       </div>
       <div class="modal-br-round">
-        <div class="modal-br-round-title">Finalistas · +40</div>
+        <div class="modal-br-round-title">Finalistas · +8</div>
         ${brTeams(finalistas,rFin)}
       </div>
       <div class="modal-br-round">
-        <div class="modal-br-round-title">🏆 Campeón · +80</div>
+        <div class="modal-br-round-title">🏆 Campeón · +10</div>
         ${campeon?`<div class="modal-br-team campeon${campHit?' hit':campMiss?' miss':''}">${flag(campeon)} ${esc(campeon)}${campHit?' ✓':campMiss?' ✗':''}</div>`:'<div style="color:var(--muted);font-size:11px;font-style:italic;">Sin elegir</div>'}
       </div>
     </div>
@@ -3336,12 +3136,12 @@ function calcPtsElim(pron, res){
   const rOct=toArr(res.oct), rQua=toArr(res.qua), rSem=toArr(res.sem);
   const rFin=[res.f1||'',res.f2||''].filter(Boolean);
   const rCamp=res.campeon||'';
-  (elim.oct||[]).forEach(t=>{ if(rOct.includes(t)) pts+=10; });
-  (elim.qua||[]).forEach(t=>{ if(rQua.includes(t)) pts+=20; });
-  (elim.sem||[]).forEach(t=>{ if(rSem.includes(t)) pts+=30; });
+  (elim.oct||[]).forEach(t=>{ if(rOct.includes(t)) pts+=2; });
+  (elim.qua||[]).forEach(t=>{ if(rQua.includes(t)) pts+=4; });
+  (elim.sem||[]).forEach(t=>{ if(rSem.includes(t)) pts+=6; });
   const userFin=[...new Set([elim.f1,elim.f2])].filter(Boolean);
-  userFin.forEach(t=>{ if(rFin.includes(t)) pts+=40; });
-  if(elim.campeon&&elim.campeon===rCamp) pts+=80;
+  userFin.forEach(t=>{ if(rFin.includes(t)) pts+=8; });
+  if(elim.campeon&&elim.campeon===rCamp) pts+=10;
   return pts;
 }
 
@@ -3351,19 +3151,16 @@ function toArr(v){
   try{ return JSON.parse(v); }catch{ return []; }
 }
 
-function calcPtsPartido(pred, res){
-  if(!pred||!res||res.gL==null||res.gV==null) return 0;
-  const g1=pred.g1, g2=pred.g2, rL=res.gL, rV=res.gV;
-  if(g1===rL&&g2===rV) return 2; // marcador exacto
-  const resDir=(g1>g2?1:g1<g2?-1:0);
-  const realDir=(rL>rV?1:rL<rV?-1:0);
-  return resDir===realDir ? 1 : 0; // resultado correcto (W/D/L)
-}
 function calcPtsPartidos(pron){
   if(!pron?.partidos) return 0;
   const scores=state.scores||{};
   let pts=0;
-  PARTIDOS.forEach(p=>{ pts+=calcPtsPartido(pron.partidos[p.id], scores[p.id]); });
+  PARTIDOS.forEach(p=>{
+    const pred=pron.partidos[p.id];
+    const res=scores[p.id];
+    if(!pred||!res||res.gL==null||res.gV==null) return;
+    if(pred.g1===res.gL&&pred.g2===res.gV) pts+=1;
+  });
   return pts;
 }
 
