@@ -617,7 +617,7 @@ select option { background:#fff; }
   color:var(--dorado); letter-spacing:3px;
 }
 .pozo-label { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; }
-.prize-split { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:1rem; }
+.prize-split { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:1rem; }
 .prize-card { padding:12px; border-radius:10px; text-align:center; }
 .p1 { background:rgba(245,188,0,0.1); border:1px solid rgba(245,188,0,0.25); }
 .p2 { background:rgba(158,173,194,0.1); border:1px solid rgba(158,173,194,0.2); }
@@ -911,7 +911,7 @@ select option { background:#fff; }
       </div>
 
       <button class="home-cta" onclick="showView('inscripcion', $id('nav-inscripcion'))">
-        📋 Inscríbete ahora — $5.000
+        📋 Inscríbete ahora — $10.000
       </button>
       <button class="home-cta-sec" id="home-btn-pronos" style="display:none;" onclick="irAMisPronos()">
         🎯 Continuar mis pronósticos
@@ -923,7 +923,7 @@ select option { background:#fff; }
           <div class="home-step-num">1</div>
           <div class="home-step-body">
             <strong>Inscríbete</strong>
-            <span>Paga $5.000 y queda registrado con tu nombre</span>
+            <span>Paga $10.000 y queda registrado con tu nombre</span>
           </div>
         </div>
         <div class="home-step-row">
@@ -944,7 +944,7 @@ select option { background:#fff; }
           <div class="home-step-num">4</div>
           <div class="home-step-body">
             <strong>¡A ganar!</strong>
-            <span>El mejor pronóstico se lleva el 60% del pozo. 2° lugar lleva 40%</span>
+            <span>El mejor pronóstico se lleva el 75% del pozo. 2° lugar lleva 25%</span>
           </div>
         </div>
       </div>
@@ -975,6 +975,14 @@ select option { background:#fff; }
           <button class="view-tab" onclick="setMatchView('group',this)">Por Grupo</button>
         </div>
       </div>
+      <!-- Selector para predicciones de partidos -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:1rem;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">⚽ TUS PREDICCIONES DE PARTIDOS</div>
+        <select id="sel-jugador-partidos" onchange="renderMatches()" style="margin-bottom:0;font-size:13px;">
+          <option value="">— Selecciona tu nombre para predecir marcadores —</option>
+        </select>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">✅ +1 punto por cada marcador exacto que aciertes</div>
+      </div>
       <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;">
         <strong style="color:var(--rosa);">📺 ¿Dónde ver en Chile?</strong>
         <span style="color:var(--muted);margin-left:8px;">Canales confirmados para la Fase de Grupos:</span>
@@ -984,6 +992,10 @@ select option { background:#fff; }
           <span style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-weight:700;color:#1a1a2a;">▶️ Disney+</span>
         </div>
         <div style="color:var(--muted);font-size:11px;margin-top:6px;">📌 Cada partido muestra su canal debajo de la sede. DGO incluye Paramount+.</div>
+      </div>
+      <div id="matches-save-btn" style="display:none;margin-bottom:10px;">
+        <button class="btn" id="btn-save-partidos" onclick="guardarPronosPartidos()" style="width:100%;background:var(--rosa);color:#fff;font-weight:800;">💾 Guardar predicciones de partidos</button>
+        <div id="msg-partidos" style="font-size:12px;margin-top:6px;"></div>
       </div>
       <div id="matches-container"></div>
     </div>
@@ -1086,7 +1098,7 @@ select option { background:#fff; }
         <div class="step">
           <div class="step-num">1️⃣</div>
           <div class="step-title">Inscríbete</div>
-          <div class="step-desc">Escribe tu nombre y paga $5.000 al admin</div>
+          <div class="step-desc">Escribe tu nombre y paga $10.000 al admin</div>
         </div>
         <div class="step">
           <div class="step-num">2️⃣</div>
@@ -1104,7 +1116,7 @@ select option { background:#fff; }
         <div class="form-title">➕ Nuevo Participante</div>
         <label>Tu nombre completo</label>
         <input id="inp-nombre" type="text" placeholder="Ej: Juan Pérez" autocomplete="name">
-        <input id="inp-monto" type="hidden" value="5000">
+        <input id="inp-monto" type="hidden" value="10000">
         <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.2);border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:13px;color:var(--muted);">
           💰 Entrada fija: <strong style="color:var(--verde);font-size:15px;">$5.000 CLP</strong> — coordina el pago con el admin
         </div>
@@ -1128,6 +1140,10 @@ select option { background:#fff; }
 
       <div class="form-card">
         <div class="form-title">📊 Sistema de Puntaje</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Predicciones de Partidos</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
+          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>⚽ Marcador exacto (ej: 2–1)</span><span style="color:var(--verde);font-weight:700;">+1 pt</span></div>
+        </div>
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase de Grupos</div>
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
           <div class="score-row"><span>🥇 1° lugar de grupo correcto</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
@@ -1307,14 +1323,14 @@ select option { background:#fff; }
         </p>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
           <div class="score-row" style="background:rgba(245,188,0,0.08);">
-            <span>🥇 1° lugar</span><span style="color:var(--dorado);font-weight:700;">60% del pozo</span>
+            <span>🥇 1° lugar</span><span style="color:var(--dorado);font-weight:700;">75% del pozo</span>
           </div>
           <div class="score-row" style="background:rgba(200,200,200,0.05);">
-            <span>🥈 2° lugar</span><span style="color:#ccc;font-weight:700;">40% del pozo</span>
+            <span>🥈 2° lugar</span><span style="color:#ccc;font-weight:700;">25% del pozo</span>
           </div>
         </div>
         <p style="font-size:12px;color:var(--muted);line-height:1.6;">
-          El pozo total se calcula sumando los montos de inscripción de todos los participantes ($5.000 por persona).
+          El pozo total se calcula sumando los montos de inscripción de todos los participantes ($10.000 por persona).
         </p>
       </div>
 
@@ -1448,7 +1464,7 @@ let SCRIPT_URL = localStorage.getItem('polla2026_url') || DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
-const MONTO_ENTRADA = 5000;
+const MONTO_ENTRADA = 10000;
 const APP_URL = 'https://tingado.github.io/PollaMundial2026';
 
 // ══════════════════════════════════════════════════════════
@@ -1719,7 +1735,7 @@ function initFacts(){
 // WHATSAPP
 // ══════════════════════════════════════════════════════════
 function compartirWhatsApp(){
-  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $5.000\n🥇 1° lugar → 60% del pozo\n🥈 2° lugar → 40% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica 1° y 2° de cada grupo (A–L)\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
+  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $10.000\n🥇 1° lugar → 75% del pozo\n🥈 2° lugar → 25% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica 1° y 2° de cada grupo (A–L)\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1740,7 +1756,7 @@ function renderHome(){
   // Stats
   const n=state.jugadores.length;
   const el_n=$id('home-stat-n'); if(el_n) el_n.textContent=n||'—';
-  const total=n*5000;
+  const total=n*MONTO_ENTRADA;
   const el_p=$id('home-stat-pozo'); if(el_p) el_p.textContent=n?fmtCLP(total):'—';
   // Show "Continuar" button if last player exists
   const last=localStorage.getItem('p2026_last');
@@ -1835,6 +1851,7 @@ function applyState(d){
   actualizarSelector();
   actualizarSelectorElim();
   actualizarSelectorTerc();
+  actualizarSelectorPartidos();
   cargarCamposAdmin();
   renderAdminPlayers();
   renderAdminGrupos();
@@ -1936,8 +1953,8 @@ function renderPozo(){
       <div class="pozo-label" style="margin-top:4px;">${n} participante${n!==1?'s':''}</div>
     </div>
     <div class="prize-split">
-      <div class="prize-card p1"><div class="prize-pct">🥇 60%</div><div class="prize-val">${fmtCLP(total*.6)}</div></div>
-      <div class="prize-card p2"><div class="prize-pct">🥈 40%</div><div class="prize-val">${fmtCLP(total*.4)}</div></div>
+      <div class="prize-card p1"><div class="prize-pct">🥇 75%</div><div class="prize-val">${fmtCLP(total*.75)}</div></div>
+      <div class="prize-card p2"><div class="prize-pct">🥈 25%</div><div class="prize-val">${fmtCLP(total*.25)}</div></div>
     </div>`;
   ['pozo-widget','pozo-mini'].forEach(id=>{const el=$id(id);if(el)el.innerHTML=html;});
 }
@@ -1967,6 +1984,30 @@ function renderMatchCard(p){
   const gL=sc?sc.gL:null;
   const gV=sc?sc.gV:null;
   const hasScore=gL!==null&&gV!==null;
+  const jugador=$id('sel-jugador-partidos')?.value||'';
+  const pred=jugador&&state.pronosticos[jugador]?.partidos?.[p.id];
+  const predG1=pred!=null?pred.g1:'';
+  const predG2=pred!=null?pred.g2:'';
+  const esExacto=hasScore&&pred!=null&&pred.g1===gL&&pred.g2===gV;
+  const canPredict=jugador&&st==='upcoming';
+  const cerrado=new Date()>=FECHA_CIERRE;
+  let predHtml='';
+  if(jugador){
+    if(canPredict&&!cerrado){
+      predHtml=`<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--muted);font-weight:600;">Tu pronóstico:</span>
+        <input class="pron-score-input" type="number" min="0" max="20" id="prd-${p.id}-g1" value="${predG1}" placeholder="0" oninput="marcaPendiente()">
+        <span class="pron-vs">–</span>
+        <input class="pron-score-input" type="number" min="0" max="20" id="prd-${p.id}-g2" value="${predG2}" placeholder="0" oninput="marcaPendiente()">
+      </div>`;
+    } else if(pred!=null){
+      predHtml=`<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;">
+        <span style="color:var(--muted);">Tu pronóstico:</span>
+        <strong style="color:${esExacto?'var(--verde)':'var(--text)'};">${pred.g1} – ${pred.g2}</strong>
+        ${esExacto?'<span style="color:var(--verde);font-weight:700;">✅ +1 pt</span>':''}
+      </div>`;
+    }
+  }
   return `
     <div class="match-card ${st}">
       <div class="match-meta">
@@ -1988,6 +2029,7 @@ function renderMatchCard(p){
       </div>
       <div class="match-venue">📍 ${p.sede}</div>
       ${p.canales&&p.canales.length?`<div class="match-channels">📺 ${p.canales.join(' · ')}</div>`:''}
+      ${predHtml}
     </div>`;
 }
 
@@ -2718,6 +2760,43 @@ function actualizarSelectorElim(){
     state.jugadores.map(j=>`<option value="${j.nombre}"${j.nombre===cur?' selected':''}>${j.nombre}</option>`).join('');
 }
 
+function actualizarSelectorPartidos(){
+  const sel=$id('sel-jugador-partidos'); if(!sel)return;
+  const last=localStorage.getItem('p2026_last')||'';
+  const cur=sel.value||last;
+  sel.innerHTML='<option value="">— Selecciona tu nombre para predecir marcadores —</option>'+
+    state.jugadores.map(j=>`<option value="${esc(j.nombre)}"${j.nombre===cur?' selected':''}>${esc(j.nombre)}</option>`).join('');
+  const btn=$id('matches-save-btn');
+  if(btn) btn.style.display=sel.value?'block':'none';
+}
+
+let _partidosPendiente=false;
+function marcaPendiente(){
+  _partidosPendiente=true;
+  const btn=$id('matches-save-btn'); if(btn) btn.style.display='block';
+}
+
+async function guardarPronosPartidos(){
+  const jugador=$id('sel-jugador-partidos')?.value; if(!jugador)return;
+  const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
+  pron.partidos=pron.partidos||{};
+  PARTIDOS.forEach(p=>{
+    const g1el=$id(`prd-${p.id}-g1`), g2el=$id(`prd-${p.id}-g2`);
+    if(!g1el||!g2el) return;
+    const g1=parseInt(g1el.value), g2=parseInt(g2el.value);
+    if(!isNaN(g1)&&!isNaN(g2)) pron.partidos[p.id]={g1,g2};
+  });
+  setLoad('btn-save-partidos',true);
+  try{
+    await api({action:'guardarPron',nombre:jugador,pronostico:pron});
+    state.pronosticos[jugador]=pron;
+    _partidosPendiente=false;
+    setMsg('msg-partidos','✅ Predicciones de partidos guardadas','ok');
+    renderMatches();
+  }catch(e){setMsg('msg-partidos',e.message,'err');}
+  finally{setLoad('btn-save-partidos',false);}
+}
+
 function cargarElim(){
   const jugador=$id('sel-jugador-elim').value;
   const cont=$id('elim-container');
@@ -3023,12 +3102,26 @@ function toArr(v){
   try{ return JSON.parse(v); }catch{ return []; }
 }
 
-function calcPtsTotal(pron, res){ return calcPtsGrupos(pron,res)+calcPtsElim(pron,res); }
+function calcPtsPartidos(pron){
+  if(!pron?.partidos) return 0;
+  const scores=state.scores||{};
+  let pts=0;
+  PARTIDOS.forEach(p=>{
+    const pred=pron.partidos[p.id];
+    const res=scores[p.id];
+    if(!pred||!res||res.gL==null||res.gV==null) return;
+    if(pred.g1===res.gL&&pred.g2===res.gV) pts+=1;
+  });
+  return pts;
+}
+
+function calcPtsTotal(pron, res){ return calcPtsGrupos(pron,res)+calcPtsElim(pron,res)+calcPtsPartidos(pron); }
 
 function calcPtsDetalle(pron, res){
   const grupos=calcPtsGrupos(pron,res);
   const elim=calcPtsElim(pron,res);
-  return { grupos, elim, total:grupos+elim };
+  const partidos=calcPtsPartidos(pron);
+  return { grupos, elim, partidos, total:grupos+elim+partidos };
 }
 
 // ══════════════════════════════════════════════════════════
