@@ -930,7 +930,7 @@ select option { background:#fff; }
           <div class="home-step-num">2</div>
           <div class="home-step-body">
             <strong>Predice los grupos</strong>
-            <span>Elige 1° y 2° de cada uno de los 12 grupos</span>
+            <span>Ordena los 4 equipos de cada grupo: 1°, 2°, 3° y 4° lugar</span>
           </div>
         </div>
         <div class="home-step-row">
@@ -1013,9 +1013,14 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">🎯 Pronósticos de Grupos</div>
       </div>
+      <div class="wizard-steps">
+        <div class="wizard-step active">1 · Grupos</div>
+        <div class="wizard-step">2 · Terceros</div>
+        <div class="wizard-step">3 · Llaves</div>
+      </div>
       <div id="pron-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        ✅ <strong style="color:var(--verde);">¡Inscripción exitosa!</strong> Ahora predice el 1° y 2° lugar de cada grupo.<br>
-        <span style="font-size:12px;">Paso 1 de 2 — grupos → después harás las eliminatorias.</span>
+        ✅ <strong style="color:var(--verde);">¡Inscripción exitosa!</strong> Ahora predice el orden final de cada grupo.<br>
+        <span style="font-size:12px;">Etapa 1 de 3 — ordena los 4 equipos de cada grupo (1°, 2°, 3°, 4°) → luego elegirás los terceros que avanzan → finalmente las llaves.</span>
       </div>
       <div class="form-card">
         <label>Selecciona tu nombre</label>
@@ -1035,8 +1040,14 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">3️⃣ Terceros que Avanzan</div>
       </div>
-      <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        En el Mundial 2026, <strong style="color:var(--text);">8 de los 12 terceros</strong> pasan a las llaves. Para cada slot de tercero en el bracket, elige el equipo que ocupará ese lugar.
+      <div class="wizard-steps">
+        <div class="wizard-step done">✓ 1 · Grupos</div>
+        <div class="wizard-step active">2 · Terceros</div>
+        <div class="wizard-step">3 · Llaves</div>
+      </div>
+      <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
+        ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Ahora elige cuáles 8 terceros avanzan.<br>
+        <span style="font-size:12px;">Etapa 2 de 3 — selecciona 8 de los 12 terceros de grupo que crees que pasan a las llaves.</span>
       </div>
       <div class="form-card" style="margin-bottom:1rem;">
         <label>Selecciona tu nombre</label>
@@ -1057,9 +1068,14 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">🏆 Llaves</div>
       </div>
+      <div class="wizard-steps">
+        <div class="wizard-step done">✓ 1 · Grupos</div>
+        <div class="wizard-step done">✓ 2 · Terceros</div>
+        <div class="wizard-step active">3 · Llaves</div>
+      </div>
       <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        ✅ <strong style="color:var(--verde);">¡Terceros guardados!</strong> Ahora completa las llaves.<br>
-        <span style="font-size:12px;">Paso 3 de 3 — elige los ganadores de cada partido y guarda.</span>
+        ✅ <strong style="color:var(--verde);">¡Terceros guardados!</strong> Última etapa: completa las llaves.<br>
+        <span style="font-size:12px;">Etapa 3 de 3 — elige quién gana en octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+2</strong>, cuartos <strong style="color:var(--verde);">+4</strong>, semis <strong style="color:var(--verde);">+6</strong>, finalistas <strong style="color:var(--dorado);">+8 c/u</strong>, campeón <strong style="color:var(--dorado);">+10</strong>
@@ -1735,7 +1751,7 @@ function initFacts(){
 // WHATSAPP
 // ══════════════════════════════════════════════════════════
 function compartirWhatsApp(){
-  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $10.000\n🥇 1° lugar → 75% del pozo\n🥈 2° lugar → 25% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Click en "Inscripción" → escribe tu nombre\n2️⃣ Pronostica 1° y 2° de cada grupo (A–L)\n3️⃣ Pronostica quién avanza en eliminatorias\n4️⃣ ¡Guarda antes del 11 de junio!\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
+  const msg=`⚽🏆 POLLA MUNDIALERA 2026 🏆⚽\n\n¡El Mundial se viene y nos jugamos la plata!\n\n💰 Entrada: $10.000\n🥇 1° lugar → 75% del pozo\n🥈 2° lugar → 25% del pozo\n\n👉 Entra aquí:\n${APP_URL}\n\nPasos:\n1️⃣ Inscríbete con tu nombre y paga $10.000\n2️⃣ Predice el orden de los 12 grupos (1° al 4°)\n3️⃣ Elige cuáles 8 terceros avanzan a las llaves\n4️⃣ Completa las llaves hasta el campeón\n⚽ Bonus: predice el marcador exacto de cada partido (+1 pt)\n\n¡El que sepa de fútbol que lo demuestre! 🤙`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
