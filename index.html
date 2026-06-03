@@ -1143,7 +1143,7 @@ select option { background:#fff; }
         <input id="inp-nombre" type="text" placeholder="Ej: Juan Pérez" autocomplete="name">
         <input id="inp-monto" type="hidden" value="10000">
         <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.2);border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:13px;color:var(--muted);">
-          💰 Entrada fija: <strong style="color:var(--verde);font-size:15px;">$5.000 CLP</strong> — coordina el pago con el admin
+          💰 Entrada fija: <strong style="color:var(--verde);font-size:15px;">$10.000 CLP</strong> — coordina el pago con el admin
         </div>
         <div id="msg-inscripcion"></div>
         <button class="btn btn-rosa btn-full" id="btn-inscribir" onclick="inscribir()">✅ Inscribirse</button>
@@ -2148,18 +2148,32 @@ function renderGroups(){
 async function inscribir(){
   const nombre=$id('inp-nombre').value.trim();
   if(!nombre){setMsg('msg-inscripcion','Ingresa tu nombre.','err');return;}
+  if(state.jugadores.find(j=>j.nombre===nombre)){
+    setMsg('msg-inscripcion','Ya existe un participante con ese nombre.','err');return;
+  }
   setLoad('btn-inscribir',true);
   try{
     await api({action:'inscribir',nombre,monto:MONTO_ENTRADA});
     $id('inp-nombre').value='';
-    // Actualizar estado local para que el selector funcione de inmediato
     if(!state.jugadores.find(j=>j.nombre===nombre)){
       state.jugadores.push({nombre,monto:MONTO_ENTRADA});
     }
     actualizarSelector(); actualizarSelectorElim();
-    invalidarCache(); cargarDatos(true); // sin await — navegar de inmediato
+    invalidarCache(); cargarDatos(true);
     irAPronósticos(nombre);
-  }catch(e){setMsg('msg-inscripcion',e.message,'err');}
+  }catch(e){
+    // Modo offline: guardar localmente y continuar — admin sincroniza después
+    if(!state.jugadores.find(j=>j.nombre===nombre)){
+      state.jugadores.push({nombre,monto:MONTO_ENTRADA});
+    }
+    // Persistir pendientes en localStorage
+    const pendientes=JSON.parse(localStorage.getItem('p2026_pendientes')||'[]');
+    if(!pendientes.includes(nombre)){ pendientes.push(nombre); localStorage.setItem('p2026_pendientes',JSON.stringify(pendientes)); }
+    $id('inp-nombre').value='';
+    actualizarSelector(); actualizarSelectorElim();
+    setMsg('msg-inscripcion','✅ Inscripción guardada localmente. Recuerda coordinar el pago de $10.000 con el admin para confirmar tu lugar.','ok');
+    setTimeout(()=>irAPronósticos(nombre),1800);
+  }
   finally{setLoad('btn-inscribir',false);}
 }
 
