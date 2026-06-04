@@ -1077,7 +1077,7 @@ select option { background:#fff; }
       </div>
       <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Última etapa: completa las llaves.<br>
-        <span style="font-size:12px;">Etapa 2 de 2 — elige quién gana en 16avos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
+        <span style="font-size:12px;">Etapa 2 de 2 — elige quién gana en 16avos, octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+10</strong>, cuartos <strong style="color:var(--verde);">+20</strong>, semis <strong style="color:var(--verde);">+30</strong>, finalistas <strong style="color:var(--dorado);">+40 c/u</strong>, campeón <strong style="color:var(--dorado);">+80</strong>
@@ -1234,7 +1234,7 @@ select option { background:#fff; }
       <div class="form-card">
         <div class="form-title">🏆 Fase Eliminatoria — Puntos</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <div class="score-row"><span>Equipo correcto en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
+          <div class="score-row"><span>Equipo correcto en Octavos (16 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
           <div class="score-row"><span>Equipo correcto en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
           <div class="score-row"><span>Equipo correcto en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
           <div class="score-row"><span>Finalista correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
@@ -2649,7 +2649,7 @@ function initCuadro(nombre){
   const resGrupos=state.resultados&&state.resultados.grupos||{};
   const resTerc=state.resultados&&state.resultados.terc||[];
   const grupos=Object.keys(resGrupos).length>=12?resGrupos:(pron.grupos||{});
-  const terceros=resTerc.length>=8?resTerc:[];
+  const terceros=resTerc.length>=8?resTerc:(pron.terceros||[]);
   let ti=0;
   cuadro.r32=CUADRO_R32_SLOTS.map(([a,b])=>{
     const ra=a==='3ro'?(terceros[ti++]||'3ro'):resolveSlot(a,grupos);
@@ -2918,6 +2918,12 @@ async function guardarElim(){
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
   const d=getCuadroData();
   pron.elim={oct:d.oct,qua:d.qua,sem:d.sem,fin:d.fin,f1:d.f1,f2:d.f2,campeon:d.campeon};
+  const tList=[];
+  CUADRO_R32_SLOTS.forEach(([a,b],i)=>{
+    if(a==='3ro') tList.push(cuadro.r32[i].a);
+    if(b==='3ro') tList.push(cuadro.r32[i].b);
+  });
+  if(tList.length) pron.terceros=tList;
   const st=estadoPron(jugador);
   const ahoraCompleto=st.gOk&&!!d.campeon;
   if(ahoraCompleto) pron.completo=true;
