@@ -844,7 +844,6 @@ select option { background:#fff; }
       <button id="nav-partidos"     class="nav-btn" onclick="showView('partidos',this)">📅 Partidos</button>
       <button id="nav-grupos"       class="nav-btn" onclick="showView('grupos',this)">🏟️ Grupos</button>
       <button id="nav-pronosticos"  class="nav-btn" onclick="showView('pronosticos',this)">🎯 Pronósticos</button>
-      <button id="nav-terceros"     class="nav-btn" onclick="showView('terceros',this)">3️⃣ Terceros</button>
       <button id="nav-eliminatorias" class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Llaves</button>
       <button id="nav-ranking"      class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
       <button id="nav-inscripcion"  class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
@@ -1024,8 +1023,7 @@ select option { background:#fff; }
       </div>
       <div class="wizard-steps">
         <div class="wizard-step active">1 · Grupos</div>
-        <div class="wizard-step">2 · Terceros</div>
-        <div class="wizard-step">3 · Llaves</div>
+        <div class="wizard-step">2 · Llaves</div>
       </div>
       <div id="pron-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         ✅ <strong style="color:var(--verde);">¡Inscripción exitosa!</strong> Ahora predice el orden final de cada grupo.<br>
@@ -1049,11 +1047,7 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">3️⃣ Terceros que Avanzan</div>
       </div>
-      <div class="wizard-steps">
-        <div class="wizard-step done">✓ 1 · Grupos</div>
-        <div class="wizard-step active">2 · Terceros</div>
-        <div class="wizard-step">3 · Llaves</div>
-      </div>
+      <div class="wizard-steps" style="display:none;"></div>
       <div style="background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Ahora elige cuáles 8 terceros avanzan.<br>
         <span style="font-size:12px;">Etapa 2 de 3 — selecciona 8 de los 12 terceros de grupo que crees que pasan a las llaves.</span>
@@ -1079,12 +1073,11 @@ select option { background:#fff; }
       </div>
       <div class="wizard-steps">
         <div class="wizard-step done">✓ 1 · Grupos</div>
-        <div class="wizard-step done">✓ 2 · Terceros</div>
-        <div class="wizard-step active">3 · Llaves</div>
+        <div class="wizard-step active">2 · Llaves</div>
       </div>
       <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        ✅ <strong style="color:var(--verde);">¡Terceros guardados!</strong> Última etapa: completa las llaves.<br>
-        <span style="font-size:12px;">Etapa 3 de 3 — elige quién gana en octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
+        ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Última etapa: completa las llaves.<br>
+        <span style="font-size:12px;">Etapa 2 de 2 — elige quién gana en 16avos, octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
       </div>
       <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
         Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+10</strong>, cuartos <strong style="color:var(--verde);">+20</strong>, semis <strong style="color:var(--verde);">+30</strong>, finalistas <strong style="color:var(--dorado);">+40 c/u</strong>, campeón <strong style="color:var(--dorado);">+80</strong>
@@ -1241,7 +1234,7 @@ select option { background:#fff; }
       <div class="form-card">
         <div class="form-title">🏆 Fase Eliminatoria — Puntos</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <div class="score-row"><span>Equipo correcto en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
+          <div class="score-row"><span>Equipo correcto en Octavos (16 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
           <div class="score-row"><span>Equipo correcto en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
           <div class="score-row"><span>Equipo correcto en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
           <div class="score-row"><span>Finalista correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
@@ -1335,6 +1328,8 @@ select option { background:#fff; }
       <div class="admin-card" style="border-color:rgba(245,188,0,0.2);">
         <div class="admin-title">✍️ Ingreso Manual de Resultados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Actualiza a medida que avanza el torneo.</p>
+        <label>8 Mejores Terceros (en orden de bracket, separados por coma)</label>
+        <input id="real-terc" type="text" placeholder="México, Japón, Marruecos, Polonia, Senegal, EEUU, Croacia, Camerún">
         <label>Equipos en 16avos (separados por coma)</label>
         <input id="real-oct" type="text" placeholder="Brasil, Argentina...">
         <label>Equipos en Cuartos</label>
@@ -1495,7 +1490,6 @@ select option { background:#fff; }
     <div class="more-sheet-handle"></div>
     <div class="more-sheet-grid">
       <button class="msb" onclick="closeMoreSheet();showView('grupos',null)"><span>🏟️</span>Grupos</button>
-      <button class="msb" onclick="closeMoreSheet();showView('terceros',null)"><span>3️⃣</span>3ros</button>
       <button class="msb" onclick="closeMoreSheet();showView('eliminatorias',null)"><span>🏆</span>Llaves</button>
       <button class="msb" onclick="closeMoreSheet();showView('inscripcion',null)"><span>📋</span>Inscripción</button>
       <button class="msb" onclick="closeMoreSheet();showView('calculos',null)"><span>🧮</span>Cálculo</button>
@@ -1817,11 +1811,8 @@ function renderHome(){
 function irAMisPronos(){
   const last=localStorage.getItem('p2026_last');
   if(!last) return;
-  const pron=state.pronosticos[last]||{};
   const st=estadoPron(last);
-  if(st.completo){showView('eliminatorias',null);}
-  else if(st.gOk&&st.tOk){showView('eliminatorias',null);}
-  else if(st.gOk){irATerceros(last);}
+  if(st.gOk){showView('eliminatorias',null);}
   else{showView('pronosticos',null);}
 }
 
@@ -1925,12 +1916,11 @@ function restoreLastPlayer(){
       <div style="width:28px;height:28px;border-radius:50%;background:var(--rosa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">${esc(last.charAt(0).toUpperCase())}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(last)}</div>
-        <div style="font-size:10px;color:var(--muted);">${pts} pts · ${st.completo?'✅ completo':st.gOk&&st.tOk?'paso 3/3':st.gOk?'paso 2/3':'paso 1/3'}</div>
+        <div style="font-size:10px;color:var(--muted);">${pts} pts · ${st.completo?'✅ completo':st.gOk?'paso 2/2':'paso 1/2'}</div>
       </div>
     </div>
     ${!st.completo?`<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;">
       <button class="btn btn-rosa" style="flex:1;font-size:11px;padding:6px;" data-pn="${esc(last)}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
-      <button class="btn" style="flex:1;font-size:11px;padding:6px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irATerceros(this.dataset.pn)">3️⃣ 3ros</button>
       <button class="btn" style="flex:1;font-size:11px;padding:6px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>
     </div>`:'<div style="font-size:11px;color:var(--verde);margin-top:8px;">🔒 Pronóstico completo</div>'}`;
 }
@@ -1956,9 +1946,7 @@ function renderInscJugadores(){
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <button class="rank-ver" data-pn="${en}" onclick="openPronModal(this.dataset.pn)" style="font-size:10px;padding:2px 6px;">👁 Ver</button>
         ${!cerrado&&!estadoPron(j.nombre).completo?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)" style="font-size:11px;">✏️ Grupos</button>
-        <button class="rank-edit" data-pn="${en}" onclick="irATerceros(this.dataset.pn)" style="font-size:11px;">3️⃣ 3ros</button>
         <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)" style="font-size:11px;">🏆 Llaves</button>`:''}
       </div>
     </div>`;
@@ -1982,7 +1970,7 @@ function renderLeaderboard(){
   const rk=['r1','r2','r3'];
   const mk=['🥇','🥈','🥉'];
   cont.innerHTML=scores.map((s,i)=>`
-    <div class="lb-item" style="cursor:pointer;" data-pn="${esc(s.nombre)}" onclick="openPronModal(this.dataset.pn)">
+    <div class="lb-item">
       <div class="lb-rank ${rk[i]||''}">${i<3?mk[i]:i+1}</div>
       <div class="lb-avatar">${esc(s.nombre.charAt(0).toUpperCase())}</div>
       <div class="lb-name">${esc(s.nombre)}${s.completo?'':' <span style="font-size:9px;color:rgba(255,188,0,0.85);" title="Pronósticos incompletos">⚠</span>'}</div>
@@ -2346,7 +2334,7 @@ async function guardarPronostico(){
     actualizarSelector(); actualizarSelectorElim(); actualizarSelectorTerc();
     invalidarCache(); cargarDatos(true);
     const banner=$id('pron-onboard-banner'); if(banner) banner.style.display='none';
-    irATerceros(jugador);
+    irAEliminatorias(jugador);
   }catch(e){setMsg('msg-pron',e.message,'err');}
   finally{setLoad('btn-save-pron',false);}
 }
@@ -2568,7 +2556,7 @@ function mostrarComprobante(nombre){
     </div>
   </div>`;
 
-  $id('comprobante-body').innerHTML=gruposHtml+tercerosHtml+bracketHtml;
+  $id('comprobante-body').innerHTML=gruposHtml+bracketHtml;
   $id('comprobante-modal').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -2657,8 +2645,11 @@ function resolveSlot(slot, grupos){
 
 function initCuadro(nombre){
   const pron=state.pronosticos[nombre]||{};
-  const grupos=pron.grupos||{};
-  const terceros=pron.terceros||[];
+  // Use real admin results if available, otherwise fall back to user predictions for group slots
+  const resGrupos=state.resultados&&state.resultados.grupos||{};
+  const resTerc=state.resultados&&state.resultados.terc||[];
+  const grupos=Object.keys(resGrupos).length>=12?resGrupos:(pron.grupos||{});
+  const terceros=resTerc.length>=8?resTerc:(pron.terceros||[]);
   let ti=0;
   cuadro.r32=CUADRO_R32_SLOTS.map(([a,b])=>{
     const ra=a==='3ro'?(terceros[ti++]||'3ro'):resolveSlot(a,grupos);
@@ -2910,9 +2901,9 @@ function cargarElim(){
     if(st.eOk){
       aviso.innerHTML='<div style="background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);border-radius:9px;padding:8px 13px;font-size:12px;color:var(--verde);margin-bottom:10px;">✅ Tienes llaves guardadas — puedes editarlas hasta el inicio del torneo.</div>';
     } else if(!st.gOk){
-      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Completa primero los grupos y los terceros para que el cuadro se llene automáticamente.</div>';
-    } else if(!st.tOk){
-      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Falta elegir los terceros. <button class="rank-edit" onclick="irATerceros(\''+jugador.replace(/'/g,"\\'")+'\')" style="font-size:11px;">Ir a Terceros →</button></div>';
+      aviso.innerHTML='<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⚠️ Completa primero los pronósticos de grupos para que el cuadro se active.</div>';
+    } else if(!state.resultados||!state.resultados.grupos||Object.keys(state.resultados.grupos).length<12){
+      aviso.innerHTML='<div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:9px;padding:8px 13px;font-size:12px;color:#b8860b;margin-bottom:10px;">⏳ El admin aún no ha cerrado la fase de grupos. El cuadro se completará con los clasificados reales una vez terminen los partidos.</div>';
     } else {
       aviso.innerHTML='';
     }
@@ -2927,8 +2918,14 @@ async function guardarElim(){
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
   const d=getCuadroData();
   pron.elim={oct:d.oct,qua:d.qua,sem:d.sem,fin:d.fin,f1:d.f1,f2:d.f2,campeon:d.campeon};
+  const tList=[];
+  CUADRO_R32_SLOTS.forEach(([a,b],i)=>{
+    if(a==='3ro') tList.push(cuadro.r32[i].a);
+    if(b==='3ro') tList.push(cuadro.r32[i].b);
+  });
+  if(tList.length) pron.terceros=tList;
   const st=estadoPron(jugador);
-  const ahoraCompleto=st.gOk&&st.tOk&&!!d.campeon;
+  const ahoraCompleto=st.gOk&&!!d.campeon;
   if(ahoraCompleto) pron.completo=true;
   setLoad('btn-save-elim',true);
   try{
@@ -2940,7 +2937,7 @@ async function guardarElim(){
       mostrarComprobante(jugador);
     } else {
       // guardado parcial
-      setMsg('msg-elim','✅ Llaves guardadas. Completa los terceros y elige el campeón para finalizar.','ok');
+      setMsg('msg-elim','✅ Llaves guardadas. Elige el campeón para completar tu pronóstico.','ok');
     }
   }catch(e){setMsg('msg-elim',e.message,'err');}
   finally{setLoad('btn-save-elim',false);}
@@ -2952,10 +2949,9 @@ async function guardarElim(){
 function estadoPron(nombre){
   const p=state.pronosticos[nombre]||{};
   const gOk=!!(p.grupos&&Object.keys(p.grupos).length>=12&&Object.values(p.grupos).every(g=>g.p1&&g.p2&&g.p3));
-  const tOk=!!(p.terceros&&p.terceros.length>=8&&p.terceros.every(t=>t&&!isSlotLabel(t)));
   const eOk=!!(p.elim&&p.elim.campeon);
   const completo=!!(p.completo);
-  return {gOk,tOk,eOk,completo};
+  return {gOk,tOk:true,eOk,completo};
 }
 
 function renderRanking(){
@@ -3001,13 +2997,10 @@ function renderRanking(){
                     <div class="rank-name">${en}</div>
                     <div class="rank-status">
                       <span class="rank-badge ${r.gOk?'ok':'pend'}">${r.gOk?'✓ Grupos':'✗ Grupos'}</span>
-                      <span class="rank-badge ${r.tOk?'ok':'pend'}">${r.tOk?'✓ 3ros':'✗ 3ros'}</span>
                       <span class="rank-badge ${r.eOk?'ok':'pend'}">${r.eOk?'✓ Llaves':'✗ Llaves'}</span>
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;">
-                      <button class="rank-ver" data-pn="${en}" onclick="openPronModal(this.dataset.pn)">👁 Ver</button>
                       ${!cerrado&&!r.completo?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
-                      <button class="rank-edit" data-pn="${en}" onclick="irATerceros(this.dataset.pn)">3️⃣ 3ros</button>
                       <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>`:''}
                     </div>
                   </div>
@@ -3259,6 +3252,7 @@ async function guardarResultadosGrupos(){
 function cargarCamposAdmin(){
   const r=state.resultados; if(!r)return;
   const toStr=v=>Array.isArray(v)?v.join(', '):(typeof v==='string'&&v.startsWith('['))?JSON.parse(v).join(', '):v||'';
+  if(r.terc) $id('real-terc').value=toStr(r.terc);
   if(r.oct) $id('real-oct').value=toStr(r.oct);
   if(r.qua) $id('real-qua').value=toStr(r.qua);
   if(r.sem) $id('real-sem').value=toStr(r.sem);
@@ -3269,6 +3263,7 @@ function cargarCamposAdmin(){
 
 async function guardarResultados(){
   const resultados={
+    terc:$id('real-terc').value.split(',').map(e=>e.trim()).filter(Boolean),
     oct:$id('real-oct').value.split(',').map(e=>e.trim()).filter(Boolean),
     qua:$id('real-qua').value.split(',').map(e=>e.trim()).filter(Boolean),
     sem:$id('real-sem').value.split(',').map(e=>e.trim()).filter(Boolean),
@@ -3358,6 +3353,7 @@ async function sincronizar(){
     if(r.error){logS('❌ '+r.error,'lerr');setAPIBadge(false,'Error');return;}
     if(r.resultados){
       const rd=r.resultados;
+      if(rd.terc) $id('real-terc').value=(rd.terc||[]).join(', ');
       $id('real-oct').value=(rd.oct||[]).join(', ');
       $id('real-qua').value=(rd.qua||[]).join(', ');
       $id('real-sem').value=(rd.sem||[]).join(', ');
