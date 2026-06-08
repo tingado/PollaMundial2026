@@ -10,8 +10,8 @@
 // 4. La URL /exec no cambia al editar el mismo deployment
 //
 // SCORING:
-//   Grupo 1°: +2pts | Grupo 2°: +1pt
-//   16avos: +2 | Cuartos: +4 | Semis: +6 | Subcampeón: +8 | Campeón: +10
+//   Grupo 1°: +2pts | Grupo 2°: +1pt | Marcador exacto: +2pts adicionales
+//   Octavos: +10 | Cuartos: +20 | Semis: +30 | Finalista: +40 | Campeón: +80
 // ═══════════════════════════════════════════════════════
 
 const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -91,13 +91,13 @@ function getResultados() {
   const data = sh.getDataRange().getValues();
   if (data.length <= 1) return {};
   const r = data[1];
-  let grupos = {};
-  let oct = [], qua = [], sem = [];
+  let grupos = {}, oct = [], qua = [], sem = [], terc = [];
   try { grupos = JSON.parse(r[0] || '{}'); } catch(e) {}
-  try { oct = JSON.parse(r[1] || '[]'); } catch(e) {}
-  try { qua = JSON.parse(r[2] || '[]'); } catch(e) {}
-  try { sem = JSON.parse(r[3] || '[]'); } catch(e) {}
-  return { grupos, oct, qua, sem, f1: r[4]||'', f2: r[5]||'', campeon: r[6]||'' };
+  try { oct   = JSON.parse(r[1] || '[]'); } catch(e) {}
+  try { qua   = JSON.parse(r[2] || '[]'); } catch(e) {}
+  try { sem   = JSON.parse(r[3] || '[]'); } catch(e) {}
+  try { terc  = JSON.parse(r[7] || '[]'); } catch(e) {}
+  return { grupos, oct, qua, sem, f1: r[4]||'', f2: r[5]||'', campeon: r[6]||'', terc };
 }
 
 function getScores() {
@@ -129,7 +129,7 @@ function inscribir(p) {
   if (sh.getDataRange().getValues().slice(1).some(r => r[0] === nombre)) {
     throw new Error('Ya existe un participante con ese nombre');
   }
-  sh.appendRow([nombre, Number(p.monto) || 5000, new Date()]);
+  sh.appendRow([nombre, Number(p.monto) || 10000, new Date()]);
   return { ok: true };
 }
 
@@ -158,26 +158,28 @@ function guardarResultados(p) {
   let res;
   try { res = JSON.parse(p.resultados || '{}'); } catch(e) { res = {}; }
   const sh = getSheet('Resultados');
-  // Init headers
+  // Init headers (col 8 = terc_json)
   if (sh.getLastRow() === 0) {
-    sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon']);
+    sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon', 'terc_json']);
   }
-  // Preserve existing grupos
-  let existingGrupos = '{}';
+  // Preserve existing grupos and terc
+  let existingGrupos = '{}', existingTerc = '[]';
   if (sh.getLastRow() > 1) {
     existingGrupos = sh.getRange(2, 1).getValue() || '{}';
+    existingTerc  = sh.getRange(2, 8).getValue() || '[]';
   }
   const row = [
     existingGrupos,
-    JSON.stringify(res.oct || []),
-    JSON.stringify(res.qua || []),
-    JSON.stringify(res.sem || []),
+    JSON.stringify(res.oct  || []),
+    JSON.stringify(res.qua  || []),
+    JSON.stringify(res.sem  || []),
     res.f1 || '',
     res.f2 || '',
-    res.campeon || ''
+    res.campeon || '',
+    JSON.stringify(res.terc || JSON.parse(existingTerc))
   ];
   if (sh.getLastRow() <= 1) sh.appendRow(row);
-  else sh.getRange(2, 1, 1, 7).setValues([row]);
+  else sh.getRange(2, 1, 1, 8).setValues([row]);
   return { ok: true };
 }
 
@@ -186,10 +188,10 @@ function guardarResultadosGrupos(p) {
   try { grupos = JSON.parse(p.grupos || '{}'); } catch(e) { grupos = {}; }
   const sh = getSheet('Resultados');
   if (sh.getLastRow() === 0) {
-    sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon']);
+    sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon', 'terc_json']);
   }
   if (sh.getLastRow() <= 1) {
-    sh.appendRow([JSON.stringify(grupos), '[]', '[]', '[]', '', '', '']);
+    sh.appendRow([JSON.stringify(grupos), '[]', '[]', '[]', '', '', '', '[]']);
   } else {
     sh.getRange(2, 1).setValue(JSON.stringify(grupos));
   }
