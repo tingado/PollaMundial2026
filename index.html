@@ -1507,6 +1507,7 @@ let SCRIPT_URL = localStorage.getItem('polla2026_url') || DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
+const FECHA_APERTURA_LLAVES = new Date('2026-06-27T00:00:00-04:00');
 const MONTO_ENTRADA = 10000;
 const APP_URL = 'https://tingado.github.io/PollaMundial2026';
 
@@ -1921,7 +1922,9 @@ function restoreLastPlayer(){
     ${!st.completo?`<div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;">
       <button class="btn btn-rosa" style="flex:1;font-size:11px;padding:6px;" data-pn="${esc(last)}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
       <button class="btn" style="flex:1;font-size:11px;padding:6px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>
-    </div>`:'<div style="font-size:11px;color:var(--verde);margin-top:8px;">🔒 Pronóstico completo</div>'}`;
+    </div>`:`<div style="display:flex;gap:5px;margin-top:8px;">
+      <button class="btn" style="flex:1;font-size:11px;padding:6px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(last)}" onclick="mostrarComprobante(this.dataset.pn)">📄 Ver comprobante</button>
+    </div>`}`;
 }
 
 function renderInscJugadores(){
@@ -2886,10 +2889,27 @@ function cargarElim(){
     cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong></div>';
     if(btn)btn.style.display='none'; return;
   }
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  const llavesAbiertas=new Date()>=FECHA_APERTURA_LLAVES;
+  if(!llavesAbiertas&&!esAdmin){
+    const diasRestantes=Math.ceil((FECHA_APERTURA_LLAVES-new Date())/(1000*60*60*24));
+    cont.innerHTML=`<div class="form-card" style="text-align:center;padding:2rem 1.5rem;border-color:rgba(233,30,140,0.25);">
+      <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+      <div style="font-weight:800;font-size:16px;color:var(--text);margin-bottom:8px;">Fase de Llaves bloqueada</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">
+        Las llaves se abren el <strong style="color:var(--rosa);">Viernes 27 de junio</strong> cuando termine la fase de grupos.<br>
+        <span style="font-size:12px;">Quedan aproximadamente <strong>${diasRestantes}</strong> día${diasRestantes!==1?'s':''}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);">Por ahora puedes seguir editando tus pronósticos de grupos ✏️</div>
+    </div>`;
+    if(btn)btn.style.display='none'; return;
+  }
   const st=estadoPron(jugador);
   const aviso=$id('elim-aviso');
   if(st.completo){
-    if(aviso) aviso.innerHTML='<div class="lock-banner">🔒 Tus pronósticos están completos y guardados. Ya no puedes modificarlos.</div>';
+    if(aviso) aviso.innerHTML=`<div class="lock-banner">🔒 Tus pronósticos están completos y guardados. Ya no puedes modificarlos.
+      <button class="btn" style="margin-top:8px;display:block;width:100%;font-size:12px;padding:7px;background:var(--card);border:1px solid var(--border);" data-pn="${esc(jugador)}" onclick="mostrarComprobante(this.dataset.pn)">📄 Ver / imprimir comprobante</button>
+    </div>`;
     initCuadro(jugador);
     renderCuadroReadonly();
     const btn=$id('btn-save-elim'); if(btn)btn.style.display='none';
@@ -3399,7 +3419,7 @@ if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
         <div class="comprobante-sub" id="comprobante-sub"></div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-        <button class="btn" style="font-size:12px;padding:8px 14px;" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-rosa" style="font-size:12px;padding:8px 14px;" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
         <button class="btn btn-wa" style="font-size:12px;padding:8px 14px;" onclick="compartirComprobante()">📲 WhatsApp</button>
         <button class="btn" style="font-size:12px;padding:8px 14px;background:var(--card);border:1px solid var(--border);" onclick="cerrarComprobante()">✕ Cerrar</button>
       </div>
