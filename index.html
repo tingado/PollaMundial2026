@@ -1692,6 +1692,31 @@ function leerCache(){ try{ const ts=+localStorage.getItem(CKT)||0,d=localStorage
 function guardarCache(d){ try{ localStorage.setItem(CK,JSON.stringify(d)); localStorage.setItem(CKT,String(Date.now())); }catch{} }
 function invalidarCache(){ localStorage.removeItem(CK); localStorage.removeItem(CKT); }
 
+// Guardado local de pronósticos cuando API falla
+function guardarPronLocal(nombre,pron){
+  try{
+    localStorage.setItem('p2026_pron_'+nombre, JSON.stringify(pron));
+    const pendientes=JSON.parse(localStorage.getItem('p2026_sync_pendientes')||'[]');
+    if(!pendientes.includes(nombre)){pendientes.push(nombre);localStorage.setItem('p2026_sync_pendientes',JSON.stringify(pendientes));}
+  }catch{}
+}
+async function sincronizarPendientes(){
+  if(!SCRIPT_URL) return;
+  const pendientes=JSON.parse(localStorage.getItem('p2026_sync_pendientes')||'[]');
+  if(!pendientes.length) return;
+  const restantes=[];
+  for(const nombre of pendientes){
+    const local=localStorage.getItem('p2026_pron_'+nombre);
+    if(!local){continue;}
+    try{
+      await api({action:'guardarPron',nombre,pronostico:JSON.parse(local)});
+      localStorage.removeItem('p2026_pron_'+nombre);
+    }catch{restantes.push(nombre);}
+  }
+  localStorage.setItem('p2026_sync_pendientes',JSON.stringify(restantes));
+  if(restantes.length<pendientes.length) invalidarCache();
+}
+
 // ══════════════════════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════════════════════
@@ -1870,6 +1895,7 @@ async function cargarDatos(forzar=false){
     if(c){ applyState(c); return; }
   }
   try{
+    await sincronizarPendientes();
     const d=await api({action:'getAll'});
     if(!d)return;
     guardarCache(d);
@@ -2337,7 +2363,15 @@ async function guardarPronostico(){
     invalidarCache(); cargarDatos(true);
     const banner=$id('pron-onboard-banner'); if(banner) banner.style.display='none';
     irAEliminatorias(jugador);
-  }catch(e){setMsg('msg-pron',e.message,'err');}
+  }catch(e){
+    // Fallback offline: guardar en localStorage y continuar
+    state.pronosticos[jugador]=pron;
+    guardarPronLocal(jugador,pron);
+    actualizarSelector(); actualizarSelectorElim(); actualizarSelectorTerc();
+    const banner=$id('pron-onboard-banner'); if(banner) banner.style.display='none';
+    setMsg('msg-pron','⚠️ Sin conexión al servidor — pronóstico guardado localmente. El admin lo sincronizará.','ok');
+    setTimeout(()=>irAEliminatorias(jugador),1800);
+  }
   finally{setLoad('btn-save-pron',false);}
 }
 
@@ -2958,7 +2992,17 @@ async function guardarElim(){
       // guardado parcial
       setMsg('msg-elim','✅ Llaves guardadas. Elige el campeón para completar tu pronóstico.','ok');
     }
-  }catch(e){setMsg('msg-elim',e.message,'err');}
+  }catch(e){
+    // Fallback offline: guardar en localStorage y continuar
+    state.pronosticos[jugador]=pron;
+    guardarPronLocal(jugador,pron);
+    const banner=$id('elim-onboard-banner'); if(banner) banner.style.display='none';
+    if(ahoraCompleto){
+      mostrarComprobante(jugador);
+    } else {
+      setMsg('msg-elim','⚠️ Sin conexión al servidor — llaves guardadas localmente. El admin lo sincronizará.','ok');
+    }
+  }
   finally{setLoad('btn-save-elim',false);}
 }
 
@@ -3325,8 +3369,8 @@ function renderAdminPlayers(){
         <div class="player-row-date">📅 ${esc(j.fecha||'')} · 💰 ${fmtCLP(j.monto||0)}</div>
         <div class="rank-status" style="margin-top:3px;">
           <span class="rank-badge ${st.gOk?'ok':'pend'}">${st.gOk?'✓ Grupos':'✗ Grupos'}</span>
-          <span class="rank-badge ${st.tOk?'ok':'pend'}">${st.tOk?'✓ 3ros':'✗ 3ros'}</span>
           <span class="rank-badge ${st.eOk?'ok':'pend'}">${st.eOk?'✓ Llaves':'✗ Llaves'}</span>
+          ${localStorage.getItem('p2026_pron_'+j.nombre)?'<span class="rank-badge pend">⚠ Local</span>':''}
         </div>
       </div>
       <button class="player-row-del" data-pn="${en}" onclick="eliminarJugador(this.dataset.pn)">🗑️</button>
