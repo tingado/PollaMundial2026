@@ -2187,7 +2187,7 @@ async function inscribir(){
     if(!pendientes.includes(nombre)){ pendientes.push(nombre); localStorage.setItem('p2026_pendientes',JSON.stringify(pendientes)); }
     $id('inp-nombre').value='';
     actualizarSelector(); actualizarSelectorElim();
-renderLeaderboard(); renderPozo(); renderRanking();
+    renderLeaderboard(); renderPozo(); renderRanking();
         setMsg('msg-inscripcion','✅ Inscripción guardada localmente. Recuerda coordinar el pago de $10.000 con el admin para confirmar tu lugar.','ok');
     setTimeout(()=>irAPronósticos(nombre),1800);
   }
