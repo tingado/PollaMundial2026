@@ -1701,7 +1701,7 @@ function guardarPronLocal(nombre,pron){
   }catch{}
 }
 async function sincronizarPendientes(){
-  if(!SCRIPT_URL) return;
+  if(!SCRIPT_URL){ $id('cache-status-sb').textContent='⚙️ Sin servidor'; return; }
   const pendientes=JSON.parse(localStorage.getItem('p2026_sync_pendientes')||'[]');
   if(!pendientes.length) return;
   const restantes=[];
@@ -1889,10 +1889,10 @@ function guardarURL(){
 }
 
 async function cargarDatos(forzar=false){
-  if(!SCRIPT_URL) return;
+  if(!SCRIPT_URL){ $id('cache-status-sb').textContent='⚙️ Sin servidor'; return; }
   if(!forzar){
     const c=leerCache();
-    if(c){ applyState(c); return; }
+    if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; return; }
   }
   try{
     await sincronizarPendientes();
@@ -2187,7 +2187,8 @@ async function inscribir(){
     if(!pendientes.includes(nombre)){ pendientes.push(nombre); localStorage.setItem('p2026_pendientes',JSON.stringify(pendientes)); }
     $id('inp-nombre').value='';
     actualizarSelector(); actualizarSelectorElim();
-    setMsg('msg-inscripcion','✅ Inscripción guardada localmente. Recuerda coordinar el pago de $10.000 con el admin para confirmar tu lugar.','ok');
+renderLeaderboard(); renderPozo(); renderRanking();
+        setMsg('msg-inscripcion','✅ Inscripción guardada localmente. Recuerda coordinar el pago de $10.000 con el admin para confirmar tu lugar.','ok');
     setTimeout(()=>irAPronósticos(nombre),1800);
   }
   finally{setLoad('btn-inscribir',false);}
