@@ -1907,7 +1907,7 @@ async function cargarDatos(forzar=false){
 }
 
 function applyState(d){
-  state.jugadores=d.jugadores||[];
+  state.jugadores=(d.jugadores||[]).map(j=>({...j,nombre:String(j.nombre)}))
   state.pronosticos=d.pronosticos||{};
   state.resultados=d.resultados||{};
   renderLeaderboard();
