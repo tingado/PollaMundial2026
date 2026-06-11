@@ -1377,17 +1377,18 @@ select option { background:#fff; }
           <span id="api-txt">Sin conectar</span>
         </div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;line-height:1.6;">
-          Usa <strong style="color:#60c8ff;">football-data.org</strong> — gratis, sin tarjeta.<br>
-          Regístrate en football-data.org para obtener tu token API.
+          Token de <strong style="color:#60c8ff;">football-data.org</strong> — ingresa tu token y presiona Sincronizar para cargar resultados automáticamente.<br>
+          <strong style="color:rgba(245,188,0,0.9);">⚠ También debes redesplegar el Apps Script con el código más reciente.</strong>
         </p>
-        <div style="display:flex;gap:8px;">
-          <input id="inp-token" type="password" placeholder="Tu token de football-data.org"
+        <div style="display:flex;gap:8px;margin-bottom:6px;">
+          <input id="inp-token" type="password" placeholder="Token football-data.org (se guarda en este browser)"
                  style="margin-bottom:0;flex:1;" oninput="onTokenChange()">
           <button class="btn btn-ghost" id="btn-sync" onclick="sincronizar()" disabled
                   style="border-color:rgba(96,200,255,0.3);color:#60c8ff;white-space:nowrap;">
             🔄 Sincronizar
           </button>
         </div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:0.5rem;">Si prefieres ingresar resultados manualmente, usa el panel <strong>⚽ Marcadores</strong> de abajo.</p>
         <div class="sync-log" id="sync-log"></div>
       </div>
 
@@ -3256,9 +3257,12 @@ function renderRanking(){
       }).join('')}
     </div>`:'';
 
+  const nPartidos=Object.keys(state.scores||{}).length;
   const noBanner=!hayResultados?`<div style="background:rgba(96,200,255,0.07);border:1px solid rgba(96,200,255,0.2);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#60c8ff;">
-    ⏳ <strong>Esperando resultados reales</strong> — los puntos se actualizarán en tiempo real a medida que el admin ingrese los marcadores de cada partido.
-  </div>`:'';
+    ⏳ <strong>Esperando resultados</strong> — el admin aún no ha ingresado marcadores. Ve a Admin → ⚽ Marcadores para cargarlos.
+  </div>`:`<div style="background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.2);border-radius:10px;padding:8px 14px;margin-bottom:1rem;font-size:11px;color:var(--muted);">
+    ⚽ <strong>${nPartidos}</strong> partido${nPartidos!==1?'s':''} con resultado · Columna <strong>Grupos</strong>: 1pt por equipo ganador en tu top-2 predicho · Bonus al final de grupos: +3 por 1° exacto, +2 por 2° exacto
+  </div>`;
 
   cont.innerHTML=`
     ${noBanner}
@@ -3500,16 +3504,37 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePronModal(); 
 // PUNTAJE
 // ══════════════════════════════════════════════════════════
 function calcPtsGrupos(pron, res){
-  if(!pron||!res) return 0;
+  if(!pron) return 0;
   const pg = pron.grupos || {};
-  const rg = res.grupos || {};
+  const rg = (res && res.grupos) || {};
+  const scores = state.scores || {};
   let pts = 0;
+
+  // LIVE: 1pt por cada partido de grupos donde el ganador estaba en tu top-2 predicho
+  // 0.5pt si empate y tenías al menos uno de los equipos en top-2
+  PARTIDOS.forEach(p => {
+    if(!p.grupo || p.grupo.length !== 1) return; // solo fase de grupos (A-L)
+    const sc = scores[p.local+'|'+p.visita] || scores[p.id];
+    if(!sc || sc.gL == null || sc.gV == null) return; // sin resultado aún
+    const gg = pg[p.grupo] || {};
+    const top2 = [gg.p1, gg.p2].filter(Boolean);
+    if(!top2.length) return;
+    if(sc.gL > sc.gV){        if(top2.includes(p.local))   pts += 1; }
+    else if(sc.gV > sc.gL){   if(top2.includes(p.visita))  pts += 1; }
+    else { // empate
+      let h = (top2.includes(p.local)?1:0) + (top2.includes(p.visita)?1:0);
+      pts += h * 0.5;
+    }
+  });
+
+  // BONUS al final de grupos: acierto exacto 1° (+3) y 2° (+2)
   Object.keys(GRUPOS).forEach(g => {
     const pp = pg[g] || {};
     const rr = rg[g] || {};
-    if(pp.p1 && rr.p1 && pp.p1 === rr.p1) pts += 2;
-    if(pp.p2 && rr.p2 && pp.p2 === rr.p2) pts += 1;
+    if(pp.p1 && rr.p1 && pp.p1 === rr.p1) pts += 3;
+    if(pp.p2 && rr.p2 && pp.p2 === rr.p2) pts += 2;
   });
+
   return pts;
 }
 
