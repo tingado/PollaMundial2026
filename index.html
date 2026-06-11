@@ -1979,6 +1979,19 @@ function guardarURL(){
   cargarDatos(true);
 }
 
+function _mostrarBannerConexion(show){
+  let b=$id('banner-sin-conexion');
+  if(!b){
+    b=document.createElement('div');
+    b.id='banner-sin-conexion';
+    b.style.cssText='background:rgba(255,61,90,0.08);border:1px solid rgba(255,61,90,0.3);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--rojo);display:flex;align-items:center;gap:10px;';
+    b.innerHTML='⚠️ <strong>Sin conexión al servidor</strong> — los participantes no se cargaron. <button onclick="cargarDatos(true)" style="margin-left:auto;padding:5px 12px;background:var(--rojo);color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;">🔄 Recargar</button>';
+    const main=document.querySelector('.main');
+    if(main) main.insertBefore(b, main.querySelector('.countdown-bar')?.nextSibling||main.firstChild);
+  }
+  b.style.display=show?'flex':'none';
+}
+
 async function cargarDatos(forzar=false){
   if(!SCRIPT_URL){
     // Sin API: restaurar jugadores y pronósticos desde localStorage
@@ -1987,29 +2000,42 @@ async function cargarDatos(forzar=false){
   }
   if(!forzar){
     const c=leerCache();
-    if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; return; }
+    if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; _mostrarBannerConexion(false); return; }
   }
-  try{
+  $id('cache-status-sb').textContent='⏳ Cargando...';
+  const _intentar=async()=>{
     await sincronizarPendientes();
     const d=await api({action:'getAll'});
-    if(!d)return;
-    // Fusionar jugadores locales pendientes que el servidor aún no tiene
+    if(!d) throw new Error('Sin respuesta');
     const localExtra=_jugadoresLocalesPendientes(d.jugadores||[]);
     if(localExtra.length) d.jugadores=[...(d.jugadores||[]),...localExtra];
     guardarCache(d);
     applyState(d);
     $id('cache-status-sb').textContent='✓ Actualizado';
+    _mostrarBannerConexion(false);
+  };
+  try{
+    await _intentar();
   }catch(e){
-    // Sin conexión: mostrar lo que haya en caché + jugadores locales
-    const c=leerCache();
-    if(c){
-      const localExtra=_jugadoresLocalesPendientes(c.jugadores||[]);
-      if(localExtra.length) c.jugadores=[...(c.jugadores||[]),...localExtra];
-      applyState(c);
-    } else {
-      _aplicarEstadoLocal();
+    // Reintentar una vez tras 2.5 s
+    await new Promise(r=>setTimeout(r,2500));
+    try{
+      await _intentar();
+    }catch(e2){
+      // Sin conexión definitivo: mostrar lo que haya en caché + jugadores locales
+      const c=leerCache();
+      if(c){
+        const localExtra=_jugadoresLocalesPendientes(c.jugadores||[]);
+        if(localExtra.length) c.jugadores=[...(c.jugadores||[]),...localExtra];
+        applyState(c);
+        $id('cache-status-sb').textContent='📦 Caché (sin conexión)';
+        _mostrarBannerConexion(false); // hay caché, no mostrar error
+      } else {
+        _aplicarEstadoLocal();
+        $id('cache-status-sb').textContent='⚠ Sin conexión';
+        _mostrarBannerConexion(true); // sin datos locales, mostrar botón recargar
+      }
     }
-    $id('cache-status-sb').textContent='⚠ Sin conexión';
   }
 }
 
