@@ -1502,7 +1502,7 @@ select option { background:#fff; }
 // ══════════════════════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════════════════════
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz7nEAOOnzNj1JvU9SOHgaveW7NDGBN4KegtE9uJ3gHyIOD3KMJ9FB3esflX-qOvZfO/exec';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNJC6JnhFUqxnItsSZQVxTS4CQ_3KwfvdCFuqx3b3s9gR7K4N8MtkC4NuBitX7YNnn/exec';
 let SCRIPT_URL = localStorage.getItem('polla2026_url') || DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
@@ -1896,7 +1896,7 @@ async function cargarDatos(forzar=false){
   }
   if(!forzar){
     const c=leerCache();
-    if(c){ applyState(c); return; }
+    if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; return; }
   }
   try{
     await sincronizarPendientes();
@@ -1939,7 +1939,7 @@ function _aplicarEstadoLocal(){
 }
 
 function applyState(d){
-  state.jugadores=d.jugadores||[];
+  state.jugadores=(d.jugadores||[]).map(j=>({...j,nombre:String(j.nombre)}))
   state.pronosticos=d.pronosticos||{};
   state.resultados=d.resultados||{};
   renderLeaderboard();
@@ -2220,7 +2220,8 @@ async function inscribir(){
     if(!pendientes.includes(nombre)){ pendientes.push(nombre); localStorage.setItem('p2026_pendientes',JSON.stringify(pendientes)); }
     $id('inp-nombre').value='';
     actualizarSelector(); actualizarSelectorElim();
-    setMsg('msg-inscripcion','✅ Inscripción guardada localmente. Recuerda coordinar el pago de $10.000 con el admin para confirmar tu lugar.','ok');
+    renderLeaderboard(); renderPozo(); renderRanking();
+        setMsg('msg-inscripcion','✅ Inscripción guardada localmente. Recuerda coordinar el pago de $10.000 con el admin para confirmar tu lugar.','ok');
     setTimeout(()=>irAPronósticos(nombre),1800);
   }
   finally{setLoad('btn-inscribir',false);}
