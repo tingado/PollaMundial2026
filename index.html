@@ -1889,7 +1889,11 @@ function guardarURL(){
 }
 
 async function cargarDatos(forzar=false){
-  if(!SCRIPT_URL) return;
+  if(!SCRIPT_URL){
+    // Sin API: restaurar jugadores y pronósticos desde localStorage
+    _aplicarEstadoLocal();
+    return;
+  }
   if(!forzar){
     const c=leerCache();
     if(c){ applyState(c); return; }
@@ -1898,12 +1902,40 @@ async function cargarDatos(forzar=false){
     await sincronizarPendientes();
     const d=await api({action:'getAll'});
     if(!d)return;
+    // Fusionar jugadores locales pendientes que el servidor aún no tiene
+    const localExtra=_jugadoresLocalesPendientes(d.jugadores||[]);
+    if(localExtra.length) d.jugadores=[...(d.jugadores||[]),...localExtra];
     guardarCache(d);
     applyState(d);
     $id('cache-status-sb').textContent='✓ Actualizado';
   }catch(e){
+    // Sin conexión: mostrar lo que haya en caché + jugadores locales
+    const c=leerCache();
+    if(c){
+      const localExtra=_jugadoresLocalesPendientes(c.jugadores||[]);
+      if(localExtra.length) c.jugadores=[...(c.jugadores||[]),...localExtra];
+      applyState(c);
+    } else {
+      _aplicarEstadoLocal();
+    }
     $id('cache-status-sb').textContent='⚠ Sin conexión';
   }
+}
+
+function _jugadoresLocalesPendientes(serverJugadores){
+  const serverNames=new Set(serverJugadores.map(j=>j.nombre));
+  const local=JSON.parse(localStorage.getItem('p2026_jugadores_local')||'[]');
+  return local.filter(j=>!serverNames.has(j.nombre));
+}
+
+function _aplicarEstadoLocal(){
+  const local=JSON.parse(localStorage.getItem('p2026_jugadores_local')||'[]');
+  const prons={};
+  local.forEach(j=>{
+    const p=localStorage.getItem('p2026_pron_'+j.nombre);
+    if(p) try{prons[j.nombre]=JSON.parse(p);}catch{}
+  });
+  applyState({jugadores:local,pronosticos:prons,resultados:{}});
 }
 
 function applyState(d){
@@ -2182,7 +2214,8 @@ async function inscribir(){
     if(!state.jugadores.find(j=>j.nombre===nombre)){
       state.jugadores.push({nombre,monto:MONTO_ENTRADA});
     }
-    // Persistir pendientes en localStorage
+    // Persistir lista de jugadores y pendientes en localStorage
+    localStorage.setItem('p2026_jugadores_local', JSON.stringify(state.jugadores));
     const pendientes=JSON.parse(localStorage.getItem('p2026_pendientes')||'[]');
     if(!pendientes.includes(nombre)){ pendientes.push(nombre); localStorage.setItem('p2026_pendientes',JSON.stringify(pendientes)); }
     $id('inp-nombre').value='';
