@@ -3536,8 +3536,8 @@ function calcPtsGrupos(pron, res){
   Object.keys(GRUPOS).forEach(g => {
     const pp = pg[g] || {};
     const rr = rg[g] || {};
-    if(pp.p1 && rr.p1 && pp.p1 === rr.p1) pts += 2;
-    if(pp.p2 && rr.p2 && pp.p2 === rr.p2) pts += 1;
+    if(pp.p1 && rr.p1 && pp.p1 === rr.p1) pts += 3;
+    if(pp.p2 && rr.p2 && pp.p2 === rr.p2) pts += 2;
   });
 
   return pts;
