@@ -1390,6 +1390,27 @@ select option { background:#fff; }
         </div>
         <p style="font-size:11px;color:var(--muted);margin-bottom:0.5rem;">Si prefieres ingresar resultados manualmente, usa el panel <strong>⚽ Marcadores</strong> de abajo.</p>
         <div class="sync-log" id="sync-log"></div>
+
+        <!-- AUTO-SYNC -->
+        <div style="margin-top:12px;padding:10px 12px;background:rgba(96,200,255,0.05);border:1px solid rgba(96,200,255,0.2);border-radius:10px;">
+          <div style="font-size:12px;font-weight:700;color:#60c8ff;margin-bottom:8px;">⚡ Auto-Sync — sincronización automática cada 10 min</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6;">
+            Guarda el token en el servidor y activa el trigger. El Apps Script llamará a football-data.org automáticamente sin que hagas nada.
+          </div>
+          <div id="autosync-status" style="font-size:11px;color:var(--muted);margin-bottom:8px;">● Estado: cargando...</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn" onclick="guardarTokenServidor()" style="font-size:11px;padding:5px 12px;background:rgba(96,200,255,0.12);border:1px solid rgba(96,200,255,0.3);color:#60c8ff;font-weight:700;">
+              💾 Guardar token en servidor
+            </button>
+            <button class="btn" id="btn-activar-sync" onclick="activarAutoSync()" style="font-size:11px;padding:5px 12px;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);color:var(--verde);font-weight:700;">
+              ▶ Activar Auto-Sync
+            </button>
+            <button class="btn" onclick="desactivarAutoSync()" style="font-size:11px;padding:5px 12px;background:rgba(255,61,90,0.08);border:1px solid rgba(255,61,90,0.2);color:var(--rojo);font-weight:700;">
+              ⏹ Desactivar
+            </button>
+          </div>
+          <div id="msg-autosync" style="font-size:11px;margin-top:6px;"></div>
+        </div>
       </div>
 
       <!-- RESULTADOS DE GRUPOS -->
@@ -1967,7 +1988,7 @@ function showView(v, el){
   cargarDatos();
   if(v==='proyecciones') renderProyecciones();
   if(v==='inscripcion') cargarInscripcion();
-  if(v==='admin') renderAdminScores();
+  if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); }
   if(v==='partidos') actualizarBarraAdmin();
 }
 
@@ -3847,8 +3868,50 @@ async function eliminarJugador(nombre){
 }
 
 // ══════════════════════════════════════════════════════════
-// API FOOTBALL-DATA.ORG
+// API FOOTBALL-DATA.ORG + AUTO-SYNC
 // ══════════════════════════════════════════════════════════
+
+async function cargarAutoSyncStatus(){
+  const el=$id('autosync-status'); if(!el) return;
+  try{
+    const r=await api({action:'getAutoSyncStatus'});
+    const on=r.active;
+    el.innerHTML=`<span style="color:${on?'var(--verde)':'var(--muted)'};">● Estado: ${on?'<strong>ACTIVO</strong> — sincroniza cada 10 min':'Inactivo'}</span>${r.hasToken?' · Token guardado ✓':' · <span style="color:var(--rojo);">Sin token</span>'}`;
+  }catch(e){ el.textContent='● Estado: sin conexión al servidor'; }
+}
+
+async function guardarTokenServidor(){
+  const token=$id('inp-token').value.trim();
+  if(!token){ setMsg('msg-autosync','Ingresa el token primero en el campo de arriba.','err'); return; }
+  try{
+    const r=await api({action:'guardarToken',apiToken:token});
+    if(r.error){ setMsg('msg-autosync',r.error,'err'); return; }
+    setMsg('msg-autosync','✅ '+r.msg,'ok');
+    cargarAutoSyncStatus();
+  }catch(e){ setMsg('msg-autosync','Error: '+e.message,'err'); }
+}
+
+async function activarAutoSync(){
+  const token=$id('inp-token').value.trim();
+  const params={action:'activarAutoSync'};
+  if(token) params.apiToken=token;
+  try{
+    setMsg('msg-autosync','Activando...','ok');
+    const r=await api(params);
+    if(r.error){ setMsg('msg-autosync',r.error,'err'); return; }
+    setMsg('msg-autosync','✅ '+r.msg,'ok');
+    cargarAutoSyncStatus();
+  }catch(e){ setMsg('msg-autosync','Error: '+e.message,'err'); }
+}
+
+async function desactivarAutoSync(){
+  try{
+    const r=await api({action:'desactivarAutoSync'});
+    setMsg('msg-autosync',r.ok?'⏹ '+r.msg:r.error,'ok');
+    cargarAutoSyncStatus();
+  }catch(e){ setMsg('msg-autosync','Error: '+e.message,'err'); }
+}
+
 function onTokenChange(){
   const t=$id('inp-token').value.trim();
   $id('btn-sync').disabled=!t;

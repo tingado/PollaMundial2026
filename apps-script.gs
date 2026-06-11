@@ -29,6 +29,10 @@ function doGet(e) {
       case 'guardarResultadosGrupos': result = guardarResultadosGrupos(p); break;
       case 'guardarScores':           result = guardarScores(p); break;
       case 'fetchResultadosAPI':      result = fetchResultadosAPI(p); break;
+      case 'guardarToken':            result = guardarToken(p); break;
+      case 'activarAutoSync':         result = activarAutoSync(p); break;
+      case 'desactivarAutoSync':      result = desactivarAutoSync(); break;
+      case 'getAutoSyncStatus':       result = getAutoSyncStatus(); break;
       case 'eliminarJugador':         result = eliminarJugador(p); break;
       case 'resetear':                result = resetear(); break;
       default: result = {error: 'Acción desconocida: ' + p.action};
@@ -267,8 +271,8 @@ function calcularScores(jugadores, pronosticos, resultados) {
 // ── FOOTBALL-DATA.ORG API ────────────────────────────────
 
 function fetchResultadosAPI(p) {
-  const token = p.apiToken || '';
-  if (!token) return { error: 'Token requerido' };
+  const token = (p && p.apiToken) || PropertiesService.getScriptProperties().getProperty('API_TOKEN') || '';
+  if (!token) return { error: 'Token no configurado. Usa Admin → Guardar Token primero.' };
 
   // Team name mapping: API English → App Spanish
   const NAME_MAP = {
@@ -400,4 +404,71 @@ function resetear() {
     if (sh) sh.clearContents();
   });
   return { ok: true };
+}
+
+// ── AUTO-SYNC (trigger automático cada 10 min) ─────────────
+
+// Guarda el token en Script Properties (no queda en código público)
+function guardarToken(p) {
+  const token = (p.apiToken || '').trim();
+  if (!token) return { error: 'Token vacío' };
+  PropertiesService.getScriptProperties().setProperty('API_TOKEN', token);
+  return { ok: true, msg: 'Token guardado en el servidor. Ahora puedes activar el Auto-Sync.' };
+}
+
+// Activa un trigger que llama a autoSyncResultados cada 10 minutos
+function activarAutoSync(p) {
+  // Si se pasa un token nuevo, guardarlo también
+  if (p && p.apiToken) {
+    PropertiesService.getScriptProperties().setProperty('API_TOKEN', p.apiToken.trim());
+  }
+  // Verificar que hay token
+  const token = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+  if (!token) return { error: 'Primero guarda el token con guardarToken.' };
+
+  // Eliminar triggers anteriores del mismo tipo para evitar duplicados
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'autoSyncResultados') ScriptApp.deleteTrigger(t);
+  });
+
+  // Crear nuevo trigger cada 10 minutos
+  ScriptApp.newTrigger('autoSyncResultados')
+    .timeBased()
+    .everyMinutes(10)
+    .create();
+
+  return { ok: true, msg: 'Auto-Sync activado: resultados se sincronizan cada 10 minutos automáticamente.' };
+}
+
+// Desactiva todos los triggers de auto-sync
+function desactivarAutoSync() {
+  let count = 0;
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'autoSyncResultados') {
+      ScriptApp.deleteTrigger(t);
+      count++;
+    }
+  });
+  return { ok: true, msg: count > 0 ? 'Auto-Sync desactivado.' : 'No había Auto-Sync activo.' };
+}
+
+// Informa si el trigger está activo
+function getAutoSyncStatus() {
+  const active = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'autoSyncResultados');
+  const hasToken = !!PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+  return { active, hasToken };
+}
+
+// Esta función es llamada por el trigger automático
+function autoSyncResultados() {
+  try {
+    const result = fetchResultadosAPI({});
+    // Log en hoja auxiliar para diagnóstico
+    const logSh = getSheet('AutoSyncLog');
+    if (logSh.getLastRow() > 500) logSh.deleteRows(2, 100); // evitar crecer indefinidamente
+    logSh.appendRow([new Date(), result.matches || 0, result.error || 'ok']);
+  } catch(e) {
+    const logSh = getSheet('AutoSyncLog');
+    logSh.appendRow([new Date(), 0, 'ERROR: ' + e.message]);
+  }
 }
