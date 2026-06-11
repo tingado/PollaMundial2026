@@ -639,8 +639,9 @@ select option { background:#fff; }
 
 /* MSG */
 .msg { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:10px; }
-.msg-ok  { background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; }
-.msg-err { background:#fef2f2; border:1px solid #fecaca; color:#dc2626; }
+.msg-ok   { background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; }
+.msg-err  { background:#fef2f2; border:1px solid #fecaca; color:#dc2626; }
+.msg-warn { background:#fffbeb; border:1px solid #fde68a; color:#92400e; }
 
 /* SPINNER */
 .spinner { display:inline-block; width:15px; height:15px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
@@ -2027,11 +2028,27 @@ function _aplicarEstadoLocal(){
   applyState({jugadores:local,pronosticos:prons,resultados:{}});
 }
 
+function _guardarScoresLocal(){
+  try{ localStorage.setItem('p2026_scores', JSON.stringify(state.scores||{})); }catch(e){}
+}
+
+function _cargarScoresLocal(){
+  try{
+    const raw=localStorage.getItem('p2026_scores');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return null;
+}
+
 function applyState(d){
   state.jugadores=(d.jugadores||[]).map(j=>({...j,nombre:String(j.nombre)}))
   state.pronosticos=d.pronosticos||{};
   state.resultados=d.resultados||{};
-  state.scores=d.scores||state.scores||{};
+  // Scores: fusionar servidor + local (el servidor tiene prioridad, pero si no trae scores usar local)
+  const serverScores=d.scores&&Object.keys(d.scores).length>0?d.scores:null;
+  const localScores=_cargarScoresLocal();
+  state.scores=serverScores||localScores||state.scores||{};
+  if(serverScores) _guardarScoresLocal();
   renderLeaderboard();
   renderPozo();
   renderHome();
@@ -3691,17 +3708,25 @@ async function guardarMarcadores(){
     }
   });
   if(!scores.length){ setMsg('msg-admin-scores','Sin marcadores para guardar.','err'); return; }
+
+  // Actualización local inmediata — funciona aunque el API falle
+  if(!state.scores) state.scores={};
+  scores.forEach(s=>{ state.scores[s.key]={gL:s.gL,gV:s.gV}; });
+  _guardarScoresLocal();
+  renderAdminScores();
+  renderRanking();
+  renderGroups();
+  invalidarCache();
+  setMsg('msg-admin-scores',`✅ ${scores.length} marcador(es) guardados localmente. Sincronizando...`,'ok');
+
+  // Intentar guardar en el servidor en segundo plano
   try{
     await api({action:'guardarScores', scores: JSON.stringify(scores)});
-    // Update local state.scores immediately
-    if(!state.scores) state.scores={};
-    scores.forEach(s=>{ state.scores[s.key]={gL:s.gL,gV:s.gV}; });
-    renderAdminScores();
-    renderRanking();
-    invalidarCache();
-    setMsg('msg-admin-scores',`✅ ${scores.length} marcador(es) guardados. Ranking actualizado.`,'ok');
-    setTimeout(()=>clearMsg('msg-admin-scores'),5000);
-  }catch(e){ setMsg('msg-admin-scores',e.message,'err'); }
+    setMsg('msg-admin-scores',`✅ ${scores.length} marcador(es) guardados y sincronizados.`,'ok');
+  }catch(e){
+    setMsg('msg-admin-scores',`⚠ Guardado local OK — sin conexión al servidor (${e.message})`,'warn');
+  }
+  setTimeout(()=>clearMsg('msg-admin-scores'),6000);
 }
 
 async function resetear(){
