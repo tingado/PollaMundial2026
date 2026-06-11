@@ -802,6 +802,28 @@ select option { background:#fff; }
   padding:7px 11px; background:#f9fafb; border-radius:7px;
 }
 
+/* ══ PREDICCIONES POR PARTIDO ══ */
+.proy-group-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem; }
+.proy-tab { padding:5px 13px; border-radius:20px; border:1px solid var(--border); background:var(--card); font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s; color:var(--text); }
+.proy-tab:hover { background:var(--card-hover); }
+.proy-tab.active { background:var(--rosa); color:#fff; border-color:var(--rosa); }
+.proy-match-card { background:var(--card); border-radius:12px; border:1px solid var(--border); margin-bottom:10px; overflow:hidden; }
+.proy-match-header { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:rgba(220,38,38,0.04); border-bottom:1px solid var(--border); flex-wrap:wrap; gap:4px; }
+.proy-match-teams { font-weight:700; font-size:14px; }
+.proy-match-info { font-size:11px; color:var(--muted); }
+.proy-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; padding:12px; }
+.proy-pred { background:#f9fafb; border-radius:8px; padding:8px 10px; text-align:center; border:1px solid var(--border); }
+.proy-pred-name { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.proy-pred-score { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; color:var(--text); line-height:1; }
+.proy-pred-score.no-pred { font-size:11px; font-family:'Outfit',sans-serif; color:var(--muted); font-style:italic; }
+.proy-pred.result-win { border-color:rgba(22,163,74,0.4); background:rgba(22,163,74,0.06); }
+.proy-pred.result-ok { border-color:rgba(22,163,74,0.7); background:rgba(22,163,74,0.12); }
+.proy-pred.result-wrong { border-color:rgba(220,38,38,0.25); background:rgba(220,38,38,0.04); }
+/* ══ INSCRIPCION CERRADA ══ */
+.insc-closed-banner { background:rgba(220,38,38,0.06); border:1px solid rgba(220,38,38,0.2); border-radius:12px; padding:1.25rem 1.5rem; margin-bottom:1rem; text-align:center; }
+.insc-closed-banner h3 { color:var(--rosa); font-size:1.1rem; margin-bottom:6px; }
+.insc-closed-banner p { font-size:13px; color:var(--muted); }
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .sidebar { display:none; }
@@ -846,6 +868,7 @@ select option { background:#fff; }
       <button id="nav-pronosticos"  class="nav-btn" onclick="showView('pronosticos',this)">🎯 Pronósticos</button>
       <button id="nav-eliminatorias" class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Llaves</button>
       <button id="nav-ranking"      class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
+      <button id="nav-proyecciones" class="nav-btn" onclick="showView('proyecciones',this)">👁️ Predicciones</button>
       <button id="nav-inscripcion"  class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
       <button id="nav-calculos"     class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
       <button id="nav-bases"        class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
@@ -1106,6 +1129,18 @@ select option { background:#fff; }
       </div>
     </div>
 
+    <!-- ══ VIEW: PREDICCIONES ══ -->
+    <div id="view-proyecciones" class="view">
+      <div class="view-header">
+        <div class="view-title">👁️ Predicciones por Partido</div>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Mira lo que pronosticó cada participante en cada partido. Filtra por grupo.</div>
+      <div class="proy-group-tabs" id="proy-tabs"></div>
+      <div id="proy-container">
+        <div style="color:var(--muted);text-align:center;padding:2rem;">Cargando predicciones...</div>
+      </div>
+    </div>
+
     <!-- ══ VIEW: INSCRIPCIÓN ══ -->
     <div id="view-inscripcion" class="view">
       <div class="view-header">
@@ -1130,7 +1165,13 @@ select option { background:#fff; }
         </div>
       </div>
 
-      <div class="form-card">
+      <div id="insc-closed-wrap" style="display:none;" class="insc-closed-banner">
+        <h3>⛔ Inscripciones Cerradas</h3>
+        <p>El plazo de inscripción terminó el 11 de junio. Si eres administrador, puedes agregar participantes con el PIN de admin.</p>
+        <button class="btn btn-rosa" style="margin-top:10px;font-size:13px;" onclick="desbloquearInscripcionAdmin()">🔐 Acceso Admin</button>
+      </div>
+
+      <div id="insc-form-wrap" class="form-card">
         <div class="form-title">➕ Nuevo Participante</div>
         <label>Tu nombre completo</label>
         <input id="inp-nombre" type="text" placeholder="Ej: Juan Pérez" autocomplete="name">
@@ -1490,6 +1531,7 @@ select option { background:#fff; }
     <div class="more-sheet-grid">
       <button class="msb" onclick="closeMoreSheet();showView('grupos',null)"><span>🏟️</span>Grupos</button>
       <button class="msb" onclick="closeMoreSheet();showView('eliminatorias',null)"><span>🏆</span>Llaves</button>
+      <button class="msb" onclick="closeMoreSheet();showView('proyecciones',null)"><span>👁️</span>Predicciones</button>
       <button class="msb" onclick="closeMoreSheet();showView('inscripcion',null)"><span>📋</span>Inscripción</button>
       <button class="msb" onclick="closeMoreSheet();showView('calculos',null)"><span>🧮</span>Cálculo</button>
       <button class="msb" onclick="closeMoreSheet();showView('bases',null)"><span>📜</span>Bases</button>
@@ -1859,6 +1901,8 @@ function showView(v, el){
   if(el) el.classList.add('active');
   document.querySelectorAll('[onclick*="showView(\''+v+'\'"]').forEach(x=>x.classList.add('active'));
   cargarDatos();
+  if(v==='proyecciones') renderProyecciones();
+  if(v==='inscripcion') cargarInscripcion();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1957,6 +2001,8 @@ function applyState(d){
   renderRanking();
   renderInscJugadores();
   restoreLastPlayer();
+  if($id('view-proyecciones')?.classList.contains('active')) renderProyecciones();
+  if($id('view-inscripcion')?.classList.contains('active')) cargarInscripcion();
 }
 
 function restoreLastPlayer(){
@@ -2193,11 +2239,45 @@ function renderGroups(){
 // ══════════════════════════════════════════════════════════
 // INSCRIPCIÓN
 // ══════════════════════════════════════════════════════════
+function cargarInscripcion(){
+  const cerrado=new Date()>=FECHA_CIERRE;
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  const closedWrap=$id('insc-closed-wrap');
+  const formWrap=$id('insc-form-wrap');
+  if(!closedWrap||!formWrap) return;
+  if(cerrado&&!esAdmin){
+    closedWrap.style.display='block';
+    formWrap.style.display='none';
+  } else {
+    closedWrap.style.display='none';
+    formWrap.style.display='block';
+    if(esAdmin&&cerrado){
+      setMsg('msg-inscripcion','⚙️ Modo admin: puedes agregar participantes manualmente.','ok');
+    }
+  }
+}
+
+function desbloquearInscripcionAdmin(){
+  const ok=sessionStorage.getItem('adminOk')==='1';
+  if(!ok){
+    const pin=prompt('🔐 PIN de administrador:');
+    if(pin!==ADMIN_PIN){alert('PIN incorrecto ❌');return;}
+    sessionStorage.setItem('adminOk','1');
+  }
+  cargarInscripcion();
+}
+
 async function inscribir(){
   const nombre=$id('inp-nombre').value.trim();
   if(!nombre){setMsg('msg-inscripcion','Ingresa tu nombre.','err');return;}
   if(state.jugadores.find(j=>j.nombre===nombre)){
     setMsg('msg-inscripcion','Ya existe un participante con ese nombre.','err');return;
+  }
+  const cerrado=new Date()>=FECHA_CIERRE;
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  if(cerrado&&!esAdmin){
+    setMsg('msg-inscripcion','⛔ Las inscripciones están cerradas. Solo el admin puede agregar participantes.','err');
+    return;
   }
   setLoad('btn-inscribir',true);
   try{
@@ -3113,6 +3193,70 @@ function renderRanking(){
         </tbody>
       </table>
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// PREDICCIONES POR PARTIDO
+// ══════════════════════════════════════════════════════════
+let _proyGrupoActual = 'A';
+
+function renderProyecciones(grupo){
+  if(grupo) _proyGrupoActual = grupo;
+  const g = _proyGrupoActual;
+  const tabs = $id('proy-tabs');
+  const cont = $id('proy-container');
+  if(!tabs||!cont) return;
+
+  // Tabs de grupos
+  const grupos = Object.keys(GRUPOS);
+  tabs.innerHTML = grupos.map(gk=>
+    `<button class="proy-tab${gk===g?' active':''}" onclick="renderProyecciones('${gk}')">Grupo ${gk}</button>`
+  ).join('');
+
+  const jugadores = state.jugadores;
+  if(!jugadores.length){
+    cont.innerHTML='<div style="color:var(--muted);text-align:center;padding:2rem;">Sin participantes inscritos.</div>';
+    return;
+  }
+
+  // Partidos del grupo seleccionado
+  const matches = PARTIDOS.filter(p=>p.grupo===g);
+  const res = (state.resultados&&state.resultados.partidos)||{};
+
+  cont.innerHTML = matches.map(pm=>{
+    // resultado real si existe
+    const rr = res[pm.id];
+    const tieneRes = rr&&(rr.g1!==undefined&&rr.g1!==''&&rr.g2!==undefined&&rr.g2!=='');
+    const resLabel = tieneRes ? `<span style="font-weight:700;color:var(--rosa);">Resultado: ${rr.g1}–${rr.g2}</span>` : '';
+
+    const preds = jugadores.map(j=>{
+      const pron = state.pronosticos[j.nombre]||{};
+      const p = (pron.partidos||{})[pm.id];
+      const tieneP = p&&(p.g1!==undefined&&p.g1!==''&&p.g2!==undefined&&p.g2!=='');
+      let cls = '';
+      if(tieneP&&tieneRes){
+        const pg1=+p.g1, pg2=+p.g2, rg1=+rr.g1, rg2=+rr.g2;
+        if(pg1===rg1&&pg2===rg2){ cls='result-ok'; }
+        else if((pg1>pg2&&rg1>rg2)||(pg1<pg2&&rg1<rg2)||(pg1===pg2&&rg1===rg2)){ cls='result-win'; }
+        else { cls='result-wrong'; }
+      }
+      return `<div class="proy-pred${cls?' '+cls:''}">
+        <div class="proy-pred-name" title="${esc(j.nombre)}">${esc(j.nombre.split(' ')[0])}</div>
+        ${tieneP
+          ? `<div class="proy-pred-score">${p.g1}–${p.g2}</div>`
+          : `<div class="proy-pred-score no-pred">sin pred.</div>`}
+      </div>`;
+    }).join('');
+
+    const fecha = pm.fecha ? `<span>${pm.fecha}</span>` : '';
+    return `<div class="proy-match-card">
+      <div class="proy-match-header">
+        <div class="proy-match-teams">${fi(pm.local)} ${esc(pm.local)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(pm.visita)} ${fi(pm.visita)}</div>
+        <div class="proy-match-info">${fecha} ${resLabel}</div>
+      </div>
+      <div class="proy-grid">${preds}</div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════════════════════
