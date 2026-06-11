@@ -27,6 +27,7 @@ function doGet(e) {
       case 'guardarPron':             result = guardarPron(p); break;
       case 'guardarResultados':       result = guardarResultados(p); break;
       case 'guardarResultadosGrupos': result = guardarResultadosGrupos(p); break;
+      case 'guardarScores':           result = guardarScores(p); break;
       case 'fetchResultadosAPI':      result = fetchResultadosAPI(p); break;
       case 'eliminarJugador':         result = eliminarJugador(p); break;
       case 'resetear':                result = resetear(); break;
@@ -105,14 +106,41 @@ function getScores() {
   const data = sh.getDataRange().getValues();
   if (data.length <= 1) return {};
   const result = {};
+  // Rows: [key (local|visita), gL, gV]
   data.slice(1).forEach(r => {
     if (!r[0]) return;
-    result[r[0]] = {
-      gL: r[1] !== '' ? Number(r[1]) : null,
-      gV: r[2] !== '' ? Number(r[2]) : null
+    result[String(r[0])] = {
+      gL: r[1] !== '' && r[1] !== null ? Number(r[1]) : null,
+      gV: r[2] !== '' && r[2] !== null ? Number(r[2]) : null
     };
   });
   return result;
+}
+
+function guardarScores(p) {
+  let scores;
+  try { scores = JSON.parse(p.scores || '[]'); } catch(e) { scores = []; }
+  // scores = [{key:'México|Sudáfrica', gL:2, gV:1}, ...]
+  const sh = getSheet('Scores');
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['partido', 'gL', 'gV']);
+  }
+  const existing = sh.getDataRange().getValues();
+  scores.forEach(s => {
+    if (!s.key || s.gL === undefined || s.gV === undefined) return;
+    // Look for existing row to update
+    for (let i = 1; i < existing.length; i++) {
+      if (existing[i][0] === s.key) {
+        sh.getRange(i + 1, 2, 1, 2).setValues([[s.gL, s.gV]]);
+        existing[i][1] = s.gL; existing[i][2] = s.gV;
+        return;
+      }
+    }
+    // New row
+    sh.appendRow([s.key, s.gL, s.gV]);
+    existing.push([s.key, s.gL, s.gV]);
+  });
+  return { ok: true, saved: scores.length };
 }
 
 // ── WRITE ────────────────────────────────────────────────
@@ -296,7 +324,12 @@ function fetchResultadosAPI(p) {
     // Build resultados from elimination stage matches
     const oct = new Set(), qua = new Set(), sem = new Set();
     let f1 = '', f2 = '', campeon = '';
+    const groupScores = []; // {key, gL, gV}
+
     results.forEach(m => {
+      if (m.stage === 'GROUP_STAGE' || m.stage === 'PRELIMINARY_ROUND') {
+        groupScores.push({ key: m.local + '|' + m.visita, gL: m.gL, gV: m.gV });
+      }
       if (m.stage === 'ROUND_OF_32')    { oct.add(m.local); oct.add(m.visita); }
       if (m.stage === 'QUARTER_FINALS') { qua.add(m.local); qua.add(m.visita); }
       if (m.stage === 'SEMI_FINALS')    { sem.add(m.local); sem.add(m.visita); }
@@ -305,6 +338,12 @@ function fetchResultadosAPI(p) {
         campeon = m.gL > m.gV ? m.local : m.gL < m.gV ? m.visita : '';
       }
     });
+
+    // Save group match scores to Scores sheet
+    if (groupScores.length > 0) {
+      guardarScores({ scores: JSON.stringify(groupScores) });
+    }
+
     const resultadosObj = {
       oct: Array.from(oct), qua: Array.from(qua), sem: Array.from(sem),
       f1, f2, campeon
@@ -314,19 +353,20 @@ function fetchResultadosAPI(p) {
     if (oct.size > 0 || qua.size > 0 || sem.size > 0 || f1) {
       const sh = getSheet('Resultados');
       if (sh.getLastRow() === 0) {
-        sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon']);
+        sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon', 'terc_json']);
       }
       const existingGrupos = sh.getLastRow() > 1 ? (sh.getRange(2, 1).getValue() || '{}') : '{}';
+      const existingTerc   = sh.getLastRow() > 1 ? (sh.getRange(2, 8).getValue() || '[]') : '[]';
       const row = [
         existingGrupos,
         JSON.stringify(resultadosObj.oct), JSON.stringify(resultadosObj.qua),
-        JSON.stringify(resultadosObj.sem), f1, f2, campeon
+        JSON.stringify(resultadosObj.sem), f1, f2, campeon, existingTerc
       ];
       if (sh.getLastRow() <= 1) sh.appendRow(row);
-      else sh.getRange(2, 1, 1, 7).setValues([row]);
+      else sh.getRange(2, 1, 1, 8).setValues([row]);
     }
 
-    return { ok: true, resultados: resultadosObj, matches: results.length };
+    return { ok: true, resultados: resultadosObj, scores: getScores(), matches: results.length };
 
   } catch(err) {
     return { error: 'Error al consultar football-data.org: ' + err.message };

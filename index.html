@@ -1387,6 +1387,16 @@ select option { background:#fff; }
         <button class="btn btn-gold btn-full" id="btn-res" onclick="guardarResultados()">💾 Guardar y recalcular ranking</button>
       </div>
 
+      <!-- MARCADORES DE PARTIDOS -->
+      <div class="admin-card" style="border-color:rgba(22,163,74,0.25);">
+        <div class="admin-title" style="color:var(--verde);">⚽ Marcadores de Partidos Jugados</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;">Ingresa el resultado de cada partido que ya se jugó. Solo afecta puntos de marcador exacto/resultado.</p>
+        <div class="proy-group-tabs" id="admin-scores-tabs" style="margin-bottom:10px;"></div>
+        <div id="admin-scores-grid" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="msg-admin-scores" style="font-size:12px;margin-top:6px;"></div>
+        <button class="btn btn-full" style="margin-top:10px;background:var(--verde);color:#fff;font-weight:800;" onclick="guardarMarcadores()">💾 Guardar marcadores</button>
+      </div>
+
       <div class="admin-card" style="border-color:rgba(255,61,90,0.2);">
         <div class="admin-title" style="color:var(--rojo);">⚠️ Zona de riesgo</div>
         <button class="btn btn-danger btn-full" onclick="resetear()">🗑️ Borrar todos los datos</button>
@@ -1903,6 +1913,7 @@ function showView(v, el){
   cargarDatos();
   if(v==='proyecciones') renderProyecciones();
   if(v==='inscripcion') cargarInscripcion();
+  if(v==='admin') renderAdminScores();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1986,6 +1997,7 @@ function applyState(d){
   state.jugadores=(d.jugadores||[]).map(j=>({...j,nombre:String(j.nombre)}))
   state.pronosticos=d.pronosticos||{};
   state.resultados=d.resultados||{};
+  state.scores=d.scores||state.scores||{};
   renderLeaderboard();
   renderPozo();
   renderHome();
@@ -2003,6 +2015,7 @@ function applyState(d){
   restoreLastPlayer();
   if($id('view-proyecciones')?.classList.contains('active')) renderProyecciones();
   if($id('view-inscripcion')?.classList.contains('active')) cargarInscripcion();
+  if($id('view-admin')?.classList.contains('active')) renderAdminScores();
 }
 
 function restoreLastPlayer(){
@@ -3221,21 +3234,22 @@ function renderProyecciones(grupo){
 
   // Partidos del grupo seleccionado
   const matches = PARTIDOS.filter(p=>p.grupo===g);
-  const res = (state.resultados&&state.resultados.partidos)||{};
+  const scores = state.scores||{};
 
   cont.innerHTML = matches.map(pm=>{
-    // resultado real si existe
-    const rr = res[pm.id];
-    const tieneRes = rr&&(rr.g1!==undefined&&rr.g1!==''&&rr.g2!==undefined&&rr.g2!=='');
-    const resLabel = tieneRes ? `<span style="font-weight:700;color:var(--rosa);">Resultado: ${rr.g1}–${rr.g2}</span>` : '';
+    // resultado real: viene de state.scores con clave "Local|Visita"
+    const key = pm.local+'|'+pm.visita;
+    const rr = scores[key];
+    const tieneRes = rr&&rr.gL!==null&&rr.gL!==undefined&&rr.gV!==null&&rr.gV!==undefined;
+    const resLabel = tieneRes ? `<span style="font-weight:700;color:var(--verde);">✓ ${rr.gL}–${rr.gV}</span>` : '';
 
     const preds = jugadores.map(j=>{
       const pron = state.pronosticos[j.nombre]||{};
       const p = (pron.partidos||{})[pm.id];
-      const tieneP = p&&(p.g1!==undefined&&p.g1!==''&&p.g2!==undefined&&p.g2!=='');
+      const tieneP = p&&(p.g1!==undefined&&p.g1!=='')&&(p.g2!==undefined&&p.g2!=='');
       let cls = '';
       if(tieneP&&tieneRes){
-        const pg1=+p.g1, pg2=+p.g2, rg1=+rr.g1, rg2=+rr.g2;
+        const pg1=+p.g1, pg2=+p.g2, rg1=+rr.gL, rg2=+rr.gV;
         if(pg1===rg1&&pg2===rg2){ cls='result-ok'; }
         else if((pg1>pg2&&rg1>rg2)||(pg1<pg2&&rg1<rg2)||(pg1===pg2&&rg1===rg2)){ cls='result-win'; }
         else { cls='result-wrong'; }
@@ -3437,7 +3451,11 @@ function calcPtsPartidos(pron){
   if(!pron?.partidos) return 0;
   const scores=state.scores||{};
   let pts=0;
-  PARTIDOS.forEach(p=>{ pts+=calcPtsPartido(pron.partidos[p.id], scores[p.id]); });
+  PARTIDOS.forEach(p=>{
+    const key=p.local+'|'+p.visita;
+    const res=scores[key]||scores[p.id]; // key nuevo o id legacy
+    pts+=calcPtsPartido(pron.partidos[p.id], res);
+  });
   return pts;
 }
 
@@ -3519,6 +3537,69 @@ async function guardarResultados(){
     setTimeout(()=>clearMsg('msg-admin'),4000);
   }catch(e){setMsg('msg-admin',e.message,'err');}
   finally{setLoad('btn-res',false);}
+}
+
+// ══════════════════════════════════════════════════════════
+// ADMIN — marcadores de partidos
+// ══════════════════════════════════════════════════════════
+let _adminScoresGrupo = 'A';
+
+function renderAdminScores(grupo){
+  if(grupo) _adminScoresGrupo = grupo;
+  const g = _adminScoresGrupo;
+  const tabs = $id('admin-scores-tabs');
+  const grid = $id('admin-scores-grid');
+  if(!tabs||!grid) return;
+
+  const grupos = Object.keys(GRUPOS);
+  tabs.innerHTML = grupos.map(gk=>
+    `<button class="proy-tab${gk===g?' active':''}" onclick="renderAdminScores('${gk}')">${gk}</button>`
+  ).join('');
+
+  const scores = state.scores||{};
+  const matches = PARTIDOS.filter(p=>p.grupo===g);
+
+  grid.innerHTML = matches.map(pm=>{
+    const key = pm.local+'|'+pm.visita;
+    const existing = scores[key]||{};
+    const gL = existing.gL!==null&&existing.gL!==undefined ? existing.gL : '';
+    const gV = existing.gV!==null&&existing.gV!==undefined ? existing.gV : '';
+    const played = gL!==''&&gV!=='';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${played?'rgba(22,163,74,0.06)':'#f9fafb'};border:1px solid ${played?'rgba(22,163,74,0.3)':'var(--border)'};border-radius:10px;">
+      <div style="flex:1;font-size:13px;font-weight:700;">${fi(pm.local)}${esc(pm.local)}</div>
+      <input type="number" min="0" max="30" id="sc-${pm.id}-gL" value="${gL}" placeholder="–"
+        style="width:52px;text-align:center;padding:6px 4px;font-size:15px;font-weight:700;border:1px solid var(--border);border-radius:7px;font-family:inherit;">
+      <span style="color:var(--muted);font-weight:700;">–</span>
+      <input type="number" min="0" max="30" id="sc-${pm.id}-gV" value="${gV}" placeholder="–"
+        style="width:52px;text-align:center;padding:6px 4px;font-size:15px;font-weight:700;border:1px solid var(--border);border-radius:7px;font-family:inherit;">
+      <div style="flex:1;font-size:13px;font-weight:700;text-align:right;">${esc(pm.visita)}${fi(pm.visita)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function guardarMarcadores(){
+  const g = _adminScoresGrupo;
+  const matches = PARTIDOS.filter(p=>p.grupo===g);
+  const scores = [];
+  matches.forEach(pm=>{
+    const gL=$id(`sc-${pm.id}-gL`)?.value;
+    const gV=$id(`sc-${pm.id}-gV`)?.value;
+    if(gL!==''&&gV!==''&&!isNaN(+gL)&&!isNaN(+gV)){
+      scores.push({key: pm.local+'|'+pm.visita, gL:+gL, gV:+gV});
+    }
+  });
+  if(!scores.length){ setMsg('msg-admin-scores','Sin marcadores para guardar.','err'); return; }
+  try{
+    await api({action:'guardarScores', scores: JSON.stringify(scores)});
+    // Update local state.scores immediately
+    if(!state.scores) state.scores={};
+    scores.forEach(s=>{ state.scores[s.key]={gL:s.gL,gV:s.gV}; });
+    renderAdminScores();
+    renderRanking();
+    invalidarCache();
+    setMsg('msg-admin-scores',`✅ ${scores.length} marcador(es) guardados. Ranking actualizado.`,'ok');
+    setTimeout(()=>clearMsg('msg-admin-scores'),5000);
+  }catch(e){ setMsg('msg-admin-scores',e.message,'err'); }
 }
 
 async function resetear(){
