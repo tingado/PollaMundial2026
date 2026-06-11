@@ -824,6 +824,33 @@ select option { background:#fff; }
 .insc-closed-banner h3 { color:var(--rosa); font-size:1.1rem; margin-bottom:6px; }
 .insc-closed-banner p { font-size:13px; color:var(--muted); }
 
+/* ══ TOP 3 PODIUM ══ */
+.podium { display:flex; align-items:flex-end; justify-content:center; gap:10px; margin-bottom:1.5rem; }
+.podium-place { display:flex; flex-direction:column; align-items:center; border-radius:16px; padding:14px 10px 10px; background:var(--card); border:2px solid var(--border); flex:1; max-width:160px; }
+.podium-place.p1 { border-color:var(--dorado); background:rgba(245,188,0,0.06); padding-top:20px; }
+.podium-place.p2 { border-color:#9ca3af; }
+.podium-place.p3 { border-color:#b45309; }
+.podium-medal { font-size:2rem; line-height:1; margin-bottom:6px; }
+.podium-avatar { width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--rosa),#c2006e);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;margin-bottom:8px; }
+.podium-name { font-size:12px;font-weight:700;text-align:center;color:var(--text);max-width:120px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis; }
+.podium-pts { font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--rosa);letter-spacing:1px;line-height:1; }
+.podium-pts-lbl { font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px; }
+/* ══ ADMIN SCORE INPUT ══ */
+.admin-score-input { width:48px!important;text-align:center;padding:4px!important;font-size:18px!important;font-weight:800!important;border:2px solid var(--border);border-radius:8px;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;background:#f9fafb;color:var(--text); }
+.admin-score-input:focus { border-color:var(--verde);outline:none;background:#fff; }
+.match-card.admin-edit { cursor:default; }
+.match-card.admin-edit:hover { transform:none; }
+.match-card.admin-edit.played { border-color:#bbf7d0; background:rgba(22,163,74,0.03); }
+/* Admin match card layout */
+.mc-teams { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.mc-team { display:flex; align-items:center; gap:6px; flex:1; }
+.mc-team-right { flex-direction:row-reverse; }
+.mc-flag { font-size:20px; line-height:1; }
+.mc-name { font-size:13px; font-weight:700; color:var(--text); }
+.mc-score-edit { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.mc-sep { font-size:16px; font-weight:800; color:var(--muted); }
+.mc-meta { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:0.3px; }
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .sidebar { display:none; }
@@ -1027,6 +1054,12 @@ select option { background:#fff; }
       <div id="matches-save-btn" style="display:none;margin-bottom:10px;">
         <button class="btn" id="btn-save-partidos" onclick="guardarPronosPartidos()" style="width:100%;background:var(--rosa);color:#fff;font-weight:800;">💾 Guardar predicciones de partidos</button>
         <div id="msg-partidos" style="font-size:12px;margin-top:6px;"></div>
+      </div>
+      <!-- Sync admin button — solo visible si admin autenticado -->
+      <div id="partidos-admin-bar" style="display:none;background:rgba(96,200,255,0.08);border:1px solid rgba(96,200,255,0.25);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:12px;font-weight:700;color:#60c8ff;flex:1;">⚙️ Panel Admin — Resultados reales</span>
+        <button class="btn" onclick="sincronizarPartidos()" style="font-size:12px;padding:6px 14px;background:rgba(96,200,255,0.15);border:1px solid rgba(96,200,255,0.3);color:#60c8ff;font-weight:700;">🔄 Sync API</button>
+        <button class="btn" onclick="showView('admin',$id('nav-admin'));setTimeout(()=>document.getElementById('admin-scores-tabs')?.scrollIntoView({behavior:'smooth'}),300)" style="font-size:12px;padding:6px 14px;background:rgba(22,163,74,0.12);border:1px solid rgba(22,163,74,0.3);color:var(--verde);font-weight:700;">✍️ Ingresar manual</button>
       </div>
       <div id="matches-container"></div>
     </div>
@@ -1914,6 +1947,7 @@ function showView(v, el){
   if(v==='proyecciones') renderProyecciones();
   if(v==='inscripcion') cargarInscripcion();
   if(v==='admin') renderAdminScores();
+  if(v==='partidos') actualizarBarraAdmin();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2137,9 +2171,9 @@ function getMatchStatus(p){
 
 function renderMatchCard(p){
   const st=getMatchStatus(p);
-  const sc=state.scores&&state.scores[p.id];
-  const gL=sc?sc.gL:null;
-  const gV=sc?sc.gV:null;
+  const sc=state.scores&&(state.scores[p.local+'|'+p.visita]||state.scores[p.id]);
+  const gL=sc!=null&&sc.gL!==null&&sc.gL!==undefined?sc.gL:null;
+  const gV=sc!=null&&sc.gV!==null&&sc.gV!==undefined?sc.gV:null;
   const hasScore=gL!==null&&gV!==null;
   const jugador=$id('sel-jugador-partidos')?.value||'';
   const pred=jugador&&state.pronosticos[jugador]?.partidos?.[p.id];
@@ -2223,8 +2257,8 @@ function renderGroups(){
       const ps=PARTIDOS.filter(p=>p.grupo===g&&(p.local===eq||p.visita===eq));
       let pj=0,pg=0,pe=0,pp=0,gf=0,gc=0;
       ps.forEach(p=>{
-        const sc=state.scores&&state.scores[p.id];
-        if(!sc||sc.gL===null) return;
+        const sc=state.scores&&(state.scores[p.local+'|'+p.visita]||state.scores[p.id]);
+        if(!sc||sc.gL===null||sc.gL===undefined) return;
         pj++;
         const esLocal=p.local===eq;
         const gM=esLocal?sc.gL:sc.gV;
@@ -3151,28 +3185,49 @@ function renderRanking(){
     return;
   }
   const medals=['🥇','🥈','🥉'];
-  const cerrado=new Date()>=FECHA_CIERRE;
   const rows=state.jugadores.map(j=>{
     const d=calcPtsDetalle(state.pronosticos[j.nombre], state.resultados);
     const st=estadoPron(j.nombre);
     return {...j, ...d, ...st};
-  }).sort((a,b)=>b.total-a.total);
+  }).sort((a,b)=>b.total-a.total||(b.partidos-a.partidos)||(b.grupos-a.grupos));
 
   const maxPts=rows[0]?.total||1;
-  const pendientes=rows.filter(r=>!r.gOk||!r.eOk).length;
+  const hayResultados=Object.keys(state.scores||{}).length>0;
+
+  // Top 3 podium (solo top 3 o los que hay)
+  const top3=[rows[1],rows[0],rows[2]].filter(Boolean); // orden visual: 2°, 1°, 3°
+  const podiumOrder=[1,0,2]; // índices de rows para 2°, 1°, 3°
+  const podiumHtml=rows.length>=2?`
+    <div class="podium">
+      ${podiumOrder.map(i=>{
+        const r=rows[i]; if(!r) return '';
+        const cls=i===0?'p1':i===1?'p2':'p3';
+        return `<div class="podium-place ${cls}">
+          <div class="podium-medal">${medals[i]||''}</div>
+          <div class="podium-avatar">${esc(r.nombre.charAt(0).toUpperCase())}</div>
+          <div class="podium-name">${esc(r.nombre)}</div>
+          <div class="podium-pts">${r.total}</div>
+          <div class="podium-pts-lbl">PTS</div>
+        </div>`;
+      }).join('')}
+    </div>`:'';
+
+  const noBanner=!hayResultados?`<div style="background:rgba(96,200,255,0.07);border:1px solid rgba(96,200,255,0.2);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#60c8ff;">
+    ⏳ <strong>Esperando resultados reales</strong> — los puntos se actualizarán en tiempo real a medida que el admin ingrese los marcadores de cada partido.
+  </div>`:'';
 
   cont.innerHTML=`
-    ${!cerrado&&pendientes?`<div style="background:rgba(255,188,0,0.09);border:1px solid rgba(255,188,0,0.25);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#b8860b;">
-      ⚠️ <strong>${pendientes} participante${pendientes>1?'s':''}</strong> aún no ${pendientes>1?'han':'ha'} completado todos sus pronósticos.
-    </div>`:''}
+    ${noBanner}
+    ${podiumHtml}
     <div class="ranking-wrap">
       <table class="ranking-table">
         <thead>
           <tr>
             <th>#</th>
             <th>Jugador</th>
-            <th>Grupos</th>
-            <th>Elim.</th>
+            <th title="Puntos por marcadores exactos y resultados correctos">Partidos</th>
+            <th title="Puntos por 1° y 2° lugar de grupo">Grupos</th>
+            <th title="Puntos fase eliminatoria">Elim.</th>
             <th>Total</th>
           </tr>
         </thead>
@@ -3189,13 +3244,10 @@ function renderRanking(){
                       <span class="rank-badge ${r.gOk?'ok':'pend'}">${r.gOk?'✓ Grupos':'✗ Grupos'}</span>
                       <span class="rank-badge ${r.eOk?'ok':'pend'}">${r.eOk?'✓ Llaves':'✗ Llaves'}</span>
                     </div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;">
-                      ${!cerrado&&!r.completo?`<button class="rank-edit" data-pn="${en}" onclick="irAPronósticos(this.dataset.pn)">✏️ Grupos</button>
-                      <button class="rank-edit" data-pn="${en}" onclick="irAEliminatorias(this.dataset.pn)">🏆 Llaves</button>`:''}
-                    </div>
                   </div>
                 </div>
               </td>
+              <td class="rank-pts-sub" style="color:${r.partidos>0?'var(--verde)':'var(--muted)'};">${r.partidos}</td>
               <td class="rank-pts-sub">${r.grupos}</td>
               <td class="rank-pts-sub">${r.elim}</td>
               <td class="rank-pts-total">
@@ -3540,6 +3592,42 @@ async function guardarResultados(){
 }
 
 // ══════════════════════════════════════════════════════════
+// PARTIDOS — barra admin y sincronización
+// ══════════════════════════════════════════════════════════
+function actualizarBarraAdmin(){
+  const bar = $id('partidos-admin-bar');
+  if(!bar) return;
+  const isAdmin = sessionStorage.getItem('adminOk')==='1';
+  bar.style.display = isAdmin ? 'flex' : 'none';
+}
+
+async function sincronizarPartidos(){
+  const token = localStorage.getItem('p2026_token');
+  if(!token){
+    alert('Primero configura el token de la API en el panel Admin → Sincronizar API.');
+    showView('admin', $id('nav-admin'));
+    return;
+  }
+  if(!SCRIPT_URL){ alert('Configura primero la URL del Apps Script.'); return; }
+  const btn = document.querySelector('#partidos-admin-bar button');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Sincronizando...'; }
+  try{
+    const r = await api({action:'fetchResultadosAPI', apiToken:token});
+    if(r.error){ alert('Error API: '+r.error); return; }
+    if(r.scores){ state.scores=r.scores; renderGroups(); }
+    if(r.resultados){
+      const rd=r.resultados;
+      if(!state.resultados) state.resultados={};
+      Object.assign(state.resultados, rd);
+    }
+    renderRanking();
+    invalidarCache();
+    alert('✅ Resultados sincronizados.');
+  }catch(e){ alert('Error: '+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='🔄 Sync API'; } }
+}
+
+// ══════════════════════════════════════════════════════════
 // ADMIN — marcadores de partidos
 // ══════════════════════════════════════════════════════════
 let _adminScoresGrupo = 'A';
@@ -3565,17 +3653,31 @@ function renderAdminScores(grupo){
     const gL = existing.gL!==null&&existing.gL!==undefined ? existing.gL : '';
     const gV = existing.gV!==null&&existing.gV!==undefined ? existing.gV : '';
     const played = gL!==''&&gV!=='';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${played?'rgba(22,163,74,0.06)':'#f9fafb'};border:1px solid ${played?'rgba(22,163,74,0.3)':'var(--border)'};border-radius:10px;">
-      <div style="flex:1;font-size:13px;font-weight:700;">${fi(pm.local)}${esc(pm.local)}</div>
-      <input type="number" min="0" max="30" id="sc-${pm.id}-gL" value="${gL}" placeholder="–"
-        style="width:52px;text-align:center;padding:6px 4px;font-size:15px;font-weight:700;border:1px solid var(--border);border-radius:7px;font-family:inherit;">
-      <span style="color:var(--muted);font-weight:700;">–</span>
-      <input type="number" min="0" max="30" id="sc-${pm.id}-gV" value="${gV}" placeholder="–"
-        style="width:52px;text-align:center;padding:6px 4px;font-size:15px;font-weight:700;border:1px solid var(--border);border-radius:7px;font-family:inherit;">
-      <div style="flex:1;font-size:13px;font-weight:700;text-align:right;">${esc(pm.visita)}${fi(pm.visita)}</div>
+    const fecha = pm.fecha ? `<span style="font-size:11px;color:var(--muted);margin-left:4px;">${pm.fecha}</span>` : '';
+    return `<div class="match-card admin-edit${played?' played':''}">
+      <div class="mc-teams">
+        <div class="mc-team">
+          <span class="mc-flag">${fi(pm.local)}</span>
+          <span class="mc-name">${esc(pm.local)}</span>
+        </div>
+        <div class="mc-score-edit">
+          <input type="number" min="0" max="30" id="sc-${pm.id}-gL" value="${gL}" placeholder="–"
+            class="admin-score-input" oninput="previewAdminScore('${pm.id}')">
+          <span class="mc-sep">–</span>
+          <input type="number" min="0" max="30" id="sc-${pm.id}-gV" value="${gV}" placeholder="–"
+            class="admin-score-input" oninput="previewAdminScore('${pm.id}')">
+        </div>
+        <div class="mc-team mc-team-right">
+          <span class="mc-name">${esc(pm.visita)}</span>
+          <span class="mc-flag">${fi(pm.visita)}</span>
+        </div>
+      </div>
+      <div class="mc-meta">${pm.id}${fecha}${played?'<span style="color:var(--verde);font-size:11px;font-weight:700;margin-left:8px;">✓ Ingresado</span>':''}</div>
     </div>`;
   }).join('');
 }
+
+function previewAdminScore(matchId){}  // visual hook, no-op for now
 
 async function guardarMarcadores(){
   const g = _adminScoresGrupo;
