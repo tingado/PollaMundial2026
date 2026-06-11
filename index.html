@@ -225,6 +225,7 @@ body {
   content:''; position:absolute; inset:0;
   background:linear-gradient(135deg, rgba(233,30,140,0.08), transparent);
   opacity:0; transition:opacity 0.2s;
+  pointer-events:none;
 }
 .match-card:hover { border-color:var(--rosa); transform:translateY(-2px); box-shadow: 0 4px 12px rgba(233,30,140,0.12); }
 .match-card:hover::before { opacity:1; }
@@ -3831,6 +3832,8 @@ renderMatches();
 renderGroups();
 
 if(SCRIPT_URL){
+  // Persistir siempre el URL en localStorage para que todos los browsers lo tengan
+  if(!localStorage.getItem('polla2026_url')) localStorage.setItem('polla2026_url', SCRIPT_URL);
   $id('url-banner').style.display='none';
   $id('inp-url').value=SCRIPT_URL;
   cargarDatos();
