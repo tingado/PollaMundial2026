@@ -1815,7 +1815,8 @@ let matchView = 'day';
 // ══════════════════════════════════════════════════════════
 const CK = 'p2026_cache', CKT = 'p2026_cache_ts';
 const TTL = () => new Date() >= FECHA_CIERRE ? 5*60*1000 : 2*60*1000;
-function leerCache(){ try{ const ts=+localStorage.getItem(CKT)||0,d=localStorage.getItem(CK); if(!d||!ts||Date.now()-ts>TTL())return null; return JSON.parse(d); }catch{return null;} }
+// Stale cache: cuando el servidor falla, usa datos viejos (hasta 24h) para no mostrar página vacía
+function leerCache(stale=false){ try{ const ts=+localStorage.getItem(CKT)||0,d=localStorage.getItem(CK); if(!d)return null; if(!stale&&(!ts||Date.now()-ts>TTL()))return null; return JSON.parse(d); }catch{return null;} }
 function guardarCache(d){ try{ localStorage.setItem(CK,JSON.stringify(d)); localStorage.setItem(CKT,String(Date.now())); }catch{} }
 function invalidarCache(){ localStorage.removeItem(CK); localStorage.removeItem(CKT); }
 
@@ -1999,7 +2000,7 @@ function api(params){
   return new Promise((resolve,reject)=>{
     if(!SCRIPT_URL){ reject(new Error('Sin URL configurada')); return; }
     const cbName='cb_'+Date.now()+'_'+Math.floor(Math.random()*9999);
-    const timer=setTimeout(()=>{ cleanup(); reject(new Error('Timeout — el Apps Script no respondió')); },15000);
+    const timer=setTimeout(()=>{ cleanup(); reject(new Error('Timeout — el Apps Script no respondió (puede estar iniciando, espera 30s)')); },30000);
     function cleanup(){ clearTimeout(timer); delete window[cbName]; const el=document.getElementById(cbName); if(el)el.remove(); }
     window[cbName]=function(data){ cleanup(); if(data&&data.error)reject(new Error(data.error)); else resolve(data); };
     const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(typeof v==='object'?JSON.stringify(v):v)).join('&');
@@ -2041,8 +2042,12 @@ async function cargarDatos(forzar=false){
   if(!forzar){
     const c=leerCache();
     if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; _mostrarBannerConexion(false); return; }
+    // Sin caché fresca: mostrar datos viejos de inmediato y refrescar en background
+    const stale=leerCache(true);
+    if(stale){ applyState(stale); $id('cache-status-sb').textContent='⏳ Actualizando...'; }
   }
-  $id('cache-status-sb').textContent='⏳ Cargando...';
+  if(!document.getElementById('cache-status-sb').textContent.includes('Actualizando'))
+    $id('cache-status-sb').textContent='⏳ Cargando...';
   const _intentar=async()=>{
     await sincronizarPendientes();
     const d=await api({action:'getAll'});
@@ -2062,18 +2067,18 @@ async function cargarDatos(forzar=false){
     try{
       await _intentar();
     }catch(e2){
-      // Sin conexión definitivo: mostrar lo que haya en caché + jugadores locales
-      const c=leerCache();
+      // Sin conexión definitivo: usar caché (incluso vieja) + jugadores locales
+      const c=leerCache(true); // stale=true: acepta caché aunque haya expirado
       if(c){
         const localExtra=_jugadoresLocalesPendientes(c.jugadores||[]);
         if(localExtra.length) c.jugadores=[...(c.jugadores||[]),...localExtra];
         applyState(c);
         $id('cache-status-sb').textContent='📦 Caché (sin conexión)';
-        _mostrarBannerConexion(false); // hay caché, no mostrar error
+        _mostrarBannerConexion(false);
       } else {
         _aplicarEstadoLocal();
         $id('cache-status-sb').textContent='⚠ Sin conexión';
-        _mostrarBannerConexion(true); // sin datos locales, mostrar botón recargar
+        _mostrarBannerConexion(true);
       }
     }
   }
@@ -3820,9 +3825,13 @@ async function guardarMarcadores(){
     await api({action:'guardarScores', scores: JSON.stringify(scores)});
     setMsg('msg-admin-scores',`✅ ${scores.length} marcador(es) guardados y sincronizados.`,'ok');
   }catch(e){
-    setMsg('msg-admin-scores',`⚠ Guardado local OK — sin conexión al servidor (${e.message})`,'warn');
+    const esRedeploy=e.message&&e.message.includes('desconocida');
+    const msg=esRedeploy
+      ? `⚠ Scores guardados localmente. Para sincronizar al servidor: redesplega el Apps Script (apps-script.gs → Deploy → New version).`
+      : `⚠ Guardado local OK — sin conexión al servidor (${e.message})`;
+    setMsg('msg-admin-scores',msg,'warn');
   }
-  setTimeout(()=>clearMsg('msg-admin-scores'),6000);
+  setTimeout(()=>clearMsg('msg-admin-scores'),10000);
 }
 
 async function resetear(){

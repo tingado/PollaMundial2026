@@ -94,11 +94,13 @@ function toArrGAS(v) {
 // ── READ ─────────────────────────────────────────────────
 
 function getAll() {
+  let scores = {};
+  try { scores = getScores(); } catch(e) { /* Scores sheet may not exist yet */ }
   return {
     jugadores:  getJugadores(),
     pronosticos: getPronosticos(),
     resultados:  getResultados(),
-    scores:      getScores()
+    scores:      scores
   };
 }
 
