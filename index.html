@@ -1363,7 +1363,10 @@ select option { background:#fff; }
 
       <!-- PARTICIPANTES -->
       <div class="admin-card" style="border-color:rgba(233,30,140,0.25);">
-        <div class="admin-title">👥 Participantes inscritos</div>
+        <div class="admin-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>👥 Participantes inscritos</span>
+          <button onclick="invalidarCache();cargarDatos(true);" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;">🔄 Recargar</button>
+        </div>
         <div id="admin-player-list" class="player-list">
           <div style="color:var(--muted);font-size:13px;">Conecta el backend para ver participantes</div>
         </div>
