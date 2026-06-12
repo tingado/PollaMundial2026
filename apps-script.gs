@@ -24,6 +24,10 @@
 // Ejecuta esta función UNA VEZ desde el editor para activar el trigger.
 // Menú: selecciona "configurarAutoSync" en el dropdown de funciones → ▶ Ejecutar
 function configurarAutoSync() {
+  const token = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+  if (!token) {
+    Logger.log('⚠️ ADVERTENCIA: API_TOKEN no configurado. El auto-sync fallará hasta que guardes un token válido desde Admin → Guardar Token.');
+  }
   // Eliminar triggers anteriores
   ScriptApp.getProjectTriggers().forEach(t => {
     if (t.getHandlerFunction() === 'autoSyncResultados') ScriptApp.deleteTrigger(t);
@@ -39,11 +43,8 @@ function configurarAutoSync() {
 
 // Ejecuta esto para desactivar el auto-sync
 function desactivarTrigger() {
-  let n = 0;
-  ScriptApp.getProjectTriggers().forEach(t => {
-    if (t.getHandlerFunction() === 'autoSyncResultados') { ScriptApp.deleteTrigger(t); n++; }
-  });
-  Logger.log(n > 0 ? '⏹ Trigger desactivado.' : 'No había trigger activo.');
+  const result = desactivarAutoSync();
+  Logger.log(result.msg);
 }
 // ────────────────────────────────────────────────────────
 
