@@ -3,16 +3,50 @@
 // ═══════════════════════════════════════════════════════
 // DEPLOY INSTRUCTIONS:
 // 1. Abrir script.google.com → proyecto vinculado al Google Sheet
-// 2. Reemplazar todo el contenido con este código
-// 3. Deploy > Manage deployments > editar deployment existente > New version
-//    - Execute as: Me
-//    - Who has access: Anyone
-// 4. La URL /exec no cambia al editar el mismo deployment
+// 2. Seleccionar TODO (Ctrl+A) y REEMPLAZAR con este código completo
+// 3. Guardar (Ctrl+S)
+// 4. Deploy > Manage deployments > editar deployment existente > New version
+//    - Execute as: Me  |  Who has access: Anyone
+// 5. La URL /exec NO cambia
+//
+// AUTO-SYNC (opcional, después de hacer deploy):
+// 1. Abrir este editor de Apps Script
+// 2. En el menú superior, seleccionar función: configurarAutoSync
+// 3. Presionar ▶ Ejecutar (una sola vez)
+// → Desde ahí se sincroniza automáticamente cada 10 minutos
 //
 // SCORING:
 //   Grupo 1°: +2pts | Grupo 2°: +1pt | Marcador exacto: +2pts adicionales
 //   Octavos: +10 | Cuartos: +20 | Semis: +30 | Finalista: +40 | Campeón: +80
 // ═══════════════════════════════════════════════════════
+
+// ─── CONFIGURAR AUTO-SYNC DESDE EL EDITOR ───────────────
+// Ejecuta esta función UNA VEZ desde el editor para activar el trigger.
+// Menú: selecciona "configurarAutoSync" en el dropdown de funciones → ▶ Ejecutar
+function configurarAutoSync() {
+  const token = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+  if (!token) {
+    Logger.log('⚠️ ADVERTENCIA: API_TOKEN no configurado. El auto-sync fallará hasta que guardes un token válido desde Admin → Guardar Token.');
+  }
+  // Eliminar triggers anteriores
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'autoSyncResultados') ScriptApp.deleteTrigger(t);
+  });
+  // Crear trigger cada 10 minutos
+  ScriptApp.newTrigger('autoSyncResultados')
+    .timeBased()
+    .everyMinutes(10)
+    .create();
+  Logger.log('✅ Auto-Sync activado: autoSyncResultados se ejecutará cada 10 minutos.');
+  Logger.log('Para ver el log: Ver > Registros de ejecución');
+}
+
+// Ejecuta esto para desactivar el auto-sync
+function desactivarTrigger() {
+  const result = desactivarAutoSync();
+  Logger.log(result.msg);
+}
+// ────────────────────────────────────────────────────────
 
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -60,11 +94,13 @@ function toArrGAS(v) {
 // ── READ ─────────────────────────────────────────────────
 
 function getAll() {
+  let scores = {};
+  try { scores = getScores(); } catch(e) { /* Scores sheet may not exist yet */ }
   return {
     jugadores:  getJugadores(),
     pronosticos: getPronosticos(),
     resultados:  getResultados(),
-    scores:      getScores()
+    scores:      scores
   };
 }
 
@@ -386,13 +422,13 @@ function eliminarJugador(p) {
   const jSh = getSheet('Jugadores');
   const jData = jSh.getDataRange().getValues();
   for (let i = jData.length - 1; i >= 1; i--) {
-    if (jData[i][0] === nombre) { jSh.deleteRow(i + 1); break; }
+    if (String(jData[i][0]).trim() === nombre) { jSh.deleteRow(i + 1); break; }
   }
 
   const pSh = getSheet('Pronosticos');
   const pData = pSh.getDataRange().getValues();
   for (let i = pData.length - 1; i >= 1; i--) {
-    if (pData[i][0] === nombre) { pSh.deleteRow(i + 1); break; }
+    if (String(pData[i][0]).trim() === nombre) { pSh.deleteRow(i + 1); break; }
   }
 
   return { ok: true };

@@ -1815,7 +1815,8 @@ let matchView = 'day';
 // ══════════════════════════════════════════════════════════
 const CK = 'p2026_cache', CKT = 'p2026_cache_ts';
 const TTL = () => new Date() >= FECHA_CIERRE ? 5*60*1000 : 2*60*1000;
-function leerCache(){ try{ const ts=+localStorage.getItem(CKT)||0,d=localStorage.getItem(CK); if(!d||!ts||Date.now()-ts>TTL())return null; return JSON.parse(d); }catch{return null;} }
+// Stale cache: cuando el servidor falla, usa datos viejos (hasta 24h) para no mostrar página vacía
+function leerCache(stale=false){ try{ const ts=+localStorage.getItem(CKT)||0,d=localStorage.getItem(CK); if(!d)return null; if(!stale&&(!ts||Date.now()-ts>TTL()))return null; return JSON.parse(d); }catch{return null;} }
 function guardarCache(d){ try{ localStorage.setItem(CK,JSON.stringify(d)); localStorage.setItem(CKT,String(Date.now())); }catch{} }
 function invalidarCache(){ localStorage.removeItem(CK); localStorage.removeItem(CKT); }
 
@@ -1999,7 +2000,7 @@ function api(params){
   return new Promise((resolve,reject)=>{
     if(!SCRIPT_URL){ reject(new Error('Sin URL configurada')); return; }
     const cbName='cb_'+Date.now()+'_'+Math.floor(Math.random()*9999);
-    const timer=setTimeout(()=>{ cleanup(); reject(new Error('Timeout — el Apps Script no respondió')); },15000);
+    const timer=setTimeout(()=>{ cleanup(); reject(new Error('Timeout — el Apps Script no respondió (puede estar iniciando, espera 30s)')); },30000);
     function cleanup(){ clearTimeout(timer); delete window[cbName]; const el=document.getElementById(cbName); if(el)el.remove(); }
     window[cbName]=function(data){ cleanup(); if(data&&data.error)reject(new Error(data.error)); else resolve(data); };
     const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(typeof v==='object'?JSON.stringify(v):v)).join('&');
@@ -2041,8 +2042,12 @@ async function cargarDatos(forzar=false){
   if(!forzar){
     const c=leerCache();
     if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; _mostrarBannerConexion(false); return; }
+    // Sin caché fresca: mostrar datos viejos de inmediato y refrescar en background
+    const stale=leerCache(true);
+    if(stale){ applyState(stale); $id('cache-status-sb').textContent='⏳ Actualizando...'; }
   }
-  $id('cache-status-sb').textContent='⏳ Cargando...';
+  if(!document.getElementById('cache-status-sb').textContent.includes('Actualizando'))
+    $id('cache-status-sb').textContent='⏳ Cargando...';
   const _intentar=async()=>{
     await sincronizarPendientes();
     const d=await api({action:'getAll'});
@@ -2062,18 +2067,18 @@ async function cargarDatos(forzar=false){
     try{
       await _intentar();
     }catch(e2){
-      // Sin conexión definitivo: mostrar lo que haya en caché + jugadores locales
-      const c=leerCache();
+      // Sin conexión definitivo: usar caché (incluso vieja) + jugadores locales
+      const c=leerCache(true); // stale=true: acepta caché aunque haya expirado
       if(c){
         const localExtra=_jugadoresLocalesPendientes(c.jugadores||[]);
         if(localExtra.length) c.jugadores=[...(c.jugadores||[]),...localExtra];
         applyState(c);
         $id('cache-status-sb').textContent='📦 Caché (sin conexión)';
-        _mostrarBannerConexion(false); // hay caché, no mostrar error
+        _mostrarBannerConexion(false);
       } else {
         _aplicarEstadoLocal();
         $id('cache-status-sb').textContent='⚠ Sin conexión';
-        _mostrarBannerConexion(true); // sin datos locales, mostrar botón recargar
+        _mostrarBannerConexion(true);
       }
     }
   }
@@ -2398,6 +2403,18 @@ function desbloquearInscripcionAdmin(){
   cargarInscripcion();
 }
 
+function desbloquearPronAdmin(){
+  const ok=sessionStorage.getItem('adminOk')==='1';
+  if(!ok){
+    const pin=prompt('🔐 PIN de administrador:');
+    if(pin!==ADMIN_PIN){alert('PIN incorrecto ❌');return;}
+    sessionStorage.setItem('adminOk','1');
+  }
+  // Recarga la vista activa (grupos o llaves)
+  renderGroups();
+  cargarElim();
+}
+
 async function inscribir(){
   const nombre=$id('inp-nombre').value.trim();
   if(!nombre){setMsg('msg-inscripcion','Ingresa tu nombre.','err');return;}
@@ -2518,8 +2535,13 @@ function cargarPronostico(){
   btn.style.display='block';
   const p=state.pronosticos[jugador]||{};
   const cerrado=new Date()>=FECHA_CIERRE;
-  if(cerrado){
-    cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong><br><span style="color:var(--muted);font-size:13px;">El plazo terminó el 11 de junio.</span></div>';
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  if(cerrado&&!esAdmin){
+    cont.innerHTML=`<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">
+      ⏰ <strong>Pronósticos cerrados</strong><br>
+      <span style="color:var(--muted);font-size:13px;">El plazo terminó el 11 de junio.</span><br>
+      <button onclick="desbloquearPronAdmin()" style="margin-top:12px;padding:6px 16px;background:var(--rosa);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔐 Acceso Admin</button>
+    </div>`;
     btn.style.display='none'; return;
   }
   const savedParts=p.partidos||{};
@@ -3164,11 +3186,14 @@ function cargarElim(){
   const btn=$id('btn-save-elim');
   if(!jugador){cont.innerHTML='';if(btn)btn.style.display='none';return;}
   const cerrado=new Date()>=FECHA_CIERRE;
-  if(cerrado){
-    cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong></div>';
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  if(cerrado&&!esAdmin){
+    cont.innerHTML=`<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">
+      ⏰ <strong>Pronósticos cerrados</strong><br>
+      <button onclick="desbloquearPronAdmin()" style="margin-top:12px;padding:6px 16px;background:var(--rosa);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔐 Acceso Admin</button>
+    </div>`;
     if(btn)btn.style.display='none'; return;
   }
-  const esAdmin=sessionStorage.getItem('adminOk')==='1';
   const llavesAbiertas=new Date()>=FECHA_APERTURA_LLAVES;
   if(!llavesAbiertas&&!esAdmin){
     const diasRestantes=Math.ceil((FECHA_APERTURA_LLAVES-new Date())/(1000*60*60*24));
@@ -3820,9 +3845,13 @@ async function guardarMarcadores(){
     await api({action:'guardarScores', scores: JSON.stringify(scores)});
     setMsg('msg-admin-scores',`✅ ${scores.length} marcador(es) guardados y sincronizados.`,'ok');
   }catch(e){
-    setMsg('msg-admin-scores',`⚠ Guardado local OK — sin conexión al servidor (${e.message})`,'warn');
+    const esRedeploy=e.message&&e.message.includes('desconocida');
+    const msg=esRedeploy
+      ? `⚠ Scores guardados localmente. Para sincronizar al servidor: redesplega el Apps Script (apps-script.gs → Deploy → New version).`
+      : `⚠ Guardado local OK — sin conexión al servidor (${e.message})`;
+    setMsg('msg-admin-scores',msg,'warn');
   }
-  setTimeout(()=>clearMsg('msg-admin-scores'),6000);
+  setTimeout(()=>clearMsg('msg-admin-scores'),10000);
 }
 
 async function resetear(){
@@ -3855,16 +3884,30 @@ function renderAdminPlayers(){
           ${localStorage.getItem('p2026_pron_'+j.nombre)?'<span class="rank-badge pend">⚠ Local</span>':''}
         </div>
       </div>
-      <button class="player-row-del" data-pn="${en}" onclick="eliminarJugador(this.dataset.pn)">🗑️</button>
+      <button class="player-row-del" onclick="confirmarEliminar(this,'${j.nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">🗑️</button>
     </div>`;}).join('');
 }
 
-async function eliminarJugador(nombre){
-  if(!confirm(`¿Eliminar a "${nombre}" de la polla? Se borrarán sus pronósticos también.`))return;
+function confirmarEliminar(btn, nombre){
+  // Reemplaza el botón de borrar con confirmación inline
+  const row=btn.closest('.player-row');
+  btn.style.display='none';
+  const conf=document.createElement('div');
+  conf.style.cssText='display:flex;gap:6px;flex-shrink:0;align-items:center;';
+  conf.innerHTML=`<span style="font-size:11px;color:var(--rojo);font-weight:600;">¿Eliminar?</span>
+    <button onclick="eliminarJugador('${nombre.replace(/'/g,"\\'")}',this.closest('.player-row'))" style="background:var(--rojo);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Sí</button>
+    <button onclick="this.closest('.player-row').querySelector('.player-row-del').style.display='';this.parentNode.remove();" style="background:#eee;color:#333;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">No</button>`;
+  row.appendChild(conf);
+}
+async function eliminarJugador(nombre, row){
+  if(row) row.style.opacity='0.4';
   try{
     await api({action:'eliminarJugador',nombre});
     invalidarCache(); await cargarDatos(true);
-  }catch(e){ alert('Error: '+e.message); }
+  }catch(e){
+    if(row) row.style.opacity='1';
+    alert('Error al eliminar: '+e.message);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
