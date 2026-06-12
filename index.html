@@ -2403,6 +2403,18 @@ function desbloquearInscripcionAdmin(){
   cargarInscripcion();
 }
 
+function desbloquearPronAdmin(){
+  const ok=sessionStorage.getItem('adminOk')==='1';
+  if(!ok){
+    const pin=prompt('🔐 PIN de administrador:');
+    if(pin!==ADMIN_PIN){alert('PIN incorrecto ❌');return;}
+    sessionStorage.setItem('adminOk','1');
+  }
+  // Recarga la vista activa (grupos o llaves)
+  renderGroups();
+  cargarElim();
+}
+
 async function inscribir(){
   const nombre=$id('inp-nombre').value.trim();
   if(!nombre){setMsg('msg-inscripcion','Ingresa tu nombre.','err');return;}
@@ -2523,8 +2535,13 @@ function cargarPronostico(){
   btn.style.display='block';
   const p=state.pronosticos[jugador]||{};
   const cerrado=new Date()>=FECHA_CIERRE;
-  if(cerrado){
-    cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong><br><span style="color:var(--muted);font-size:13px;">El plazo terminó el 11 de junio.</span></div>';
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  if(cerrado&&!esAdmin){
+    cont.innerHTML=`<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">
+      ⏰ <strong>Pronósticos cerrados</strong><br>
+      <span style="color:var(--muted);font-size:13px;">El plazo terminó el 11 de junio.</span><br>
+      <button onclick="desbloquearPronAdmin()" style="margin-top:12px;padding:6px 16px;background:var(--rosa);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔐 Acceso Admin</button>
+    </div>`;
     btn.style.display='none'; return;
   }
   const savedParts=p.partidos||{};
@@ -3169,11 +3186,14 @@ function cargarElim(){
   const btn=$id('btn-save-elim');
   if(!jugador){cont.innerHTML='';if(btn)btn.style.display='none';return;}
   const cerrado=new Date()>=FECHA_CIERRE;
-  if(cerrado){
-    cont.innerHTML='<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">⏰ <strong>Pronósticos cerrados</strong></div>';
+  const esAdmin=sessionStorage.getItem('adminOk')==='1';
+  if(cerrado&&!esAdmin){
+    cont.innerHTML=`<div class="form-card" style="text-align:center;padding:2rem;border-color:rgba(255,61,90,0.3);">
+      ⏰ <strong>Pronósticos cerrados</strong><br>
+      <button onclick="desbloquearPronAdmin()" style="margin-top:12px;padding:6px 16px;background:var(--rosa);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔐 Acceso Admin</button>
+    </div>`;
     if(btn)btn.style.display='none'; return;
   }
-  const esAdmin=sessionStorage.getItem('adminOk')==='1';
   const llavesAbiertas=new Date()>=FECHA_APERTURA_LLAVES;
   if(!llavesAbiertas&&!esAdmin){
     const diasRestantes=Math.ceil((FECHA_APERTURA_LLAVES-new Date())/(1000*60*60*24));
@@ -3864,16 +3884,30 @@ function renderAdminPlayers(){
           ${localStorage.getItem('p2026_pron_'+j.nombre)?'<span class="rank-badge pend">⚠ Local</span>':''}
         </div>
       </div>
-      <button class="player-row-del" data-pn="${en}" onclick="eliminarJugador(this.dataset.pn)">🗑️</button>
+      <button class="player-row-del" onclick="confirmarEliminar(this,'${j.nombre.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">🗑️</button>
     </div>`;}).join('');
 }
 
-async function eliminarJugador(nombre){
-  if(!confirm(`¿Eliminar a "${nombre}" de la polla? Se borrarán sus pronósticos también.`))return;
+function confirmarEliminar(btn, nombre){
+  // Reemplaza el botón de borrar con confirmación inline
+  const row=btn.closest('.player-row');
+  btn.style.display='none';
+  const conf=document.createElement('div');
+  conf.style.cssText='display:flex;gap:6px;flex-shrink:0;align-items:center;';
+  conf.innerHTML=`<span style="font-size:11px;color:var(--rojo);font-weight:600;">¿Eliminar?</span>
+    <button onclick="eliminarJugador('${nombre.replace(/'/g,"\\'")}',this.closest('.player-row'))" style="background:var(--rojo);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Sí</button>
+    <button onclick="this.closest('.player-row').querySelector('.player-row-del').style.display='';this.parentNode.remove();" style="background:#eee;color:#333;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">No</button>`;
+  row.appendChild(conf);
+}
+async function eliminarJugador(nombre, row){
+  if(row) row.style.opacity='0.4';
   try{
     await api({action:'eliminarJugador',nombre});
     invalidarCache(); await cargarDatos(true);
-  }catch(e){ alert('Error: '+e.message); }
+  }catch(e){
+    if(row) row.style.opacity='1';
+    alert('Error al eliminar: '+e.message);
+  }
 }
 
 // ══════════════════════════════════════════════════════════

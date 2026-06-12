@@ -422,13 +422,13 @@ function eliminarJugador(p) {
   const jSh = getSheet('Jugadores');
   const jData = jSh.getDataRange().getValues();
   for (let i = jData.length - 1; i >= 1; i--) {
-    if (jData[i][0] === nombre) { jSh.deleteRow(i + 1); break; }
+    if (String(jData[i][0]).trim() === nombre) { jSh.deleteRow(i + 1); break; }
   }
 
   const pSh = getSheet('Pronosticos');
   const pData = pSh.getDataRange().getValues();
   for (let i = pData.length - 1; i >= 1; i--) {
-    if (pData[i][0] === nombre) { pSh.deleteRow(i + 1); break; }
+    if (String(pData[i][0]).trim() === nombre) { pSh.deleteRow(i + 1); break; }
   }
 
   return { ok: true };
