@@ -3906,11 +3906,18 @@ async function eliminarJugador(nombre, row){
   if(row) row.style.opacity='0.4';
   try{
     await api({action:'eliminarJugador',nombre});
-    invalidarCache(); await cargarDatos(true);
   }catch(e){
     if(row) row.style.opacity='1';
     alert('Error al eliminar: '+e.message);
+    return;
   }
+  // Limpiar también de localStorage para que no reaparezca
+  try{
+    const loc=JSON.parse(localStorage.getItem('p2026_jugadores_local')||'[]');
+    localStorage.setItem('p2026_jugadores_local',JSON.stringify(loc.filter(j=>j.nombre!==nombre)));
+    localStorage.removeItem('p2026_pron_'+nombre);
+  }catch{}
+  invalidarCache(); await cargarDatos(true);
 }
 
 // ══════════════════════════════════════════════════════════
