@@ -312,6 +312,7 @@ function fetchResultadosAPI(p) {
 
   // Team name mapping: API English → App Spanish
   const NAME_MAP = {
+    // Full names
     'Mexico': 'México', 'Canada': 'Canadá', 'United States': 'Estados Unidos',
     'Brazil': 'Brasil', 'Germany': 'Alemania', 'Netherlands': 'Países Bajos',
     'Belgium': 'Bélgica', 'Spain': 'España', 'France': 'Francia',
@@ -328,7 +329,25 @@ function fetchResultadosAPI(p) {
     'Cape Verde': 'Cabo Verde', 'Haiti': 'Haití', 'Scotland': 'Escocia',
     'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Qatar': 'Qatar',
     'Curaçao': 'Curazao', 'Uzbekistan': 'Uzbekistán',
-    'DR Congo': 'R.D. del Congo', 'Panama': 'Panamá'
+    'DR Congo': 'R.D. del Congo', 'Panama': 'Panamá',
+    // 3-letter shortName codes (fallback if API returns shortName before full name)
+    'MEX': 'México', 'CAN': 'Canadá', 'USA': 'Estados Unidos',
+    'BRA': 'Brasil', 'GER': 'Alemania', 'NED': 'Países Bajos',
+    'BEL': 'Bélgica', 'ESP': 'España', 'FRA': 'Francia',
+    'ARG': 'Argentina', 'POR': 'Portugal', 'ENG': 'Inglaterra',
+    'CRO': 'Croacia', 'MAR': 'Marruecos', 'SEN': 'Senegal',
+    'JPN': 'Japón', 'KOR': 'Corea del Sur', 'KSA': 'Arabia Saudita',
+    'URU': 'Uruguay', 'COL': 'Colombia', 'ECU': 'Ecuador',
+    'SUI': 'Suiza', 'PAR': 'Paraguay', 'AUS': 'Australia',
+    'TUN': 'Túnez', 'SWE': 'Suecia', 'NOR': 'Noruega', 'IRQ': 'Irak',
+    'EGY': 'Egipto', 'IRN': 'Irán', 'RSA': 'Sudáfrica',
+    'GHA': 'Ghana', 'CIV': 'Costa de Marfil', 'NZL': 'Nueva Zelanda',
+    'CZE': 'Chequia', 'AUT': 'Austria', 'JOR': 'Jordania',
+    'ALG': 'Algeria', 'TUR': 'Turquía',
+    'CPV': 'Cabo Verde', 'HAI': 'Haití', 'SCO': 'Escocia',
+    'BIH': 'Bosnia y Herzegovina', 'QAT': 'Qatar',
+    'CUW': 'Curazao', 'UZB': 'Uzbekistán',
+    'COD': 'R.D. del Congo', 'PAN': 'Panamá'
   };
   function mapName(n) { return NAME_MAP[n] || n; }
 
@@ -353,8 +372,8 @@ function fetchResultadosAPI(p) {
       .filter(m => m.status === 'FINISHED' && m.score && m.score.fullTime)
       .map(m => ({
         apiId:  m.id,
-        local:  mapName(m.homeTeam.shortName || m.homeTeam.name),
-        visita: mapName(m.awayTeam.shortName || m.awayTeam.name),
+        local:  mapName(m.homeTeam.name || m.homeTeam.shortName),
+        visita: mapName(m.awayTeam.name || m.awayTeam.shortName),
         gL:     m.score.fullTime.home,
         gV:     m.score.fullTime.away,
         fecha:  m.utcDate ? m.utcDate.substring(0, 10) : '',
