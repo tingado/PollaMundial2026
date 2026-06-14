@@ -487,12 +487,12 @@ select option { background:#fff; }
 .rd-item { display:flex; flex-direction:column; gap:2px; font-size:11px; padding-bottom:4px; border-bottom:1px solid rgba(0,0,0,0.06); }
 .rd-item:last-child { border-bottom:none; padding-bottom:0; }
 .rd-item-row1 { display:flex; align-items:center; justify-content:space-between; gap:6px; }
-.rd-item-match { flex:1; min-width:0; color:var(--text); font-weight:600; }
+.rd-item-match { flex:1; min-width:0; color:var(--text); font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .rd-item-pred { color:var(--muted); font-size:10px; padding-left:2px; line-height:1.4; }
-.rd-item-pts { font-weight:800; font-size:12px; flex-shrink:0; min-width:24px; text-align:right; }
-.rd-pts-2 { color:var(--verde); }
-.rd-pts-1 { color:#f59e0b; }
-.rd-pts-0 { color:#d1d5db; }
+.rd-item-pts { font-weight:800; font-size:11px; flex-shrink:0; padding:1px 6px; border-radius:10px; white-space:nowrap; }
+.rd-pts-2 { background:rgba(0,200,83,0.15); color:#00a846; }
+.rd-pts-1 { background:rgba(245,158,11,0.15); color:#b45309; }
+.rd-pts-0 { background:rgba(0,0,0,0.07); color:#888; }
 /* Mobile: ocultar col Elim, compactar tabla */
 @media(max-width:500px){
   .ranking-table th:nth-child(5), .ranking-table td:nth-child(5) { display:none; }
@@ -3779,9 +3779,10 @@ function toggleDesglose(nombre){
       const sections=buildDesglose(pron,state.resultados);
       if(!sections.length){inner.innerHTML='<span style="color:var(--muted);font-size:12px;">Sin datos aún.</span>';}
       else{
-        inner.innerHTML=sections.map(s=>`
-          <div class="rd-section">
-            <div class="rd-title">${s.title}</div>
+        inner.innerHTML=sections.map(s=>{
+          const totalSec=s.items.reduce((a,i)=>a+i.pts,0);
+          return `<div class="rd-section">
+            <div class="rd-title">${s.title} <span style="font-weight:800;color:var(--rosa);margin-left:4px;">+${totalSec} pts</span></div>
             <div class="rd-items">
               ${s.items.map(it=>{
                 const ptsCls=it.pts>=2?'rd-pts-2':it.pts>=1?'rd-pts-1':'rd-pts-0';
@@ -3797,7 +3798,8 @@ function toggleDesglose(nombre){
                 </div>`;
               }).join('')}
             </div>
-          </div>`).join('');
+          </div>`;
+        }).join('');
       }
       inner.dataset.loaded='1';
     }
