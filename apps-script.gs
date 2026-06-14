@@ -72,6 +72,9 @@ const NAME_MAP = {
   'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Qatar': 'Qatar',
   'Curaçao': 'Curazao', 'Uzbekistan': 'Uzbekistán',
   'DR Congo': 'R.D. del Congo', 'Panama': 'Panamá',
+  // Variantes que usa Zafronix
+  'Korea Republic': 'Corea del Sur', 'IR Iran': 'Irán',
+  'Congo DR': 'R.D. del Congo', 'Cabo Verde': 'Cabo Verde',
   // Códigos de 3 letras (football-data.org "shortName") — respaldo
   'MEX': 'México', 'CAN': 'Canadá', 'USA': 'Estados Unidos',
   'BRA': 'Brasil', 'GER': 'Alemania', 'NED': 'Países Bajos',
@@ -112,7 +115,9 @@ function doGet(e) {
       case 'guardarResultadosGrupos': result = guardarResultadosGrupos(p); break;
       case 'guardarScores':           result = guardarScores(p); break;
       case 'fetchResultadosAPI':      result = fetchResultadosAPI(p); break;
+      case 'fetchResultadosZafronix': result = fetchResultadosZafronix(p); break;
       case 'guardarToken':            result = guardarToken(p); break;
+      case 'guardarTokenZafronix':    result = guardarTokenZafronix(p); break;
       case 'activarAutoSync':         result = activarAutoSync(p); break;
       case 'desactivarAutoSync':      result = desactivarAutoSync(); break;
       case 'getAutoSyncStatus':       result = getAutoSyncStatus(); break;
@@ -454,6 +459,99 @@ function fetchResultadosAPI(p) {
   }
 }
 
+// ── ZAFRONIX WC API (api.zafronix.com) ───────────────────
+// Fuente principal de resultados del Mundial 2026 (en vivo).
+function fetchResultadosZafronix(p) {
+  const key = (p && p.apiToken) || PropertiesService.getScriptProperties().getProperty('ZAFRONIX_KEY') || '';
+  if (!key) return { error: 'API key de Zafronix no configurada. Pégala en Admin y presiona Guardar Token.' };
+
+  try {
+    const url = 'https://api.zafronix.com/fifa/worldcup/v1/matches?year=2026';
+    const response = UrlFetchApp.fetch(url, {
+      headers: { 'X-API-Key': key },
+      muteHttpExceptions: true
+    });
+    const code = response.getResponseCode();
+    if (code === 401 || code === 403) {
+      return { error: 'API key de Zafronix inválida (error ' + code + '). Revísala en Admin → Guardar Token.' };
+    }
+    if (code === 429) {
+      return { error: 'Límite de peticiones de Zafronix alcanzado (error 429). Espera un momento e intenta de nuevo.' };
+    }
+    if (code !== 200) {
+      return { error: 'Zafronix respondió con código ' + code + ': ' + response.getContentText().substring(0, 200) };
+    }
+
+    const data = JSON.parse(response.getContentText());
+    const matches = data.data || [];
+
+    const groupScores = []; // {key, gL, gV}
+    const oct = new Set(), qua = new Set(), sem = new Set();
+    let f1 = '', f2 = '', campeon = '';
+
+    matches.forEach(m => {
+      const stage = m.stageNormalized || m.stage || '';
+      const home = m.homeTeam ? mapName(m.homeTeam) : '';
+      const away = m.awayTeam ? mapName(m.awayTeam) : '';
+      const played = m.homeScore !== null && m.homeScore !== undefined &&
+                     m.awayScore !== null && m.awayScore !== undefined;
+
+      if (stage.indexOf('group') === 0) {
+        // Fase de grupos: guardar marcador (usar homeScore/awayScore, NO el campo result)
+        if (played && home && away) {
+          groupScores.push({ key: home + '|' + away, gL: m.homeScore, gV: m.awayScore });
+        }
+        return;
+      }
+      // Eliminatorias: equipos que alcanzaron cada ronda (cuando ya están definidos)
+      if (stage === 'round_of_16')   { if (home) oct.add(home); if (away) oct.add(away); }
+      if (stage === 'quarter_final') { if (home) qua.add(home); if (away) qua.add(away); }
+      if (stage === 'semi_final')    { if (home) sem.add(home); if (away) sem.add(away); }
+      if (stage === 'final') {
+        if (home) f1 = home;
+        if (away) f2 = away;
+        if (played && home && away) {
+          campeon = m.homeScore > m.awayScore ? home : m.awayScore > m.homeScore ? away : campeon;
+        }
+      }
+    });
+
+    if (groupScores.length > 0) {
+      guardarScores({ scores: JSON.stringify(groupScores) });
+    }
+
+    const resultadosObj = { oct: Array.from(oct), qua: Array.from(qua), sem: Array.from(sem), f1, f2, campeon };
+
+    if (oct.size > 0 || qua.size > 0 || sem.size > 0 || f1) {
+      const sh = getSheet('Resultados');
+      if (sh.getLastRow() === 0) {
+        sh.appendRow(['grupos_json', 'oct_json', 'qua_json', 'sem_json', 'f1', 'f2', 'campeon', 'terc_json']);
+      }
+      const existingGrupos = sh.getLastRow() > 1 ? (sh.getRange(2, 1).getValue() || '{}') : '{}';
+      const existingTerc   = sh.getLastRow() > 1 ? (sh.getRange(2, 8).getValue() || '[]') : '[]';
+      const row = [
+        existingGrupos,
+        JSON.stringify(resultadosObj.oct), JSON.stringify(resultadosObj.qua),
+        JSON.stringify(resultadosObj.sem), f1, f2, campeon, existingTerc
+      ];
+      if (sh.getLastRow() <= 1) sh.appendRow(row);
+      else sh.getRange(2, 1, 1, 8).setValues([row]);
+    }
+
+    return { ok: true, resultados: resultadosObj, scores: getScores(), matches: groupScores.length };
+  } catch(err) {
+    return { error: 'Error al consultar Zafronix: ' + err.message };
+  }
+}
+
+// Guarda la API key de Zafronix en el servidor (Script Properties)
+function guardarTokenZafronix(p) {
+  const key = (p.apiToken || '').trim();
+  if (!key) return { error: 'API key vacía' };
+  PropertiesService.getScriptProperties().setProperty('ZAFRONIX_KEY', key);
+  return { ok: true, msg: 'API key de Zafronix guardada. Ahora puedes activar el Auto-Sync.' };
+}
+
 // ── ADMIN ────────────────────────────────────────────────
 
 function eliminarJugador(p) {
@@ -499,9 +597,10 @@ function activarAutoSync(p) {
   if (p && p.apiToken) {
     PropertiesService.getScriptProperties().setProperty('API_TOKEN', p.apiToken.trim());
   }
-  // Verificar que hay token
-  const token = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
-  if (!token) return { error: 'Primero guarda el token con guardarToken.' };
+  // Verificar que hay alguna key (Zafronix preferida, o football-data como respaldo)
+  const props = PropertiesService.getScriptProperties();
+  const token = props.getProperty('ZAFRONIX_KEY') || props.getProperty('API_TOKEN');
+  if (!token) return { error: 'Primero guarda la API key con Guardar Token.' };
 
   // Eliminar triggers anteriores del mismo tipo para evitar duplicados
   ScriptApp.getProjectTriggers().forEach(t => {
@@ -532,18 +631,21 @@ function desactivarAutoSync() {
 // Informa si el trigger está activo
 function getAutoSyncStatus() {
   const active = ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'autoSyncResultados');
-  const hasToken = !!PropertiesService.getScriptProperties().getProperty('API_TOKEN');
+  const props = PropertiesService.getScriptProperties();
+  const hasToken = !!(props.getProperty('ZAFRONIX_KEY') || props.getProperty('API_TOKEN'));
   return { active, hasToken };
 }
 
-// Esta función es llamada por el trigger automático
+// Esta función es llamada por el trigger automático.
+// Prefiere Zafronix (tiene el Mundial 2026); usa football-data solo si no hay key de Zafronix.
 function autoSyncResultados() {
   try {
-    const result = fetchResultadosAPI({});
+    const hasZafronix = !!PropertiesService.getScriptProperties().getProperty('ZAFRONIX_KEY');
+    const result = hasZafronix ? fetchResultadosZafronix({}) : fetchResultadosAPI({});
     // Log en hoja auxiliar para diagnóstico
     const logSh = getSheet('AutoSyncLog');
     if (logSh.getLastRow() > 500) logSh.deleteRows(2, 100); // evitar crecer indefinidamente
-    logSh.appendRow([new Date(), result.matches || 0, result.error || 'ok']);
+    logSh.appendRow([new Date(), result.matches || 0, result.error || 'ok (' + (hasZafronix ? 'zafronix' : 'football-data') + ')']);
   } catch(e) {
     const logSh = getSheet('AutoSyncLog');
     logSh.appendRow([new Date(), 0, 'ERROR: ' + e.message]);
