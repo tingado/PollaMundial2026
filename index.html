@@ -2081,10 +2081,15 @@ async function cargarDatos(forzar=false){
     await sincronizarPendientes();
     const d=await api({action:'getAll'});
     if(!d) throw new Error('Sin respuesta');
+    // Limpiar registros offline que el servidor ya confirmó
+    const serverNames=new Set((d.jugadores||[]).map(j=>String(j.nombre)));
+    const pendReg=JSON.parse(localStorage.getItem('p2026_pendientes')||'[]');
+    const pendRestantes=pendReg.filter(n=>!serverNames.has(String(n)));
+    if(pendRestantes.length!==pendReg.length) localStorage.setItem('p2026_pendientes',JSON.stringify(pendRestantes));
     const localExtra=_jugadoresLocalesPendientes(d.jugadores||[]);
     if(localExtra.length) d.jugadores=[...(d.jugadores||[]),...localExtra];
     guardarCache(d);
-    applyState(d);
+    applyState(d, true);
     $id('cache-status-sb').textContent='✓ Actualizado';
     _mostrarBannerConexion(false);
   };
@@ -2115,8 +2120,12 @@ async function cargarDatos(forzar=false){
 
 function _jugadoresLocalesPendientes(serverJugadores){
   const serverNames=new Set(serverJugadores.map(j=>j.nombre));
+  // Solo jugadores registrados OFFLINE que aún no se han subido al servidor.
+  // (Evita re-inyectar jugadores que el admin borró del servidor.)
+  const pendientesReg=JSON.parse(localStorage.getItem('p2026_pendientes')||'[]');
+  if(!pendientesReg.length) return [];
   const local=JSON.parse(localStorage.getItem('p2026_jugadores_local')||'[]');
-  return local.filter(j=>!serverNames.has(j.nombre));
+  return local.filter(j=>pendientesReg.includes(j.nombre) && !serverNames.has(j.nombre));
 }
 
 function _aplicarEstadoLocal(){
@@ -2141,15 +2150,22 @@ function _cargarScoresLocal(){
   return null;
 }
 
-function applyState(d){
+function applyState(d, fromServer=false){
   state.jugadores=(d.jugadores||[]).map(j=>({...j,nombre:String(j.nombre)}))
   state.pronosticos=d.pronosticos||{};
   state.resultados=d.resultados||{};
-  // Scores: fusionar servidor + local (el servidor tiene prioridad, pero si no trae scores usar local)
-  const serverScores=d.scores&&Object.keys(d.scores).length>0?d.scores:null;
-  const localScores=_cargarScoresLocal();
-  state.scores=serverScores||localScores||state.scores||{};
-  if(serverScores) _guardarScoresLocal();
+  if(fromServer){
+    // El servidor es la fuente de verdad: sus scores mandan (aunque vengan vacíos)
+    // y se sobreescribe el espejo local para no arrastrar datos viejos.
+    state.scores=d.scores||{};
+    _guardarScoresLocal();
+  }else{
+    // Caché / offline: usar local como respaldo si el servidor no trajo nada.
+    const serverScores=d.scores&&Object.keys(d.scores).length>0?d.scores:null;
+    const localScores=_cargarScoresLocal();
+    state.scores=serverScores||localScores||state.scores||{};
+    if(serverScores) _guardarScoresLocal();
+  }
   renderLeaderboard();
   renderPozo();
   renderHome();
@@ -4178,17 +4194,20 @@ const savedToken=localStorage.getItem('p2026_token');
 if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
 
 // ── Service Worker: fuerza HTML fresco en cada visita ──
+// Patrón "controllerchange": cuando un SW nuevo toma el control de una
+// pestaña que YA estaba controlada (= hubo un deploy), se recarga 1 vez.
+// En la primera visita (sin controlador previo) NO recarga: ya tiene HTML fresco.
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.addEventListener('message', e => {
-    if(e.data?.type==='SW_RELOAD') location.reload();
+  let _swReloaded=false;
+  const _hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swReloaded || !_hadController) return;
+    _swReloaded=true;
+    location.reload();
   });
   navigator.serviceWorker.register('./sw.js').then(reg=>{
-    reg.addEventListener('updatefound',()=>{
-      const sw=reg.installing;
-      sw.addEventListener('statechange',()=>{
-        if(sw.state==='activated') location.reload();
-      });
-    });
+    // Buscar actualización del SW en cada carga
+    if(reg.update) reg.update();
   }).catch(()=>{});
 }
 </script>
