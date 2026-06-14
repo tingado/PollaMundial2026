@@ -1406,11 +1406,11 @@ select option { background:#fff; }
           <span id="api-txt">Sin conectar</span>
         </div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;line-height:1.6;">
-          Token de <strong style="color:#60c8ff;">football-data.org</strong> — ingresa tu token y presiona Sincronizar para cargar resultados automáticamente.<br>
+          API key de <strong style="color:#60c8ff;">Zafronix</strong> (zwc_…) — ingrésala y presiona Sincronizar para cargar los resultados del Mundial 2026.<br>
           <strong style="color:rgba(245,188,0,0.9);">⚠ También debes redesplegar el Apps Script con el código más reciente.</strong>
         </p>
         <div style="display:flex;gap:8px;margin-bottom:6px;">
-          <input id="inp-token" type="password" placeholder="Token football-data.org (se guarda en este browser)"
+          <input id="inp-token" type="password" placeholder="API key Zafronix (zwc_…) — se guarda en este browser"
                  style="margin-bottom:0;flex:1;" oninput="onTokenChange()">
           <button class="btn btn-ghost" id="btn-sync" onclick="sincronizar()" disabled
                   style="border-color:rgba(96,200,255,0.3);color:#60c8ff;white-space:nowrap;">
@@ -1424,7 +1424,7 @@ select option { background:#fff; }
         <div style="margin-top:12px;padding:10px 12px;background:rgba(96,200,255,0.05);border:1px solid rgba(96,200,255,0.2);border-radius:10px;">
           <div style="font-size:12px;font-weight:700;color:#60c8ff;margin-bottom:8px;">⚡ Auto-Sync — sincronización automática cada 10 min</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6;">
-            Guarda el token en el servidor y activa el trigger. El Apps Script llamará a football-data.org automáticamente sin que hagas nada.
+            Guarda la API key en el servidor y activa el trigger. El Apps Script llamará a Zafronix automáticamente cada 10 min sin que hagas nada.
           </div>
           <div id="autosync-status" style="font-size:11px;color:var(--muted);margin-bottom:8px;">● Estado: cargando...</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -3906,7 +3906,7 @@ function actualizarBarraAdmin(){
 async function sincronizarPartidos(){
   const token = localStorage.getItem('p2026_token');
   if(!token){
-    alert('Primero configura el token de la API en el panel Admin → Sincronizar API.');
+    alert('Primero configura la API key de Zafronix en el panel Admin → Sincronización con API.');
     showView('admin', $id('nav-admin'));
     return;
   }
@@ -3914,7 +3914,7 @@ async function sincronizarPartidos(){
   const btn = document.querySelector('#partidos-admin-bar button');
   if(btn){ btn.disabled=true; btn.textContent='⏳ Sincronizando...'; }
   try{
-    const r = await api({action:'fetchResultadosAPI', apiToken:token});
+    const r = await api({action:'fetchResultadosZafronix', apiToken:token});
     if(r.error){ alert('Error API: '+r.error); return; }
     if(r.scores){ state.scores=r.scores; renderGroups(); }
     if(r.resultados){
@@ -4096,9 +4096,9 @@ async function cargarAutoSyncStatus(){
 
 async function guardarTokenServidor(){
   const token=$id('inp-token').value.trim();
-  if(!token){ setMsg('msg-autosync','Ingresa el token primero en el campo de arriba.','err'); return; }
+  if(!token){ setMsg('msg-autosync','Ingresa la API key primero en el campo de arriba.','err'); return; }
   try{
-    const r=await api({action:'guardarToken',apiToken:token});
+    const r=await api({action:'guardarTokenZafronix',apiToken:token});
     if(r.error){ setMsg('msg-autosync',r.error,'err'); return; }
     setMsg('msg-autosync','✅ '+r.msg,'ok');
     cargarAutoSyncStatus();
@@ -4148,9 +4148,9 @@ async function sincronizar(){
   const token=$id('inp-token').value.trim(); if(!token)return;
   if(!SCRIPT_URL){logS('❌ Primero conecta el Apps Script','lerr');return;}
   $id('btn-sync').disabled=true;
-  logS('Conectando con football-data.org...');
+  logS('Conectando con Zafronix...');
   try{
-    const r=await api({action:'fetchResultadosAPI',apiToken:token});
+    const r=await api({action:'fetchResultadosZafronix',apiToken:token});
     if(r.error){logS('❌ '+r.error,'lerr');setAPIBadge(false,'Error');return;}
     if(r.resultados){
       const rd=r.resultados;
