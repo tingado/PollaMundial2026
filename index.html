@@ -4176,6 +4176,19 @@ if(SCRIPT_URL){
 
 const savedToken=localStorage.getItem('p2026_token');
 if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
+
+// ── Service Worker: fuerza HTML fresco en cada visita ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    reg.addEventListener('updatefound',()=>{
+      const sw=reg.installing;
+      sw.addEventListener('statechange',()=>{
+        // Cuando el nuevo SW toma control, recargar silenciosamente
+        if(sw.state==='activated') location.reload();
+      });
+    });
+  }).catch(()=>{});
+}
 </script>
 
 <!-- ══ MODAL: COMPROBANTE ══ -->
