@@ -373,6 +373,15 @@ function fetchResultadosAPI(p) {
     });
 
     const code = response.getResponseCode();
+    if (code === 403) {
+      return { error: 'Tu plan de football-data.org NO incluye el Mundial 2026 (error 403). El plan gratuito solo da acceso a ciertas ligas. Carga los marcadores manualmente en Admin → ⚽ Marcadores (funciona igual y suma puntos al ranking).' };
+    }
+    if (code === 429) {
+      return { error: 'Demasiadas peticiones a la API (error 429). Espera un minuto e intenta de nuevo.' };
+    }
+    if (code === 401) {
+      return { error: 'Token inválido o expirado (error 401). Revisa el token de football-data.org.' };
+    }
     if (code !== 200) {
       return { error: 'API respondió con código ' + code + ': ' + response.getContentText().substring(0, 300) };
     }
