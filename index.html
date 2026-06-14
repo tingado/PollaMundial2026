@@ -1659,7 +1659,9 @@ select option { background:#fff; }
 // CONFIG
 // ══════════════════════════════════════════════════════════
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyRS0zEOQEEZkH5NckMbOvvMlrlz-Higv4csirRZjaleopgiFp25baMSc9O-e1HP1vS/exec';
-let SCRIPT_URL = localStorage.getItem('polla2026_url') || DEFAULT_SCRIPT_URL;
+// Siempre actualizar localStorage con la URL del código (fuerza migración si cambió el deployment)
+localStorage.setItem('polla2026_url', DEFAULT_SCRIPT_URL);
+let SCRIPT_URL = DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
