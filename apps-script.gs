@@ -50,6 +50,55 @@ function desactivarTrigger() {
 
 const ss = SpreadsheetApp.getActiveSpreadsheet();
 
+// ── MAPEO DE NOMBRES (API inglés / códigos → español de la app) ──
+// Usado tanto al sincronizar (fetchResultadosAPI) como al leer (getScores),
+// para que las claves "Local|Visita" siempre queden en español.
+const NAME_MAP = {
+  // Nombres completos (football-data.org "name")
+  'Mexico': 'México', 'Canada': 'Canadá', 'United States': 'Estados Unidos',
+  'Brazil': 'Brasil', 'Germany': 'Alemania', 'Netherlands': 'Países Bajos',
+  'Belgium': 'Bélgica', 'Spain': 'España', 'France': 'Francia',
+  'Argentina': 'Argentina', 'Portugal': 'Portugal', 'England': 'Inglaterra',
+  'Croatia': 'Croacia', 'Morocco': 'Marruecos', 'Senegal': 'Senegal',
+  'Japan': 'Japón', 'South Korea': 'Corea del Sur', 'Saudi Arabia': 'Arabia Saudita',
+  'Uruguay': 'Uruguay', 'Colombia': 'Colombia', 'Ecuador': 'Ecuador',
+  'Switzerland': 'Suiza', 'Paraguay': 'Paraguay', 'Australia': 'Australia',
+  'Tunisia': 'Túnez', 'Sweden': 'Suecia', 'Norway': 'Noruega', 'Iraq': 'Irak',
+  'Egypt': 'Egipto', 'Iran': 'Irán', 'South Africa': 'Sudáfrica',
+  'Ghana': 'Ghana', "Côte d'Ivoire": 'Costa de Marfil', 'New Zealand': 'Nueva Zelanda',
+  'Czechia': 'Chequia', 'Austria': 'Austria', 'Jordan': 'Jordania',
+  'Algeria': 'Algeria', 'Turkey': 'Turquía', 'Türkiye': 'Turquía',
+  'Cape Verde': 'Cabo Verde', 'Haiti': 'Haití', 'Scotland': 'Escocia',
+  'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Qatar': 'Qatar',
+  'Curaçao': 'Curazao', 'Uzbekistan': 'Uzbekistán',
+  'DR Congo': 'R.D. del Congo', 'Panama': 'Panamá',
+  // Códigos de 3 letras (football-data.org "shortName") — respaldo
+  'MEX': 'México', 'CAN': 'Canadá', 'USA': 'Estados Unidos',
+  'BRA': 'Brasil', 'GER': 'Alemania', 'NED': 'Países Bajos',
+  'BEL': 'Bélgica', 'ESP': 'España', 'FRA': 'Francia',
+  'ARG': 'Argentina', 'POR': 'Portugal', 'ENG': 'Inglaterra',
+  'CRO': 'Croacia', 'MAR': 'Marruecos', 'SEN': 'Senegal',
+  'JPN': 'Japón', 'KOR': 'Corea del Sur', 'KSA': 'Arabia Saudita',
+  'URU': 'Uruguay', 'COL': 'Colombia', 'ECU': 'Ecuador',
+  'SUI': 'Suiza', 'PAR': 'Paraguay', 'AUS': 'Australia',
+  'TUN': 'Túnez', 'SWE': 'Suecia', 'NOR': 'Noruega', 'IRQ': 'Irak',
+  'EGY': 'Egipto', 'IRN': 'Irán', 'RSA': 'Sudáfrica',
+  'GHA': 'Ghana', 'CIV': 'Costa de Marfil', 'NZL': 'Nueva Zelanda',
+  'CZE': 'Chequia', 'AUT': 'Austria', 'JOR': 'Jordania',
+  'ALG': 'Algeria', 'TUR': 'Turquía',
+  'CPV': 'Cabo Verde', 'HAI': 'Haití', 'SCO': 'Escocia',
+  'BIH': 'Bosnia y Herzegovina', 'QAT': 'Qatar',
+  'CUW': 'Curazao', 'UZB': 'Uzbekistán',
+  'COD': 'R.D. del Congo', 'PAN': 'Panamá'
+};
+function mapName(n) { return NAME_MAP[String(n).trim()] || String(n).trim(); }
+// Normaliza una clave "Local|Visita" mapeando cada lado al nombre español.
+function normalizarClaveScore(key) {
+  const parts = String(key).split('|');
+  if (parts.length !== 2) return String(key);
+  return mapName(parts[0]) + '|' + mapName(parts[1]);
+}
+
 function doGet(e) {
   const p = e.parameter;
   const cb = p.callback || 'callback';
@@ -147,12 +196,16 @@ function getScores() {
   if (data.length <= 1) return {};
   const result = {};
   // Rows: [key (local|visita), gL, gV]
+  // Las claves se normalizan a español al leer (sin modificar la hoja),
+  // así un marcador guardado como "SUI|..." se entrega como "Suiza|...".
   data.slice(1).forEach(r => {
     if (!r[0]) return;
-    result[String(r[0])] = {
-      gL: r[1] !== '' && r[1] !== null ? Number(r[1]) : null,
-      gV: r[2] !== '' && r[2] !== null ? Number(r[2]) : null
-    };
+    const key = normalizarClaveScore(r[0]);
+    const gL = r[1] !== '' && r[1] !== null ? Number(r[1]) : null;
+    const gV = r[2] !== '' && r[2] !== null ? Number(r[2]) : null;
+    // Si ya existe esa clave (duplicado por clave vieja + nueva), preferir la que tenga marcador
+    if (result[key] && (gL === null || gV === null)) return;
+    result[key] = { gL: gL, gV: gV };
   });
   return result;
 }
@@ -309,47 +362,7 @@ function calcularScores(jugadores, pronosticos, resultados) {
 function fetchResultadosAPI(p) {
   const token = (p && p.apiToken) || PropertiesService.getScriptProperties().getProperty('API_TOKEN') || '';
   if (!token) return { error: 'Token no configurado. Usa Admin → Guardar Token primero.' };
-
-  // Team name mapping: API English → App Spanish
-  const NAME_MAP = {
-    // Full names
-    'Mexico': 'México', 'Canada': 'Canadá', 'United States': 'Estados Unidos',
-    'Brazil': 'Brasil', 'Germany': 'Alemania', 'Netherlands': 'Países Bajos',
-    'Belgium': 'Bélgica', 'Spain': 'España', 'France': 'Francia',
-    'Argentina': 'Argentina', 'Portugal': 'Portugal', 'England': 'Inglaterra',
-    'Croatia': 'Croacia', 'Morocco': 'Marruecos', 'Senegal': 'Senegal',
-    'Japan': 'Japón', 'South Korea': 'Corea del Sur', 'Saudi Arabia': 'Arabia Saudita',
-    'Uruguay': 'Uruguay', 'Colombia': 'Colombia', 'Ecuador': 'Ecuador',
-    'Switzerland': 'Suiza', 'Paraguay': 'Paraguay', 'Australia': 'Australia',
-    'Tunisia': 'Túnez', 'Sweden': 'Suecia', 'Norway': 'Noruega', 'Iraq': 'Irak',
-    'Egypt': 'Egipto', 'Iran': 'Irán', 'South Africa': 'Sudáfrica',
-    'Ghana': 'Ghana', "Côte d'Ivoire": 'Costa de Marfil', 'New Zealand': 'Nueva Zelanda',
-    'Czechia': 'Chequia', 'Austria': 'Austria', 'Jordan': 'Jordania',
-    'Algeria': 'Algeria', 'Turkey': 'Turquía', 'Türkiye': 'Turquía',
-    'Cape Verde': 'Cabo Verde', 'Haiti': 'Haití', 'Scotland': 'Escocia',
-    'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Qatar': 'Qatar',
-    'Curaçao': 'Curazao', 'Uzbekistan': 'Uzbekistán',
-    'DR Congo': 'R.D. del Congo', 'Panama': 'Panamá',
-    // 3-letter shortName codes (fallback if API returns shortName before full name)
-    'MEX': 'México', 'CAN': 'Canadá', 'USA': 'Estados Unidos',
-    'BRA': 'Brasil', 'GER': 'Alemania', 'NED': 'Países Bajos',
-    'BEL': 'Bélgica', 'ESP': 'España', 'FRA': 'Francia',
-    'ARG': 'Argentina', 'POR': 'Portugal', 'ENG': 'Inglaterra',
-    'CRO': 'Croacia', 'MAR': 'Marruecos', 'SEN': 'Senegal',
-    'JPN': 'Japón', 'KOR': 'Corea del Sur', 'KSA': 'Arabia Saudita',
-    'URU': 'Uruguay', 'COL': 'Colombia', 'ECU': 'Ecuador',
-    'SUI': 'Suiza', 'PAR': 'Paraguay', 'AUS': 'Australia',
-    'TUN': 'Túnez', 'SWE': 'Suecia', 'NOR': 'Noruega', 'IRQ': 'Irak',
-    'EGY': 'Egipto', 'IRN': 'Irán', 'RSA': 'Sudáfrica',
-    'GHA': 'Ghana', 'CIV': 'Costa de Marfil', 'NZL': 'Nueva Zelanda',
-    'CZE': 'Chequia', 'AUT': 'Austria', 'JOR': 'Jordania',
-    'ALG': 'Algeria', 'TUR': 'Turquía',
-    'CPV': 'Cabo Verde', 'HAI': 'Haití', 'SCO': 'Escocia',
-    'BIH': 'Bosnia y Herzegovina', 'QAT': 'Qatar',
-    'CUW': 'Curazao', 'UZB': 'Uzbekistán',
-    'COD': 'R.D. del Congo', 'PAN': 'Panamá'
-  };
-  function mapName(n) { return NAME_MAP[n] || n; }
+  // NAME_MAP y mapName ahora son globales (definidos arriba) y se comparten con getScores.
 
   try {
     // WC 2026 competition ID on football-data.org is 2000 (FIFA World Cup)
