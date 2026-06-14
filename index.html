@@ -4181,11 +4181,13 @@ if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
 
 // ── Service Worker: fuerza HTML fresco en cada visita ──
 if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message', e => {
+    if(e.data?.type==='SW_RELOAD') location.reload();
+  });
   navigator.serviceWorker.register('./sw.js').then(reg=>{
     reg.addEventListener('updatefound',()=>{
       const sw=reg.installing;
       sw.addEventListener('statechange',()=>{
-        // Cuando el nuevo SW toma control, recargar silenciosamente
         if(sw.state==='activated') location.reload();
       });
     });

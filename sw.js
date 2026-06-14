@@ -2,7 +2,17 @@
 const CACHE = 'polla2026-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    self.clients.claim().then(() => {
+      // Avisar a todas las pestañas que recarguen para obtener el HTML nuevo
+      return self.clients.matchAll({ type: 'window' }).then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'SW_RELOAD' }));
+      });
+    })
+  );
+});
 
 self.addEventListener('fetch', e => {
   // Para navegación (carga de página): red primero, caché como fallback offline
