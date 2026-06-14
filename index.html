@@ -2071,11 +2071,9 @@ async function cargarDatos(forzar=false){
     return;
   }
   if(!forzar){
-    const c=leerCache();
-    if(c){ applyState(c); $id('cache-status-sb').textContent='📦 Datos en caché'; _mostrarBannerConexion(false); return; }
-    // Sin caché fresca: mostrar datos viejos de inmediato y refrescar en background
-    const stale=leerCache(true);
-    if(stale){ applyState(stale); $id('cache-status-sb').textContent='⏳ Actualizando...'; }
+    // Stale-while-revalidate: mostrar cualquier caché de inmediato, siempre actualizar del servidor
+    const c=leerCache(true); // acepta caché de cualquier edad para render inmediato
+    if(c){ applyState(c); $id('cache-status-sb').textContent='⏳ Actualizando...'; _mostrarBannerConexion(false); }
   }
   if(!document.getElementById('cache-status-sb').textContent.includes('Actualizando'))
     $id('cache-status-sb').textContent='⏳ Cargando...';
