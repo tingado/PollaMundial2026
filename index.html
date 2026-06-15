@@ -495,7 +495,8 @@ select option { background:#fff; }
 .rd-pts-0 { background:rgba(0,0,0,0.07); color:#888; }
 /* Mobile: ocultar col Elim, compactar tabla */
 @media(max-width:500px){
-  .ranking-table th:nth-child(5), .ranking-table td:nth-child(5) { display:none; }
+  .ranking-table th:nth-child(5), .ranking-table td:nth-child(5),
+  .ranking-table th:nth-child(6), .ranking-table td:nth-child(6) { display:none; }
   .ranking-table th, .ranking-table td { padding:10px 6px; }
   .rank-pts-total { font-size:1.1rem; }
   .rd-item-pred { font-size:10px; }
@@ -3382,10 +3383,10 @@ function renderRanking(){
           <tr>
             <th>#</th>
             <th>Jugador</th>
+            <th>Total</th>
             <th title="Puntos por marcadores exactos y resultados correctos">Partidos</th>
             <th title="Puntos por 1° y 2° lugar de grupo">Grupos</th>
             <th title="Puntos fase eliminatoria">Elim.</th>
-            <th>Total</th>
           </tr>
         </thead>
         <tbody>
@@ -3407,13 +3408,13 @@ function renderRanking(){
                   </div>
                 </div>
               </td>
-              <td class="rank-pts-sub" style="color:${r.partidos>0?'var(--verde)':'var(--muted)'};">${r.partidos}</td>
-              <td class="rank-pts-sub">${r.grupos}</td>
-              <td class="rank-pts-sub">${r.elim}</td>
               <td class="rank-pts-total">
                 ${r.total}
                 <div class="pts-bar"><div class="pts-bar-fill" style="width:${maxPts?Math.round(r.total/maxPts*100):0}%"></div></div>
               </td>
+              <td class="rank-pts-sub" style="color:${r.partidos>0?'var(--verde)':'var(--muted)'};">${r.partidos}</td>
+              <td class="rank-pts-sub">${r.grupos}</td>
+              <td class="rank-pts-sub">${r.elim}</td>
             </tr>
             <tr id="rd-${en}" class="rank-detail-row">
               <td colspan="6"><div class="rank-detail-inner"></div></td>
