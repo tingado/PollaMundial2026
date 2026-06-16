@@ -905,6 +905,130 @@ select option { background:#fff; }
   .cd-num { font-size:1.5rem; }
   .cd-units { gap:0.3rem; }
 }
+
+/* ══ SIMULADOR EN TIEMPO REAL ══ */
+.sim-banner {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background: linear-gradient(135deg,#0f1a2e,#1a2744);
+  border:1px solid rgba(96,160,255,0.25); border-radius:16px;
+  padding:1rem 1.25rem; margin-bottom:1.25rem;
+}
+.sim-banner-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--rosa); flex-shrink:0;
+  box-shadow:0 0 0 0 rgba(220,38,38,0.7);
+  animation: sim-pulse 1.6s infinite;
+}
+@keyframes sim-pulse {
+  0%   { box-shadow:0 0 0 0 rgba(220,38,38,0.7); }
+  70%  { box-shadow:0 0 0 8px rgba(220,38,38,0); }
+  100% { box-shadow:0 0 0 0 rgba(220,38,38,0); }
+}
+.sim-banner-label {
+  font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; color:#fff;
+}
+.sim-banner-clock {
+  font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:rgba(160,200,255,0.85);
+  letter-spacing:1px; margin-left:auto;
+}
+.sim-banner-sub {
+  font-size:11px; color:rgba(160,200,255,0.55); width:100%; margin-top:-4px;
+  letter-spacing:0.5px;
+}
+/* Demo mode toggle */
+.sim-demo-bar {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(245,188,0,0.07); border:1px solid rgba(245,188,0,0.25);
+  border-radius:12px; padding:10px 14px; margin-bottom:1.25rem; flex-wrap:wrap;
+}
+.sim-demo-label { font-size:13px; font-weight:600; color:#b8860b; flex:1; }
+.sim-toggle {
+  position:relative; width:44px; height:24px; cursor:pointer;
+  background:#d1d5db; border-radius:12px; border:none;
+  transition:background 0.2s; flex-shrink:0;
+}
+.sim-toggle.on { background:var(--rosa); }
+.sim-toggle::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:50%; background:#fff;
+  transition:left 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.sim-toggle.on::after { left:23px; }
+/* Match cards grid */
+.sim-matches { display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; }
+.sim-card {
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:box-shadow 0.2s;
+}
+.sim-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+.sim-group-badge {
+  font-family:'Bebas Neue',sans-serif; font-size:0.9rem; letter-spacing:1px;
+  background:linear-gradient(135deg,var(--rosa),#c2006e); color:#fff;
+  padding:2px 9px; border-radius:6px; flex-shrink:0;
+}
+.sim-team { flex:1; text-align:right; font-weight:600; font-size:14px; min-width:80px; }
+.sim-team.vis { text-align:left; }
+.sim-score-wrap {
+  display:flex; align-items:center; gap:6px; flex-shrink:0;
+}
+.sim-score-input {
+  width:46px; height:46px; text-align:center;
+  font-family:'Bebas Neue',sans-serif; font-size:1.7rem; line-height:1;
+  color:var(--text); background:#f9fafb;
+  border:2px solid var(--border); border-radius:10px;
+  outline:none; transition:border-color 0.2s, background 0.2s;
+  -moz-appearance:textfield;
+}
+.sim-score-input::-webkit-outer-spin-button,
+.sim-score-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.sim-score-input:focus { border-color:var(--rosa); background:#fdf2f8; }
+.sim-score-sep { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--muted); }
+.sim-minute {
+  font-size:10px; font-weight:700; color:var(--verde);
+  background:rgba(22,163,74,0.1); border-radius:4px;
+  padding:1px 5px; letter-spacing:0.5px;
+}
+/* Standings table */
+.sim-tables { display:flex; flex-direction:column; gap:1.25rem; }
+.sim-table-wrap {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden;
+}
+.sim-table-header {
+  background:linear-gradient(90deg,#0f1a2e,#1a2744);
+  padding:10px 16px; font-family:'Bebas Neue',sans-serif;
+  font-size:1rem; letter-spacing:2px; color:#fff;
+}
+.sim-table { width:100%; border-collapse:collapse; font-size:12px; }
+.sim-table th {
+  background:#f3f4f6; color:var(--muted);
+  font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  padding:7px 10px; text-align:center; border-bottom:1px solid var(--border);
+}
+.sim-table th:nth-child(2) { text-align:left; }
+.sim-table td {
+  padding:8px 10px; text-align:center;
+  border-bottom:1px solid #f3f4f6;
+}
+.sim-table td:nth-child(2) { text-align:left; font-weight:600; font-size:13px; }
+.sim-table tr:last-child td { border-bottom:none; }
+.sim-table tr.sim-advances { background:rgba(22,163,74,0.05); }
+.sim-table tr.sim-third { background:rgba(245,188,0,0.05); }
+.sim-pos { font-weight:700; font-size:13px; width:24px; }
+.sim-arrow { font-size:11px; margin-left:3px; }
+.sim-arrow.up { color:var(--verde); }
+.sim-arrow.down { color:var(--rojo); }
+.sim-pts-cell { font-weight:700; font-size:14px; color:var(--rosa); }
+.sim-sandbox-note {
+  font-size:11px; color:var(--muted); text-align:center;
+  margin-top:0.5rem; padding-bottom:0.5rem;
+}
+@media (max-width:600px) {
+  .sim-team { font-size:12px; min-width:60px; }
+  .sim-score-input { width:40px; height:40px; font-size:1.4rem; }
+  .sim-table td, .sim-table th { padding:6px 6px; }
+}
 </style>
 </head>
 <body>
@@ -929,6 +1053,7 @@ select option { background:#fff; }
       <button id="nav-calculos"     class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
       <button id="nav-bases"        class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
       <button id="nav-admin"        class="nav-btn" onclick="showView('admin',this)">⚙️ Admin</button>
+      <button id="nav-simulador"    class="nav-btn" onclick="showView('simulador',this)">🔴 Simulador</button>
     </div>
 
     <div class="sidebar-section-title">🏆 Leaderboard</div>
@@ -1586,6 +1711,11 @@ select option { background:#fff; }
 
     </div>
 
+    <!-- ══ SIMULADOR EN TIEMPO REAL ══ -->
+    <div id="view-simulador" class="view">
+      <div id="sim-root"></div>
+    </div>
+
   </main>
 
   <!-- RIGHT PANEL -->
@@ -1651,6 +1781,7 @@ select option { background:#fff; }
       <button class="msb" onclick="closeMoreSheet();showView('calculos',null)"><span>🧮</span>Cálculo</button>
       <button class="msb" onclick="closeMoreSheet();showView('bases',null)"><span>📜</span>Bases</button>
       <button class="msb" onclick="closeMoreSheet();showView('admin',null)"><span>⚙️</span>Admin</button>
+      <button class="msb" onclick="closeMoreSheet();showView('simulador',null)"><span>🔴</span>Simulador</button>
     </div>
   </div>
 </div>
@@ -2023,6 +2154,7 @@ function showView(v, el){
   if(v==='inscripcion') cargarInscripcion();
   if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); }
   if(v==='partidos') actualizarBarraAdmin();
+  if(v==='simulador') initSimulador();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -4197,6 +4329,284 @@ if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
 // ── Service Worker: fuerza HTML fresco en cada visita ──
 // Patrón "controllerchange": cuando un SW nuevo toma el control de una
 // pestaña que YA estaba controlada (= hubo un deploy), se recarga 1 vez.
+// ══════════════════════════════════════════════════════════
+// SIMULADOR EN TIEMPO REAL
+// Sandbox puro: todo en memoria, cero escritura a ningún store.
+// Muestra cómo quedaría el RANKING DE LA POLLA si los resultados
+// simulados fueran los reales, usando el scoring del juego:
+//   +2 pts → marcador exacto (mismo gol local y visita)
+//   +1 pt  → resultado correcto (mismo ganador/empate, diferente marcador)
+//    0 pts → predicción incorrecta
+// ══════════════════════════════════════════════════════════
+
+// Ventana temporal para considerar un partido "en juego" (minutos)
+const SIM_WINDOW_MIN = 110; // 90 min juego + 20 min descanso/extra
+
+// Partidos demo — usan IDs reales para que las predicciones de cada jugador apliquen
+const SIM_DEMO = [
+  {id:'C1', grupo:'C', local:'Brasil',    visita:'Marruecos', hora:'demo', fecha:'demo'},
+  {id:'J1', grupo:'J', local:'Argentina', visita:'Algeria',   hora:'demo', fecha:'demo'},
+  {id:'I1', grupo:'I', local:'Francia',   visita:'Senegal',   hora:'demo', fecha:'demo'},
+];
+
+// Estado en memoria del simulador (muere al refrescar)
+let _simScores = {};   // {matchId: {gL: number, gV: number}}
+let _simDemo   = false;
+let _simTicker = null; // intervalo del reloj
+
+/**
+ * Retorna los partidos actualmente "en juego" según la hora local del usuario.
+ * Los horarios en PARTIDOS están en UTC-4 (EDT, hora de las sedes EE.UU./CAN/MEX).
+ * Un partido es "live" desde su inicio hasta inicio + SIM_WINDOW_MIN.
+ */
+function simGetLiveMatches() {
+  const now = Date.now();
+  return PARTIDOS.filter(p => {
+    const start = new Date(`${p.fecha}T${p.hora}:00-04:00`).getTime();
+    return now >= start && now <= start + SIM_WINDOW_MIN * 60000;
+  });
+}
+
+/**
+ * Calcula el ranking proyectado de la polla con los marcadores simulados.
+ *
+ * Para cada jugador suma:
+ *   - Sus puntos reales ya acumulados (calcPtsDetalle sobre state.scores existentes)
+ *   - Los puntos que obtendría por los partidos simulados activos, usando el
+ *     scoring del juego: +2 exacto / +1 resultado correcto / 0 incorrecto
+ *     (función calcPtsPartido ya existente en la app)
+ *
+ * @param {Array} activoMatches - partidos con score simulado en _simScores
+ * @returns {Array} jugadores ordenados por total proyectado descendente
+ */
+function simCalcRanking(activoMatches) {
+  const medals = ['🥇','🥈','🥉'];
+  return state.jugadores.map(j => {
+    const pron = state.pronosticos[j.nombre] || {};
+
+    // Puntos reales ya obtenidos, excluyendo los partidos que estamos simulando
+    // (para no sumar dos veces si ya tienen score real)
+    const baseDetalle = calcPtsDetalle(pron, state.resultados);
+
+    // Puntos proyectados de los partidos simulados
+    let simPts = 0;
+    const detail = [];
+    activoMatches.forEach(m => {
+      const pred = pron?.partidos?.[m.id];
+      const sc = _simScores[m.id] || {gL:0, gV:0};
+      // calcPtsPartido espera {gL, gV} para el resultado
+      const pts = calcPtsPartido(pred, {gL: sc.gL, gV: sc.gV});
+      simPts += pts;
+      detail.push({
+        local: m.local, visita: m.visita,
+        pred: pred ? `${pred.g1}-${pred.g2}` : null,
+        sim: `${sc.gL}-${sc.gV}`,
+        pts,
+        tipo: pts === 2 ? '⭐' : pts === 1 ? '✓' : '✗'
+      });
+    });
+
+    return {
+      nombre: j.nombre,
+      basePts: baseDetalle.total,
+      simPts,
+      total: baseDetalle.total + simPts,
+      detail
+    };
+  }).sort((a,b) => b.total - a.total || b.basePts - a.basePts);
+}
+
+/** Renderiza el simulador completo */
+function simRender() {
+  const root = $id('sim-root');
+  if(!root) return;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  const liveMatches = simGetLiveMatches();
+  const useDemo = liveMatches.length === 0;
+  if(useDemo) _simDemo = true;
+
+  const activoMatches = useDemo ? SIM_DEMO : liveMatches;
+
+  // Inicializar scores en cero para partidos sin valor aún
+  activoMatches.forEach(m => {
+    if(!_simScores[m.id]) _simScores[m.id] = {gL:0, gV:0};
+  });
+
+  // ── Tarjetas de partido ──
+  const cardsHtml = activoMatches.map(m => {
+    const sc = _simScores[m.id] || {gL:0, gV:0};
+    const badge = m.hora === 'demo'
+      ? `<span class="sim-minute">DEMO</span>`
+      : `<span class="sim-minute">EN VIVO</span>`;
+    return `
+    <div class="sim-card">
+      <span class="sim-group-badge">Grupo ${m.grupo}</span>
+      ${badge}
+      <span class="sim-team">${esc(m.local)}</span>
+      <div class="sim-score-wrap">
+        <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gL}"
+               oninput="simUpdateScore('${m.id}','gL',this.value)" id="si-${m.id}-gL">
+        <span class="sim-score-sep">–</span>
+        <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gV}"
+               oninput="simUpdateScore('${m.id}','gV',this.value)" id="si-${m.id}-gV">
+      </div>
+      <span class="sim-team vis">${esc(m.visita)}</span>
+    </div>`;
+  }).join('');
+
+  // ── Ranking proyectado ──
+  const ranking = simCalcRanking(activoMatches);
+  const hayJugadores = ranking.length > 0;
+  const hayParticipantes = state.jugadores.length > 0;
+
+  const rankingHtml = hayJugadores ? ranking.map((r, i) => {
+    const medal = ['🥇','🥈','🥉'][i] || (i+1);
+    const arrow = r.simPts > 0
+      ? `<span class="sim-arrow up" title="+${r.simPts} pts del simulador">▲ +${r.simPts}</span>`
+      : r.simPts === 0
+        ? `<span class="sim-arrow" style="opacity:0.3">–</span>`
+        : '';
+    // Detalles por partido simulado
+    const detailHtml = r.detail.map(d => {
+      if(!d.pred) return `<span style="color:var(--muted);font-size:10px;">${esc(d.local)} vs ${esc(d.visita)} · Sin pronóstico</span>`;
+      return `<span style="font-size:10px;color:${d.pts===2?'var(--verde)':d.pts===1?'var(--dorado)':'var(--rojo)'};">
+        ${d.tipo} ${esc(d.local)} vs ${esc(d.visita)}: pred ${d.pred} | sim ${d.sim} → ${d.pts===2?'+2 exacto':d.pts===1?'+1 correcto':'0 pts'}
+      </span>`;
+    }).join('<br>');
+
+    return `<tr class="${i < 3 ? 'sim-advances' : ''}">
+      <td class="sim-pos">${medal}</td>
+      <td>
+        <div style="font-weight:600;font-size:13px;">${esc(r.nombre)}</div>
+        <div style="margin-top:3px;display:flex;flex-direction:column;gap:1px;">${detailHtml}</div>
+      </td>
+      <td style="text-align:center;color:var(--muted);font-size:12px;">${r.basePts}</td>
+      <td style="text-align:center;">${arrow}</td>
+      <td class="sim-pts-cell" style="text-align:center;">${r.total}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">
+    Sin participantes registrados aún
+  </td></tr>`;
+
+  // ── Banner demo ──
+  const demoBannerHtml = useDemo ? `
+  <div class="sim-demo-bar">
+    <div>
+      <div class="sim-demo-label">🎮 Modo Demo — No hay partidos en juego ahora</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+        Cambiar marcadores muestra cómo quedaría el ranking real de la polla con esos resultados.
+        Cuando haya partidos en vivo, aparecerán aquí automáticamente.
+      </div>
+    </div>
+  </div>` : '';
+
+  root.innerHTML = `
+  <div class="sim-banner">
+    <div class="sim-banner-dot"></div>
+    <div class="sim-banner-label">🔴 Simulación En Vivo</div>
+    <div class="sim-banner-clock" id="sim-clock">${timeStr}</div>
+    <div class="sim-banner-sub">
+      Sandbox temporal — cambia los marcadores y ve cómo quedaría el ranking. No se guarda nada.
+    </div>
+  </div>
+  ${demoBannerHtml}
+  <div class="sim-matches">${cardsHtml}</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--muted);margin-bottom:10px;">
+    RANKING PROYECTADO DE LA POLLA
+  </div>
+  <div class="sim-tables">
+    <div class="sim-table-wrap">
+      <div class="sim-table-header">Si estos fueran los resultados reales…</div>
+      <table class="sim-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th style="text-align:left;">Jugador</th>
+            <th title="Puntos reales actuales">Real</th>
+            <th title="Puntos ganados del simulador">Sim</th>
+            <th title="Total proyectado">Total</th>
+          </tr>
+        </thead>
+        <tbody id="sim-ranking-tbody">${rankingHtml}</tbody>
+      </table>
+      <div style="padding:6px 14px 6px;font-size:10px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;">
+        <span>⭐ Marcador exacto +2 pts</span>
+        <span>✓ Resultado correcto +1 pt</span>
+        <span>✗ Incorrecto 0 pts</span>
+      </div>
+    </div>
+  </div>
+  <div class="sim-sandbox-note">
+    🔒 Simulación en sandbox — ningún valor se escribe en ningún lado. Recarga la página para reiniciar.
+  </div>`;
+
+  // Arrancar reloj — se auto-cancela cuando el usuario navega fuera del simulador
+  if(!_simTicker) {
+    _simTicker = setInterval(() => {
+      const view = $id('view-simulador');
+      if(!view || !view.classList.contains('active')) {
+        clearInterval(_simTicker); _simTicker = null; return;
+      }
+      const el = $id('sim-clock');
+      if(el) el.textContent = new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    }, 1000);
+  }
+}
+
+/**
+ * Actualiza un gol simulado y recalcula el ranking en tiempo real.
+ * No hace re-render completo para preservar el foco del input activo.
+ */
+function simUpdateScore(matchId, side, val) {
+  if(!_simScores[matchId]) _simScores[matchId] = {gL:0, gV:0};
+  _simScores[matchId][side] = Math.max(0, parseInt(val, 10) || 0);
+  simRefreshRanking();
+}
+
+/** Recalcula y reescribe solo el tbody del ranking, sin tocar los inputs */
+function simRefreshRanking() {
+  const tbody = $id('sim-ranking-tbody');
+  if(!tbody) return;
+
+  const liveMatches = simGetLiveMatches();
+  const activoMatches = liveMatches.length > 0 ? liveMatches : SIM_DEMO;
+  const ranking = simCalcRanking(activoMatches);
+
+  tbody.innerHTML = ranking.map((r, i) => {
+    const medal = ['🥇','🥈','🥉'][i] || (i+1);
+    const arrow = r.simPts > 0
+      ? `<span class="sim-arrow up">▲ +${r.simPts}</span>`
+      : `<span class="sim-arrow" style="opacity:0.3">–</span>`;
+    const detailHtml = r.detail.map(d => {
+      if(!d.pred) return `<span style="color:var(--muted);font-size:10px;">${esc(d.local)} vs ${esc(d.visita)} · Sin pronóstico</span>`;
+      return `<span style="font-size:10px;color:${d.pts===2?'var(--verde)':d.pts===1?'var(--dorado)':'var(--rojo)'};">
+        ${d.tipo} ${esc(d.local)} vs ${esc(d.visita)}: ${d.pred} | ${d.sim} → ${d.pts===2?'+2':d.pts===1?'+1':'0'}
+      </span>`;
+    }).join('<br>');
+    return `<tr class="${i < 3 ? 'sim-advances' : ''}">
+      <td class="sim-pos">${medal}</td>
+      <td>
+        <div style="font-weight:600;font-size:13px;">${esc(r.nombre)}</div>
+        <div style="margin-top:3px;display:flex;flex-direction:column;gap:1px;">${detailHtml}</div>
+      </td>
+      <td style="text-align:center;color:var(--muted);font-size:12px;">${r.basePts}</td>
+      <td style="text-align:center;">${arrow}</td>
+      <td class="sim-pts-cell" style="text-align:center;">${r.total}</td>
+    </tr>`;
+  }).join('');
+}
+
+/** Punto de entrada al navegar a la vista del simulador */
+function initSimulador() {
+  _simScores = {};
+  if(_simTicker) { clearInterval(_simTicker); _simTicker = null; }
+  simRender();
+}
+
+// ══════════════════════════════════════════════════════════
 // En la primera visita (sin controlador previo) NO recarga: ya tiene HTML fresco.
 if('serviceWorker' in navigator){
   let _swReloaded=false;
