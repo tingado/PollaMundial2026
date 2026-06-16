@@ -241,6 +241,48 @@ function guardarScores(p) {
   return { ok: true, saved: scores.length };
 }
 
+/**
+ * Solo para auto-sync: inserta scores de partidos NUEVOS que aún no existen en el sheet.
+ * NO sobrescribe partidos que ya tienen un score ingresado manualmente por el admin.
+ * El admin siempre puede corregir un marcador usando guardarScores (admin panel).
+ */
+function guardarScoresAutoSync(scoresList) {
+  const sh = getSheet('Scores');
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['partido', 'gL', 'gV']);
+  }
+  const existing = sh.getDataRange().getValues();
+  // Construir set de claves ya existentes (con score no nulo)
+  const existingKeys = new Set();
+  for (let i = 1; i < existing.length; i++) {
+    const k = existing[i][0];
+    const hasScore = existing[i][1] !== '' && existing[i][1] !== null && existing[i][2] !== '' && existing[i][2] !== null;
+    if (k && hasScore) existingKeys.add(k);
+  }
+  let added = 0;
+  scoresList.forEach(s => {
+    if (!s.key || s.gL === undefined || s.gV === undefined) return;
+    // Saltar si ya hay un marcador para este partido (no sobrescribir entrada manual)
+    if (existingKeys.has(s.key)) return;
+    // Buscar fila existente sin score y actualizar, o agregar nueva fila
+    let found = false;
+    for (let i = 1; i < existing.length; i++) {
+      if (existing[i][0] === s.key) {
+        sh.getRange(i + 1, 2, 1, 2).setValues([[s.gL, s.gV]]);
+        existing[i][1] = s.gL; existing[i][2] = s.gV;
+        found = true; break;
+      }
+    }
+    if (!found) {
+      sh.appendRow([s.key, s.gL, s.gV]);
+      existing.push([s.key, s.gL, s.gV]);
+    }
+    existingKeys.add(s.key);
+    added++;
+  });
+  return { ok: true, added };
+}
+
 // ── WRITE ────────────────────────────────────────────────
 
 function inscribir(p) {
@@ -427,7 +469,8 @@ function fetchResultadosAPI(p) {
 
     // Save group match scores to Scores sheet
     if (groupScores.length > 0) {
-      guardarScores({ scores: JSON.stringify(groupScores) });
+      // fetchResultadosAPI: no sobrescribir scores manuales
+      guardarScoresAutoSync(groupScores);
     }
 
     const resultadosObj = {
@@ -516,8 +559,9 @@ function fetchResultadosZafronix(p) {
       }
     });
 
+    // fetchResultadosZafronix: no sobrescribir scores manuales del admin
     if (groupScores.length > 0) {
-      guardarScores({ scores: JSON.stringify(groupScores) });
+      guardarScoresAutoSync(groupScores);
     }
 
     const resultadosObj = { oct: Array.from(oct), qua: Array.from(qua), sem: Array.from(sem), f1, f2, campeon };
