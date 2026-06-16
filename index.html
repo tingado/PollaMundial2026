@@ -4379,22 +4379,37 @@ function simGetLiveMatches() {
  * @param {Array} activoMatches - partidos con score simulado en _simScores
  * @returns {Array} jugadores ordenados por total proyectado descendente
  */
+/**
+ * Calcula puntos base excluyendo los partidos activos del simulador,
+ * para evitar doble conteo cuando el partido ya tiene score en state.scores.
+ */
+function simCalcBasePts(pron, activeIds) {
+  let pts = calcPtsGrupos(pron, state.resultados) + calcPtsElim(pron, state.resultados);
+  const scores = state.scores || {};
+  PARTIDOS.forEach(p => {
+    if(activeIds.has(p.id)) return; // excluir partidos que estamos simulando
+    const key = p.local + '|' + p.visita;
+    const res = scores[key] || scores[p.id];
+    pts += calcPtsPartido(pron?.partidos?.[p.id], res);
+  });
+  return pts;
+}
+
 function simCalcRanking(activoMatches) {
-  const medals = ['🥇','🥈','🥉'];
+  const activeIds = new Set(activoMatches.map(m => m.id));
   return state.jugadores.map(j => {
     const pron = state.pronosticos[j.nombre] || {};
 
-    // Puntos reales ya obtenidos, excluyendo los partidos que estamos simulando
-    // (para no sumar dos veces si ya tienen score real)
-    const baseDetalle = calcPtsDetalle(pron, state.resultados);
+    // Puntos reales SIN los partidos en simulación (evita doble conteo)
+    const basePts = simCalcBasePts(pron, activeIds);
 
-    // Puntos proyectados de los partidos simulados
+    // Puntos de la polla por los partidos simulados:
+    //   +2 → marcador exacto | +1 → resultado correcto | 0 → incorrecto
     let simPts = 0;
     const detail = [];
     activoMatches.forEach(m => {
       const pred = pron?.partidos?.[m.id];
       const sc = _simScores[m.id] || {gL:0, gV:0};
-      // calcPtsPartido espera {gL, gV} para el resultado
       const pts = calcPtsPartido(pred, {gL: sc.gL, gV: sc.gV});
       simPts += pts;
       detail.push({
@@ -4406,13 +4421,7 @@ function simCalcRanking(activoMatches) {
       });
     });
 
-    return {
-      nombre: j.nombre,
-      basePts: baseDetalle.total,
-      simPts,
-      total: baseDetalle.total + simPts,
-      detail
-    };
+    return { nombre: j.nombre, basePts, simPts, total: basePts + simPts, detail };
   }).sort((a,b) => b.total - a.total || b.basePts - a.basePts);
 }
 
@@ -4448,12 +4457,21 @@ function simRender() {
       <span class="sim-team">${esc(m.local)}</span>
       <div class="sim-score-wrap">
         <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gL}"
-               oninput="simUpdateScore('${m.id}','gL',this.value)" id="si-${m.id}-gL">
+               oninput="simUpdateScore('${m.id}','gL',this.value)"
+               onchange="simUpdateScore('${m.id}','gL',this.value)"
+               inputmode="numeric" pattern="[0-9]*" id="si-${m.id}-gL">
         <span class="sim-score-sep">–</span>
         <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gV}"
-               oninput="simUpdateScore('${m.id}','gV',this.value)" id="si-${m.id}-gV">
+               oninput="simUpdateScore('${m.id}','gV',this.value)"
+               onchange="simUpdateScore('${m.id}','gV',this.value)"
+               inputmode="numeric" pattern="[0-9]*" id="si-${m.id}-gV">
       </div>
       <span class="sim-team vis">${esc(m.visita)}</span>
+      <button onclick="simRefreshRanking()" title="Recalcular"
+        style="margin-left:auto;border:none;background:rgba(220,38,38,0.1);color:var(--rosa);
+               border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">
+        ↻ Ver
+      </button>
     </div>`;
   }).join('');
 
