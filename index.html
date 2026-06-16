@@ -905,6 +905,130 @@ select option { background:#fff; }
   .cd-num { font-size:1.5rem; }
   .cd-units { gap:0.3rem; }
 }
+
+/* ══ SIMULADOR EN TIEMPO REAL ══ */
+.sim-banner {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  background: linear-gradient(135deg,#0f1a2e,#1a2744);
+  border:1px solid rgba(96,160,255,0.25); border-radius:16px;
+  padding:1rem 1.25rem; margin-bottom:1.25rem;
+}
+.sim-banner-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--rosa); flex-shrink:0;
+  box-shadow:0 0 0 0 rgba(220,38,38,0.7);
+  animation: sim-pulse 1.6s infinite;
+}
+@keyframes sim-pulse {
+  0%   { box-shadow:0 0 0 0 rgba(220,38,38,0.7); }
+  70%  { box-shadow:0 0 0 8px rgba(220,38,38,0); }
+  100% { box-shadow:0 0 0 0 rgba(220,38,38,0); }
+}
+.sim-banner-label {
+  font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:2px; color:#fff;
+}
+.sim-banner-clock {
+  font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:rgba(160,200,255,0.85);
+  letter-spacing:1px; margin-left:auto;
+}
+.sim-banner-sub {
+  font-size:11px; color:rgba(160,200,255,0.55); width:100%; margin-top:-4px;
+  letter-spacing:0.5px;
+}
+/* Demo mode toggle */
+.sim-demo-bar {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(245,188,0,0.07); border:1px solid rgba(245,188,0,0.25);
+  border-radius:12px; padding:10px 14px; margin-bottom:1.25rem; flex-wrap:wrap;
+}
+.sim-demo-label { font-size:13px; font-weight:600; color:#b8860b; flex:1; }
+.sim-toggle {
+  position:relative; width:44px; height:24px; cursor:pointer;
+  background:#d1d5db; border-radius:12px; border:none;
+  transition:background 0.2s; flex-shrink:0;
+}
+.sim-toggle.on { background:var(--rosa); }
+.sim-toggle::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:50%; background:#fff;
+  transition:left 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.sim-toggle.on::after { left:23px; }
+/* Match cards grid */
+.sim-matches { display:flex; flex-direction:column; gap:10px; margin-bottom:1.5rem; }
+.sim-card {
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:box-shadow 0.2s;
+}
+.sim-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+.sim-group-badge {
+  font-family:'Bebas Neue',sans-serif; font-size:0.9rem; letter-spacing:1px;
+  background:linear-gradient(135deg,var(--rosa),#c2006e); color:#fff;
+  padding:2px 9px; border-radius:6px; flex-shrink:0;
+}
+.sim-team { flex:1; text-align:right; font-weight:600; font-size:14px; min-width:80px; }
+.sim-team.vis { text-align:left; }
+.sim-score-wrap {
+  display:flex; align-items:center; gap:6px; flex-shrink:0;
+}
+.sim-score-input {
+  width:46px; height:46px; text-align:center;
+  font-family:'Bebas Neue',sans-serif; font-size:1.7rem; line-height:1;
+  color:var(--text); background:#f9fafb;
+  border:2px solid var(--border); border-radius:10px;
+  outline:none; transition:border-color 0.2s, background 0.2s;
+  -moz-appearance:textfield;
+}
+.sim-score-input::-webkit-outer-spin-button,
+.sim-score-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.sim-score-input:focus { border-color:var(--rosa); background:#fdf2f8; }
+.sim-score-sep { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--muted); }
+.sim-minute {
+  font-size:10px; font-weight:700; color:var(--verde);
+  background:rgba(22,163,74,0.1); border-radius:4px;
+  padding:1px 5px; letter-spacing:0.5px;
+}
+/* Standings table */
+.sim-tables { display:flex; flex-direction:column; gap:1.25rem; }
+.sim-table-wrap {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden;
+}
+.sim-table-header {
+  background:linear-gradient(90deg,#0f1a2e,#1a2744);
+  padding:10px 16px; font-family:'Bebas Neue',sans-serif;
+  font-size:1rem; letter-spacing:2px; color:#fff;
+}
+.sim-table { width:100%; border-collapse:collapse; font-size:12px; }
+.sim-table th {
+  background:#f3f4f6; color:var(--muted);
+  font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  padding:7px 10px; text-align:center; border-bottom:1px solid var(--border);
+}
+.sim-table th:nth-child(2) { text-align:left; }
+.sim-table td {
+  padding:8px 10px; text-align:center;
+  border-bottom:1px solid #f3f4f6;
+}
+.sim-table td:nth-child(2) { text-align:left; font-weight:600; font-size:13px; }
+.sim-table tr:last-child td { border-bottom:none; }
+.sim-table tr.sim-advances { background:rgba(22,163,74,0.05); }
+.sim-table tr.sim-third { background:rgba(245,188,0,0.05); }
+.sim-pos { font-weight:700; font-size:13px; width:24px; }
+.sim-arrow { font-size:11px; margin-left:3px; }
+.sim-arrow.up { color:var(--verde); }
+.sim-arrow.down { color:var(--rojo); }
+.sim-pts-cell { font-weight:700; font-size:14px; color:var(--rosa); }
+.sim-sandbox-note {
+  font-size:11px; color:var(--muted); text-align:center;
+  margin-top:0.5rem; padding-bottom:0.5rem;
+}
+@media (max-width:600px) {
+  .sim-team { font-size:12px; min-width:60px; }
+  .sim-score-input { width:40px; height:40px; font-size:1.4rem; }
+  .sim-table td, .sim-table th { padding:6px 6px; }
+}
 </style>
 </head>
 <body>
@@ -929,6 +1053,7 @@ select option { background:#fff; }
       <button id="nav-calculos"     class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
       <button id="nav-bases"        class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
       <button id="nav-admin"        class="nav-btn" onclick="showView('admin',this)">⚙️ Admin</button>
+      <button id="nav-simulador"    class="nav-btn" onclick="showView('simulador',this)">🔴 Simulador</button>
     </div>
 
     <div class="sidebar-section-title">🏆 Leaderboard</div>
@@ -1586,6 +1711,11 @@ select option { background:#fff; }
 
     </div>
 
+    <!-- ══ SIMULADOR EN TIEMPO REAL ══ -->
+    <div id="view-simulador" class="view">
+      <div id="sim-root"></div>
+    </div>
+
   </main>
 
   <!-- RIGHT PANEL -->
@@ -1651,6 +1781,7 @@ select option { background:#fff; }
       <button class="msb" onclick="closeMoreSheet();showView('calculos',null)"><span>🧮</span>Cálculo</button>
       <button class="msb" onclick="closeMoreSheet();showView('bases',null)"><span>📜</span>Bases</button>
       <button class="msb" onclick="closeMoreSheet();showView('admin',null)"><span>⚙️</span>Admin</button>
+      <button class="msb" onclick="closeMoreSheet();showView('simulador',null)"><span>🔴</span>Simulador</button>
     </div>
   </div>
 </div>
@@ -2023,6 +2154,7 @@ function showView(v, el){
   if(v==='inscripcion') cargarInscripcion();
   if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); }
   if(v==='partidos') actualizarBarraAdmin();
+  if(v==='simulador') initSimulador();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -4197,6 +4329,347 @@ if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
 // ── Service Worker: fuerza HTML fresco en cada visita ──
 // Patrón "controllerchange": cuando un SW nuevo toma el control de una
 // pestaña que YA estaba controlada (= hubo un deploy), se recarga 1 vez.
+// ══════════════════════════════════════════════════════════
+// SIMULADOR EN TIEMPO REAL
+// Sandbox puro: todo en memoria, cero escritura a ningún store.
+// ══════════════════════════════════════════════════════════
+
+// Ventana temporal para considerar un partido "en juego" (minutos)
+const SIM_WINDOW_MIN = 110; // 90 min + tiempo extra + descanso
+
+// Partidos demo para el Modo Demo (ficticios, usados cuando no hay partidos en vivo)
+const SIM_DEMO = [
+  {id:'SIM_D1', grupo:'C', local:'Brasil',    visita:'Marruecos',  hora:'demo', fecha:'demo'},
+  {id:'SIM_D2', grupo:'J', local:'Argentina', visita:'Algeria',    hora:'demo', fecha:'demo'},
+  {id:'SIM_D3', grupo:'I', local:'Francia',   visita:'Senegal',    hora:'demo', fecha:'demo'},
+];
+
+// Estado en memoria del simulador (muere al refrescar)
+let _simScores = {};   // {matchId: {gl: number, gv: number}}
+let _simDemo   = false;
+let _simTicker = null; // intervalo del reloj
+
+/**
+ * Retorna los partidos actualmente "en juego" según la hora del sistema del usuario.
+ * Un partido es live si: horaInicio <= ahoraLocal <= horaInicio + SIM_WINDOW_MIN.
+ * Los horarios en PARTIDOS están expresados en UTC-4 (EDT, hora de las sedes EE.UU.).
+ */
+function simGetLiveMatches() {
+  const now = Date.now();
+  return PARTIDOS.filter(p => {
+    const start = new Date(`${p.fecha}T${p.hora}:00-04:00`).getTime();
+    return now >= start && now <= start + SIM_WINDOW_MIN * 60000;
+  });
+}
+
+/**
+ * Función matemática pura: calcula la tabla de posiciones de un grupo.
+ *
+ * Reglas FIFA fase de grupos:
+ *  - Victoria  → 3 puntos para el ganador, 0 para el perdedor
+ *  - Empate    → 1 punto para cada equipo
+ *  - Derrota   → 0 puntos
+ *
+ * Ordenamiento (desempate en cascada):
+ *  1. Puntos (mayor primero)
+ *  2. Diferencia de goles (mayor primero)
+ *  3. Goles a favor (mayor primero)
+ *  4. Orden alfabético (para estabilidad visual)
+ *
+ * @param {string[]} teams  - Los 4 equipos del grupo
+ * @param {Array<{local,visita,gl,gv}>} partidos - Resultados con goles
+ * @returns {Array<{team,pts,pj,pg,pe,pp,gf,gc,dg}>} tabla ordenada
+ */
+function simCalcTabla(teams, partidos) {
+  // Inicializar acumuladores en cero para cada equipo
+  const stats = {};
+  teams.forEach(t => { stats[t] = {pts:0, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0}; });
+
+  partidos.forEach(({local, visita, gl, gv}) => {
+    if(gl == null || gv == null) return; // partido sin resultado aún
+    if(!stats[local] || !stats[visita]) return; // equipos fuera de este grupo
+
+    stats[local].pj++;  stats[visita].pj++;
+    stats[local].gf  += gl; stats[local].gc  += gv;
+    stats[visita].gf += gv; stats[visita].gc += gl;
+
+    if(gl > gv) {
+      // Victoria local
+      stats[local].pts  += 3; stats[local].pg++;
+      stats[visita].pp++;
+    } else if(gl < gv) {
+      // Victoria visitante
+      stats[visita].pts += 3; stats[visita].pg++;
+      stats[local].pp++;
+    } else {
+      // Empate
+      stats[local].pts  += 1; stats[local].pe++;
+      stats[visita].pts += 1; stats[visita].pe++;
+    }
+  });
+
+  return teams.map(t => ({team:t, ...stats[t], dg: stats[t].gf - stats[t].gc}))
+    .sort((a,b) =>
+      (b.pts - a.pts) ||
+      (b.dg  - a.dg)  ||
+      (b.gf  - a.gf)  ||
+      a.team.localeCompare(b.team)
+    );
+}
+
+/**
+ * Construye la tabla base del grupo usando state.scores (resultados reales ya cargados)
+ * más el score simulado del partido activo dado.
+ * Excluye el partido activo de los scores reales para que el simulador lo sobreescriba.
+ */
+function simTablaConSimulacion(grupo, matchesActivos) {
+  const teams = GRUPOS[grupo];
+  if(!teams) return [];
+
+  // Acumular todos los partidos del grupo con sus scores
+  const partidosGrupo = PARTIDOS.filter(p => p.grupo === grupo).map(p => {
+    // Si este partido está siendo simulado, usar el valor simulado
+    const sim = matchesActivos.find(m => m.id === p.id);
+    if(sim) {
+      const s = _simScores[p.id] || {gl:0, gv:0};
+      return {local:p.local, visita:p.visita, gl:s.gl, gv:s.gv};
+    }
+    // Si tiene resultado real en state.scores, usarlo
+    const key = `${p.local}|${p.visita}`;
+    const sc = (state.scores||{})[key];
+    if(sc) return {local:p.local, visita:p.visita, gl:sc.gl, gv:sc.gv};
+    return {local:p.local, visita:p.visita, gl:null, gv:null};
+  });
+
+  return simCalcTabla(teams, partidosGrupo);
+}
+
+/** Tabla base sin simulación (solo scores reales), para comparar posiciones */
+function simTablaBase(grupo) {
+  const teams = GRUPOS[grupo];
+  if(!teams) return [];
+  const partidos = PARTIDOS.filter(p => p.grupo === grupo).map(p => {
+    const key = `${p.local}|${p.visita}`;
+    const sc = (state.scores||{})[key];
+    return {local:p.local, visita:p.visita, gl: sc?.gl ?? null, gv: sc?.gv ?? null};
+  });
+  return simCalcTabla(teams, partidos);
+}
+
+/** Renderiza las tarjetas de partido + tablas del simulador */
+function simRender() {
+  const root = $id('sim-root');
+  if(!root) return;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  const liveMatches = simGetLiveMatches();
+  const useDemo = liveMatches.length === 0;
+  if(useDemo && !_simDemo) _simDemo = true;
+
+  const activoMatches = useDemo ? SIM_DEMO : liveMatches;
+
+  // Inicializar scores en cero para partidos sin valor aún
+  activoMatches.forEach(m => {
+    if(!_simScores[m.id]) _simScores[m.id] = {gl:0, gv:0};
+  });
+
+  // Agrupar partidos activos por grupo
+  const gruposActivos = [...new Set(activoMatches.map(m => m.grupo))];
+
+  // ── Armar HTML de tarjetas de partido ──
+  const cardsHtml = activoMatches.map(m => {
+    const sc = _simScores[m.id] || {gl:0, gv:0};
+    const minLabel = m.hora === 'demo'
+      ? `<span class="sim-minute">DEMO</span>`
+      : `<span class="sim-minute">EN VIVO</span>`;
+    return `
+    <div class="sim-card">
+      <span class="sim-group-badge">Grupo ${m.grupo}</span>
+      ${minLabel}
+      <span class="sim-team">${esc(m.local)}</span>
+      <div class="sim-score-wrap">
+        <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gl}"
+               oninput="simUpdateScore('${m.id}','gl',this.value)" id="si-${m.id}-gl">
+        <span class="sim-score-sep">–</span>
+        <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gv}"
+               oninput="simUpdateScore('${m.id}','gv',this.value)" id="si-${m.id}-gv">
+      </div>
+      <span class="sim-team vis">${esc(m.visita)}</span>
+    </div>`;
+  }).join('');
+
+  // ── Armar HTML de tablas proyectadas ──
+  const tablasHtml = gruposActivos.map(grupo => {
+    const base = simTablaBase(grupo);
+    const proj = simTablaConSimulacion(grupo, activoMatches.filter(m => m.grupo === grupo));
+
+    // Mapa de posición base por equipo (para calcular flechas)
+    const basePos = {};
+    base.forEach((r,i) => { basePos[r.team] = i; });
+
+    const rowsHtml = proj.map((r, i) => {
+      const bp = basePos[r.team] ?? i;
+      const diff = bp - i; // positivo → subió, negativo → bajó
+      const arrow = diff > 0
+        ? `<span class="sim-arrow up" title="Subió ${diff} pos">▲</span>`
+        : diff < 0
+          ? `<span class="sim-arrow down" title="Bajó ${Math.abs(diff)} pos">▼</span>`
+          : `<span class="sim-arrow" style="opacity:0.15">–</span>`;
+
+      // Clasificación visual: top 2 pasan directo, posición 3 puede pasar como mejor tercero
+      const rowClass = i < 2 ? 'sim-advances' : i === 2 ? 'sim-third' : '';
+
+      return `<tr class="${rowClass}">
+        <td class="sim-pos">${i+1}</td>
+        <td>${esc(r.team)}${arrow}</td>
+        <td>${r.pj}</td>
+        <td class="sim-pts-cell">${r.pts}</td>
+        <td>${r.gf}</td>
+        <td>${r.gc}</td>
+        <td style="color:${r.dg>0?'var(--verde)':r.dg<0?'var(--rojo)':'var(--muted)'};font-weight:700;">
+          ${r.dg > 0 ? '+' : ''}${r.dg}
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `
+    <div class="sim-table-wrap">
+      <div class="sim-table-header">GRUPO ${grupo} — Proyección</div>
+      <table class="sim-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Equipo</th>
+            <th title="Partidos jugados">PJ</th>
+            <th title="Puntos">PTS</th>
+            <th title="Goles a favor">GF</th>
+            <th title="Goles en contra">GC</th>
+            <th title="Diferencia de goles">DG</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div style="padding:6px 14px 4px;display:flex;gap:14px;font-size:10px;color:var(--muted);">
+        <span style="color:var(--verde);font-weight:700;">■</span> Clasifica directo
+        <span style="color:#b8860b;font-weight:700;">■</span> Posible mejor 3°
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Banner demo ──
+  const demoBannerHtml = useDemo ? `
+  <div class="sim-demo-bar">
+    <div>
+      <div class="sim-demo-label">🎮 Modo Demo — No hay partidos en juego ahora</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">
+        Prueba el simulador con partidos de ejemplo. Cuando haya partidos en vivo, aparecerán aquí automáticamente.
+      </div>
+    </div>
+    <button class="sim-toggle on" id="sim-demo-toggle" onclick="simToggleDemo()" title="Activar/desactivar modo demo"></button>
+  </div>` : '';
+
+  root.innerHTML = `
+  <div class="sim-banner">
+    <div class="sim-banner-dot"></div>
+    <div class="sim-banner-label">🔴 Simulación En Vivo</div>
+    <div class="sim-banner-clock" id="sim-clock">${timeStr}</div>
+    <div class="sim-banner-sub">
+      Sandbox temporal — cambia los marcadores y ve cómo quedaría la tabla. No se guarda nada.
+    </div>
+  </div>
+  ${demoBannerHtml}
+  <div class="sim-matches">${cardsHtml}</div>
+  ${gruposActivos.length ? `
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--muted);margin-bottom:10px;">
+      TABLA PROYECTADA
+    </div>
+    <div class="sim-tables">${tablasHtml}</div>
+    <div class="sim-sandbox-note">
+      🔒 Simulación en sandbox — ningún valor se escribe en la base de datos. Recarga la página para reiniciar.
+    </div>` : ''}
+  `;
+
+  // Arrancar reloj si no está corriendo
+  if(!_simTicker) {
+    _simTicker = setInterval(() => {
+      const el = $id('sim-clock');
+      if(el) el.textContent = new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    }, 1000);
+  }
+}
+
+/** Actualiza un gol simulado y recalcula la tabla en tiempo real */
+function simUpdateScore(matchId, side, val) {
+  if(!_simScores[matchId]) _simScores[matchId] = {gl:0, gv:0};
+  _simScores[matchId][side] = Math.max(0, parseInt(val, 10) || 0);
+  // Recalcular solo las tablas afectadas (sin re-render completo para mantener foco del input)
+  simRefreshTables();
+}
+
+/** Recalcula y reescribe solo la sección de tablas, preservando los inputs activos */
+function simRefreshTables() {
+  const liveMatches = simGetLiveMatches();
+  const useDemo = liveMatches.length === 0;
+  const activoMatches = useDemo ? SIM_DEMO : liveMatches;
+  const gruposActivos = [...new Set(activoMatches.map(m => m.grupo))];
+
+  gruposActivos.forEach(grupo => {
+    const base = simTablaBase(grupo);
+    const proj = simTablaConSimulacion(grupo, activoMatches.filter(m => m.grupo === grupo));
+    const basePos = {};
+    base.forEach((r,i) => { basePos[r.team] = i; });
+
+    proj.forEach((r, i) => {
+      // Actualizar solo las celdas que cambian para no perder el foco del input
+      const tbodies = document.querySelectorAll(`.sim-table tbody`);
+      // Buscar la tabla del grupo correcto por su header
+      document.querySelectorAll('.sim-table-wrap').forEach(wrap => {
+        if(!wrap.querySelector('.sim-table-header')?.textContent.includes(`GRUPO ${grupo}`)) return;
+        const rows = wrap.querySelectorAll('tbody tr');
+        if(!rows[i]) return;
+        const cells = rows[i].querySelectorAll('td');
+        if(!cells[3]) return;
+        cells[1].innerHTML = `${esc(r.team)}${
+          basePos[r.team] - i > 0
+            ? `<span class="sim-arrow up">▲</span>`
+            : basePos[r.team] - i < 0
+              ? `<span class="sim-arrow down">▼</span>`
+              : `<span class="sim-arrow" style="opacity:0.15">–</span>`
+        }`;
+        cells[2].textContent = r.pj;
+        cells[3].textContent = r.pts;
+        cells[4].textContent = r.gf;
+        cells[5].textContent = r.gc;
+        cells[6].textContent = (r.dg > 0 ? '+' : '') + r.dg;
+        cells[6].style.color = r.dg > 0 ? 'var(--verde)' : r.dg < 0 ? 'var(--rojo)' : 'var(--muted)';
+        // Actualizar clase de fila para el color de fondo
+        rows[i].className = i < 2 ? 'sim-advances' : i === 2 ? 'sim-third' : '';
+      });
+    });
+  });
+}
+
+/** Alterna el modo demo on/off */
+function simToggleDemo() {
+  _simDemo = !_simDemo;
+  if(!_simDemo) {
+    // Si apagan demo, verificar si hay partidos reales; si no, volver a encender
+    if(simGetLiveMatches().length === 0) { _simDemo = true; return; }
+  }
+  simRender();
+}
+
+/** Punto de entrada al navegar a la vista del simulador */
+function initSimulador() {
+  // Limpiar estado anterior al entrar de nuevo
+  _simScores = {};
+  if(_simTicker) { clearInterval(_simTicker); _simTicker = null; }
+  simRender();
+}
+
+// ══════════════════════════════════════════════════════════
 // En la primera visita (sin controlador previo) NO recarga: ya tiene HTML fresco.
 if('serviceWorker' in navigator){
   let _swReloaded=false;
