@@ -4383,46 +4383,51 @@ function simGetLiveMatches() {
  * Calcula puntos base excluyendo los partidos activos del simulador,
  * para evitar doble conteo cuando el partido ya tiene score en state.scores.
  */
-function simCalcBasePts(pron, activeIds) {
-  let pts = calcPtsGrupos(pron, state.resultados) + calcPtsElim(pron, state.resultados);
-  const scores = state.scores || {};
-  PARTIDOS.forEach(p => {
-    if(activeIds.has(p.id)) return; // excluir partidos que estamos simulando
-    const key = p.local + '|' + p.visita;
-    const res = scores[key] || scores[p.id];
-    pts += calcPtsPartido(pron?.partidos?.[p.id], res);
-  });
-  return pts;
-}
-
+/**
+ * Proyecta el ranking reemplazando temporalmente state.scores con los marcadores
+ * simulados, luego restaura el original en finally. Reutiliza calcPtsTotal sin
+ * duplicar lógica y elimina todo riesgo de doble conteo (incluyendo calcPtsGrupos).
+ */
 function simCalcRanking(activoMatches) {
-  const activeIds = new Set(activoMatches.map(m => m.id));
-  return state.jugadores.map(j => {
-    const pron = state.pronosticos[j.nombre] || {};
+  const origScores = state.scores;
 
-    // Puntos reales SIN los partidos en simulación (evita doble conteo)
-    const basePts = simCalcBasePts(pron, activeIds);
+  // Puntos reales actuales (con scores originales)
+  const realPtsMap = {};
+  state.jugadores.forEach(j => {
+    realPtsMap[j.nombre] = calcPtsTotal(state.pronosticos[j.nombre] || {}, state.resultados);
+  });
 
-    // Puntos de la polla por los partidos simulados:
-    //   +2 → marcador exacto | +1 → resultado correcto | 0 → incorrecto
-    let simPts = 0;
-    const detail = [];
-    activoMatches.forEach(m => {
-      const pred = pron?.partidos?.[m.id];
-      const sc = _simScores[m.id] || {gL:0, gV:0};
-      const pts = calcPtsPartido(pred, {gL: sc.gL, gV: sc.gV});
-      simPts += pts;
-      detail.push({
-        local: m.local, visita: m.visita,
-        pred: pred ? `${pred.g1}-${pred.g2}` : null,
-        sim: `${sc.gL}-${sc.gV}`,
-        pts,
-        tipo: pts === 2 ? '⭐' : pts === 1 ? '✓' : '✗'
+  // Scores temporales: real + simulados encima
+  const tempScores = { ...origScores };
+  activoMatches.forEach(m => {
+    const sc = _simScores[m.id] || {gL:0, gV:0};
+    tempScores[m.local + '|' + m.visita] = sc;
+    tempScores[m.id] = sc;
+  });
+
+  state.scores = tempScores;
+  try {
+    return state.jugadores.map(j => {
+      const pron     = state.pronosticos[j.nombre] || {};
+      const total    = calcPtsTotal(pron, state.resultados);
+      const basePts  = realPtsMap[j.nombre];
+      const simPts   = total - basePts;
+      const detail   = activoMatches.map(m => {
+        const pred = pron?.partidos?.[m.id];
+        const sc   = _simScores[m.id] || {gL:0, gV:0};
+        const pts  = calcPtsPartido(pred, {gL: sc.gL, gV: sc.gV});
+        return {
+          local: m.local, visita: m.visita,
+          pred: pred ? `${pred.g1}-${pred.g2}` : null,
+          sim: `${sc.gL}-${sc.gV}`, pts,
+          tipo: pts === 2 ? '⭐' : pts === 1 ? '✓' : '✗'
+        };
       });
-    });
-
-    return { nombre: j.nombre, basePts, simPts, total: basePts + simPts, detail };
-  }).sort((a,b) => b.total - a.total || b.basePts - a.basePts);
+      return { nombre: j.nombre, basePts, simPts, total, detail };
+    }).sort((a,b) => b.total - a.total || b.basePts - a.basePts);
+  } finally {
+    state.scores = origScores; // siempre restaurar
+  }
 }
 
 /** Renderiza el simulador completo */
