@@ -246,40 +246,57 @@ function guardarScores(p) {
  * NO sobrescribe partidos que ya tienen un score ingresado manualmente por el admin.
  * El admin siempre puede corregir un marcador usando guardarScores (admin panel).
  */
+/**
+ * Auto-sync only: inserts scores for NEW matches without overwriting existing ones.
+ * Uses a single batch setValues() write instead of per-row calls to avoid
+ * Apps Script quotas and timeouts with large datasets.
+ */
 function guardarScoresAutoSync(scoresList) {
   const sh = getSheet('Scores');
   if (sh.getLastRow() === 0) {
     sh.appendRow(['partido', 'gL', 'gV']);
   }
   const existing = sh.getDataRange().getValues();
-  // Construir set de claves ya existentes (con score no nulo)
+
+  // Index existing rows: key → row index; track which keys already have a score
+  const keyToRowIndex = {};
   const existingKeys = new Set();
   for (let i = 1; i < existing.length; i++) {
     const k = existing[i][0];
-    const hasScore = existing[i][1] !== '' && existing[i][1] !== null && existing[i][2] !== '' && existing[i][2] !== null;
-    if (k && hasScore) existingKeys.add(k);
+    if (!k) continue;
+    keyToRowIndex[k] = i;
+    const hasScore = existing[i][1] !== '' && existing[i][1] !== null &&
+                     existing[i][2] !== '' && existing[i][2] !== null;
+    if (hasScore) existingKeys.add(k);
   }
+
   let added = 0;
+  let modified = false;
+
   scoresList.forEach(s => {
     if (!s.key || s.gL === undefined || s.gV === undefined) return;
-    // Saltar si ya hay un marcador para este partido (no sobrescribir entrada manual)
-    if (existingKeys.has(s.key)) return;
-    // Buscar fila existente sin score y actualizar, o agregar nueva fila
-    let found = false;
-    for (let i = 1; i < existing.length; i++) {
-      if (existing[i][0] === s.key) {
-        sh.getRange(i + 1, 2, 1, 2).setValues([[s.gL, s.gV]]);
-        existing[i][1] = s.gL; existing[i][2] = s.gV;
-        found = true; break;
-      }
-    }
-    if (!found) {
-      sh.appendRow([s.key, s.gL, s.gV]);
+    if (existingKeys.has(s.key)) return; // ya tiene score manual — no tocar
+
+    const rowIdx = keyToRowIndex[s.key];
+    if (rowIdx !== undefined) {
+      // Fila existente sin score: actualizar en memoria
+      existing[rowIdx][1] = s.gL;
+      existing[rowIdx][2] = s.gV;
+    } else {
+      // Fila nueva
       existing.push([s.key, s.gL, s.gV]);
+      keyToRowIndex[s.key] = existing.length - 1;
     }
     existingKeys.add(s.key);
     added++;
+    modified = true;
   });
+
+  // Una sola escritura al final (batch) en vez de N llamadas individuales
+  if (modified) {
+    sh.getRange(1, 1, existing.length, 3).setValues(existing);
+  }
+
   return { ok: true, added };
 }
 
