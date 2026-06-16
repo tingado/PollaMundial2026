@@ -546,7 +546,7 @@ function fetchResultadosZafronix(p) {
 
 // Guarda la API key de Zafronix en el servidor (Script Properties)
 function guardarTokenZafronix(p) {
-  const key = (p.apiToken || '').trim();
+  const key = (p && p.apiToken || '').trim();
   if (!key) return { error: 'API key vacía' };
   PropertiesService.getScriptProperties().setProperty('ZAFRONIX_KEY', key);
   return { ok: true, msg: 'API key de Zafronix guardada. Ahora puedes activar el Auto-Sync.' };
