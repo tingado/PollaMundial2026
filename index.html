@@ -4601,7 +4601,7 @@ function simRefreshRanking() {
   if(!tbody) return;
 
   const liveMatches = simGetLiveMatches();
-  const activoMatches = liveMatches.length > 0 ? liveMatches : SIM_DEMO;
+  const activoMatches = liveMatches.length > 0 ? liveMatches : simGetNextMatch();
   const ranking = simCalcRanking(activoMatches);
 
   tbody.innerHTML = ranking.map((r, i) => {
