@@ -4342,12 +4342,17 @@ if(savedToken){ $id('inp-token').value=savedToken; onTokenChange(); }
 // Ventana temporal para considerar un partido "en juego" (minutos)
 const SIM_WINDOW_MIN = 110; // 90 min juego + 20 min descanso/extra
 
-// Partidos demo — usan IDs reales para que las predicciones de cada jugador apliquen
-const SIM_DEMO = [
-  {id:'C1', grupo:'C', local:'Brasil',    visita:'Marruecos', hora:'demo', fecha:'demo'},
-  {id:'J1', grupo:'J', local:'Argentina', visita:'Algeria',   hora:'demo', fecha:'demo'},
-  {id:'I1', grupo:'I', local:'Francia',   visita:'Senegal',   hora:'demo', fecha:'demo'},
-];
+// Retorna el próximo partido sin jugar (primero en PARTIDOS sin score cargado)
+function simGetNextMatch() {
+  const sc = state.scores || {};
+  for (const p of PARTIDOS) {
+    if(!p.fecha || !p.hora) continue;
+    const key = p.local + '|' + p.visita;
+    const played = sc[key] && sc[key].gL != null;
+    if(!played) return [{...p, hora:'next'}];
+  }
+  return [];
+}
 
 // Estado en memoria del simulador (muere al refrescar)
 let _simScores = {};   // {matchId: {gL: number, gV: number}}
@@ -4442,7 +4447,7 @@ function simRender() {
   const useDemo = liveMatches.length === 0;
   if(useDemo) _simDemo = true;
 
-  const activoMatches = useDemo ? SIM_DEMO : liveMatches;
+  const activoMatches = useDemo ? simGetNextMatch() : liveMatches;
 
   // Inicializar scores en cero para partidos sin valor aún
   activoMatches.forEach(m => {
@@ -4452,8 +4457,8 @@ function simRender() {
   // ── Tarjetas de partido ──
   const cardsHtml = activoMatches.map(m => {
     const sc = _simScores[m.id] || {gL:0, gV:0};
-    const badge = m.hora === 'demo'
-      ? `<span class="sim-minute">DEMO</span>`
+    const badge = m.hora === 'next'
+      ? `<span class="sim-minute" style="background:rgba(245,188,0,0.15);color:#b8860b;">PRÓXIMO</span>`
       : `<span class="sim-minute">EN VIVO</span>`;
     return `
     <div class="sim-card">
@@ -4515,13 +4520,14 @@ function simRender() {
   </td></tr>`;
 
   // ── Banner demo ──
+  const nextM = activoMatches[0];
   const demoBannerHtml = useDemo ? `
   <div class="sim-demo-bar">
     <div>
-      <div class="sim-demo-label">🎮 Modo Demo — No hay partidos en juego ahora</div>
+      <div class="sim-demo-label">⏭️ Próximo partido${nextM ? ` — ${nextM.local} vs ${nextM.visita}` : ''}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:2px;">
-        Cambiar marcadores muestra cómo quedaría el ranking real de la polla con esos resultados.
-        Cuando haya partidos en vivo, aparecerán aquí automáticamente.
+        ${nextM ? `Grupo ${nextM.grupo} · ${nextM.fecha} ${nextM.hora !== 'next' ? nextM.hora : ''}` : 'Sin partidos próximos'}
+        &nbsp;· Simula el marcador y ve cómo quedaría el ranking. Cuando empiece en vivo, aparecerá automáticamente.
       </div>
     </div>
   </div>` : '';
