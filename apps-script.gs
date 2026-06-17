@@ -246,40 +246,57 @@ function guardarScores(p) {
  * NO sobrescribe partidos que ya tienen un score ingresado manualmente por el admin.
  * El admin siempre puede corregir un marcador usando guardarScores (admin panel).
  */
+/**
+ * Auto-sync only: inserts scores for NEW matches without overwriting existing ones.
+ * Processes all changes in memory then writes with a single setValues() call
+ * to avoid per-row Spreadsheet API calls that cause slowness and quota issues.
+ */
 function guardarScoresAutoSync(scoresList) {
   const sh = getSheet('Scores');
   if (sh.getLastRow() === 0) {
     sh.appendRow(['partido', 'gL', 'gV']);
   }
-  const existing = sh.getDataRange().getValues();
-  // Construir set de claves ya existentes (con score no nulo)
+  // Normalizar a 3 columnas: getDataRange() puede devolver filas cortas si hay celdas vacías,
+  // causando undefined en gL/gV y un array no-rectangular que rompe setValues().
+  const existing = sh.getDataRange().getValues().map(row => { while (row.length < 3) row.push(''); return row; });
+
+  // Build index: key → row index, and set of keys that already have a score
+  const keyToRowIndex = {};
   const existingKeys = new Set();
   for (let i = 1; i < existing.length; i++) {
     const k = existing[i][0];
-    const hasScore = existing[i][1] !== '' && existing[i][1] !== null && existing[i][2] !== '' && existing[i][2] !== null;
-    if (k && hasScore) existingKeys.add(k);
+    if (!k) continue;
+    keyToRowIndex[k] = i;
+    const hasScore = existing[i][1] !== '' && existing[i][1] !== null &&
+                     existing[i][2] !== '' && existing[i][2] !== null;
+    if (hasScore) existingKeys.add(k);
   }
+
   let added = 0;
+  let modified = false;
+
   scoresList.forEach(s => {
     if (!s.key || s.gL === undefined || s.gV === undefined) return;
-    // Saltar si ya hay un marcador para este partido (no sobrescribir entrada manual)
-    if (existingKeys.has(s.key)) return;
-    // Buscar fila existente sin score y actualizar, o agregar nueva fila
-    let found = false;
-    for (let i = 1; i < existing.length; i++) {
-      if (existing[i][0] === s.key) {
-        sh.getRange(i + 1, 2, 1, 2).setValues([[s.gL, s.gV]]);
-        existing[i][1] = s.gL; existing[i][2] = s.gV;
-        found = true; break;
-      }
-    }
-    if (!found) {
-      sh.appendRow([s.key, s.gL, s.gV]);
+    if (existingKeys.has(s.key)) return; // already has a manual score — leave it
+
+    const rowIdx = keyToRowIndex[s.key];
+    if (rowIdx !== undefined) {
+      existing[rowIdx][1] = s.gL;
+      existing[rowIdx][2] = s.gV;
+    } else {
       existing.push([s.key, s.gL, s.gV]);
+      keyToRowIndex[s.key] = existing.length - 1;
     }
     existingKeys.add(s.key);
     added++;
+    modified = true;
   });
+
+  // Single batch write instead of N individual Spreadsheet API calls
+  if (modified) {
+    sh.getRange(1, 1, existing.length, 3).setValues(existing);
+  }
+
   return { ok: true, added };
 }
 
