@@ -253,12 +253,17 @@ function guardarScores(p) {
  */
 function guardarScoresAutoSync(scoresList) {
   const sh = getSheet('Scores');
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(['partido', 'gL', 'gV']);
-  }
-  // Normalizar a 3 columnas: getDataRange() puede devolver filas cortas si hay celdas vacías,
-  // causando undefined en gL/gV y un array no-rectangular que rompe setValues().
-  const existing = sh.getDataRange().getValues().map(row => { while (row.length < 3) row.push(''); return row; });
+  // Initialize empty sheet in memory (avoids a synchronous appendRow API call).
+  // Truncate each row to exactly 3 columns so the array stays rectangular even
+  // if the sheet has extra columns — a jagged array breaks setValues().
+  let modified = sh.getLastRow() === 0;
+  const existing = modified
+    ? [['partido', 'gL', 'gV']]
+    : sh.getDataRange().getValues().map(row => [
+        row[0] || '',
+        row[1] !== undefined && row[1] !== null ? row[1] : '',
+        row[2] !== undefined && row[2] !== null ? row[2] : ''
+      ]);
 
   // Build index: key → row index, and set of keys that already have a score
   const keyToRowIndex = {};
@@ -273,7 +278,6 @@ function guardarScoresAutoSync(scoresList) {
   }
 
   let added = 0;
-  let modified = false;
 
   scoresList.forEach(s => {
     if (!s.key || s.gL === undefined || s.gV === undefined) return;
