@@ -4345,13 +4345,19 @@ const SIM_WINDOW_MIN = 110; // 90 min juego + 20 min descanso/extra
 // Retorna el próximo partido sin jugar (primero en PARTIDOS sin score cargado)
 function simGetNextMatch() {
   const sc = state.scores || {};
+  // Encuentra el primer partido sin jugar
+  let earliest = null;
   for (const p of PARTIDOS) {
     if(!p.fecha || !p.hora) continue;
     const key = p.local + '|' + p.visita;
-    const played = sc[key] && sc[key].gL != null;
-    if(!played) return [{...p, hora:'next'}];
+    if(!(sc[key] && sc[key].gL != null)) { earliest = p; break; }
   }
-  return [];
+  if(!earliest) return [];
+  // Devuelve TODOS los partidos con la misma fecha+hora (pares simultáneos de J3)
+  return PARTIDOS
+    .filter(p => p.fecha === earliest.fecha && p.hora === earliest.hora)
+    .filter(p => !(sc[p.local+'|'+p.visita] && sc[p.local+'|'+p.visita].gL != null))
+    .map(p => ({...p, hora:'next'}));
 }
 
 // Estado en memoria del simulador (muere al refrescar)
