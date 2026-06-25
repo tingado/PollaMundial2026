@@ -2257,7 +2257,7 @@ function showView(v, el){
   if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); renderAdminKO(); }
   if(v==='partidos') actualizarBarraAdmin();
   if(v==='simulador') initSimulador();
-  if(v==='eliminatorias'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
+  if(v==='eliminatorias'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); startKORefresh(); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -3572,14 +3572,48 @@ async function guardarElim(){
 const KO_ROUND_LABELS = {r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
 let _koRound = 'r32';
 let _elimTab  = 'ko';
+let _koRefreshTimer = null;
+
+// Devuelve el estado efectivo de la ronda considerando el deadline.
+// Si el admin la puso "abierto" pero ya pasó el deadline → es "cerrado" en el cliente.
+function getEffectiveKOStatus(rnd){
+  const cfg=(state.koConfig?.rounds||{})[rnd]||{};
+  const status=cfg.status||'pendiente';
+  if(status==='cerrado') return 'cerrado';
+  if(status==='abierto'&&cfg.deadline&&new Date()>new Date(cfg.deadline)) return 'cerrado';
+  return status;
+}
+
+// Formatea tiempo restante hasta el deadline.
+function formatKOCountdown(deadline){
+  const diff=new Date(deadline)-new Date();
+  if(diff<=0) return null;
+  const h=Math.floor(diff/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  if(h>48) return `${Math.floor(h/24)} días`;
+  if(h>0)  return `${h}h ${m}min`;
+  return `${m}min`;
+}
+
+// Inicia un timer que refresca tabs y vista KO cada minuto (para countdown y cierre automático).
+function startKORefresh(){
+  if(_koRefreshTimer) return;
+  _koRefreshTimer=setInterval(()=>{
+    if($id('view-eliminatorias')?.classList.contains('active')&&_elimTab==='ko'){
+      renderKORoundTabs();
+      cargarKO();
+    }
+  },60000);
+}
+function stopKORefresh(){ if(_koRefreshTimer){clearInterval(_koRefreshTimer);_koRefreshTimer=null;} }
 
 function setElimTab(tab, el){
   _elimTab = tab;
   document.querySelectorAll('.elim-subtab').forEach(b=>b.classList.toggle('active', b===el));
   $id('elim-tab-ko').style.display      = tab==='ko'     ? '' : 'none';
   $id('elim-tab-bracket').style.display = tab==='bracket'? '' : 'none';
-  if(tab==='ko'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
-  if(tab==='bracket'){ cargarElim(); }
+  if(tab==='ko'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); startKORefresh(); }
+  if(tab==='bracket'){ stopKORefresh(); cargarElim(); }
 }
 
 function setKORound(rnd, el){
@@ -3608,10 +3642,8 @@ function cargarKO(){
 
 function renderKORoundTabs(){
   const cont=$id('ko-round-tabs'); if(!cont) return;
-  const rounds=state.koConfig?.rounds||{};
   cont.innerHTML=Object.entries(KO_ROUND_LABELS).map(([rnd,label])=>{
-    const cfg=rounds[rnd]||{};
-    const status=cfg.status||'pendiente';
+    const status=getEffectiveKOStatus(rnd);
     const isActive=rnd===_koRound;
     const cls=isActive?'active':status==='pendiente'?'pending':status==='cerrado'?'done':'';
     return `<button class="ko-round-tab ${cls}" onclick="setKORound('${rnd}',this)">${label}</button>`;
@@ -3621,7 +3653,7 @@ function renderKORoundTabs(){
 function renderKORound(jugador, rnd){
   const cont=$id('ko-round-content'); if(!cont) return;
   const cfg=(state.koConfig?.rounds||{})[rnd]||{};
-  const status=cfg.status||'pendiente';
+  const status=getEffectiveKOStatus(rnd);  // respeta deadline automáticamente
   const slots=cfg.slots||[];
   const pron=(state.pronosticos[jugador]?.ko||{})[rnd]||[];
   const results=(state.scoresKO||{})[rnd]||[];
@@ -3634,8 +3666,10 @@ function renderKORound(jugador, rnd){
 
   let bannerHtml='';
   if(status==='abierto'){
-    const dl=cfg.deadline?new Date(cfg.deadline).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    bannerHtml=`<div class="ko-status-banner abierto">🟡 <strong>Abierto</strong>${dl?' · Cierra '+dl:''} — Ingresa tus predicciones de marcador y guarda antes del primer partido.</div>`;
+    const countdown=cfg.deadline?formatKOCountdown(cfg.deadline):null;
+    const dlStr=cfg.deadline?new Date(cfg.deadline).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    const cdHtml=countdown?` · ⏱️ <strong style="color:#b45309;">Cierra en ${countdown}</strong> (${dlStr})`:(dlStr?` · Cierra ${dlStr}`:'');
+    bannerHtml=`<div class="ko-status-banner abierto">🟡 <strong>Abierto</strong>${cdHtml} — Ingresa tus predicciones y guarda antes del primer partido.</div>`;
     $id('btn-save-ko').style.display=jugador?'':'none';
   } else {
     bannerHtml=`<div class="ko-status-banner cerrado">🔒 <strong>Cerrado</strong> — Predicciones de ${KO_ROUND_LABELS[rnd]} ya no se aceptan.</div>`;
