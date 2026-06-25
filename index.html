@@ -403,6 +403,35 @@ select option { background:#fff; }
 }
 .elim-counter strong { color:var(--rosa); }
 
+/* KO PREDICTIONS UI */
+.elim-subtabs{display:flex;gap:8px;margin-bottom:1rem;}
+.elim-subtab{flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:#f9fafb;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;}
+.elim-subtab.active{background:var(--rosa);color:#fff;border-color:var(--rosa);}
+.ko-round-tabs{display:flex;gap:6px;margin-bottom:1rem;overflow-x:auto;padding-bottom:2px;}
+.ko-round-tab{flex-shrink:0;padding:7px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:700;background:#f9fafb;color:var(--muted);cursor:pointer;letter-spacing:.5px;transition:all .15s;}
+.ko-round-tab.active{background:var(--rosa);color:#fff;border-color:var(--rosa);}
+.ko-round-tab.done{border-color:var(--verde);color:var(--verde);background:rgba(0,200,83,0.07);}
+.ko-round-tab.pending{opacity:.45;cursor:default;pointer-events:none;}
+.ko-status-banner{border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;line-height:1.5;}
+.ko-status-banner.abierto{background:rgba(245,188,0,0.1);border:1px solid rgba(245,188,0,0.3);color:#92710a;}
+.ko-status-banner.cerrado{background:rgba(0,200,83,0.07);border:1px solid rgba(0,200,83,0.2);color:#006830;}
+.ko-status-banner.pendiente{background:rgba(96,200,255,0.07);border:1px solid rgba(96,200,255,0.2);color:#1e6fa0;}
+.ko-match-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;}
+.ko-match-card.result{border-left:3px solid var(--verde);}
+.ko-match-meta{font-size:11px;color:var(--muted);margin-bottom:10px;}
+.ko-match-teams{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.ko-team{font-size:13px;font-weight:600;flex:1;line-height:1.3;}
+.ko-team.right{text-align:right;}
+.ko-score-inputs{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.ko-match-result-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;}
+.ko-real-score{font-size:1.4rem;font-weight:800;font-family:'Bebas Neue',sans-serif;letter-spacing:2px;}
+.ko-pred-row{font-size:12px;color:var(--muted);padding-top:8px;border-top:1px solid #f0f0f0;}
+.ko-pts-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-weight:700;font-size:11px;margin-left:4px;}
+.ko-pts-badge.pts4{background:rgba(245,188,0,0.18);color:#92710a;}
+.ko-pts-badge.pts2{background:rgba(0,200,83,0.12);color:var(--verde);}
+.ko-pts-badge.pts1{background:rgba(96,200,255,0.12);color:#1e6fa0;}
+.ko-pts-badge.pts0{background:#f0f0f0;color:#888;}
+
 /* BRACKET VISUAL */
 .bracket-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:1rem; }
 .br-rounds { display:flex; align-items:stretch; min-width:820px; height:calc(16 * 58px); gap:2px; }
@@ -1281,29 +1310,59 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">🏆 Llaves</div>
       </div>
-      <div class="wizard-steps">
-        <div class="wizard-step done">✓ 1 · Grupos</div>
-        <div class="wizard-step active">2 · Llaves</div>
+
+      <!-- Sub-tabs: Predicciones KO (nuevo) vs Bracket inicial (existente) -->
+      <div class="elim-subtabs">
+        <button class="elim-subtab active" onclick="setElimTab('ko',this)">⚽ Predicciones KO</button>
+        <button class="elim-subtab" onclick="setElimTab('bracket',this)">📋 Bracket inicial</button>
       </div>
-      <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Última etapa: completa las llaves.<br>
-        <span style="font-size:12px;">Etapa 2 de 2 — elige quién gana en 16avos, octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
+
+      <!-- ── PESTAÑA PREDICCIONES KO (nuevo sistema) ── -->
+      <div id="elim-tab-ko">
+        <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.5;">
+          ⚽ Nuevo sistema: predice el <strong>marcador exacto</strong> de cada partido.<br>
+          +1 gol local · +1 gol visita · +2 ganador = <strong style="color:var(--dorado);">4 pts</strong> máximo por partido.
+          Si va a alargue/penales, solo puntúa el ganador (+2).
+        </div>
+        <div class="form-card" style="margin-bottom:1rem;">
+          <label>Selecciona tu nombre</label>
+          <select id="sel-jugador-ko" onchange="cargarKO()">
+            <option value="">-- Elige tu nombre --</option>
+          </select>
+        </div>
+        <!-- Tabs por ronda -->
+        <div class="ko-round-tabs" id="ko-round-tabs"></div>
+        <!-- Contenido de la ronda activa -->
+        <div id="ko-round-content"></div>
+        <div id="msg-ko" class="msg" style="margin-top:8px;"></div>
+        <button class="btn btn-rosa btn-full" id="btn-save-ko" onclick="saveKORound()" style="display:none;margin-top:4px;">
+          💾 Guardar predicciones
+        </button>
       </div>
-      <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
-        Predice qué equipos llegan a cada ronda. Puntos: 16avos <strong style="color:var(--verde);">+10</strong>, cuartos <strong style="color:var(--verde);">+20</strong>, semis <strong style="color:var(--verde);">+30</strong>, finalistas <strong style="color:var(--dorado);">+40 c/u</strong>, campeón <strong style="color:var(--dorado);">+80</strong>
+
+      <!-- ── PESTAÑA BRACKET INICIAL (sistema anterior, solo referencia) ── -->
+      <div id="elim-tab-bracket" style="display:none;">
+        <div style="background:rgba(96,200,255,0.07);border:1px solid rgba(96,200,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.5;">
+          📋 Este es tu bracket original de predicción de avance por rondas.<br>
+          <strong>Ya no suma puntos al ranking</strong> — el nuevo sistema es por marcador de partido.
+        </div>
+        <div id="elim-onboard-banner" style="display:none;background:rgba(0,200,83,0.08);border:1px solid rgba(0,200,83,0.25);border-radius:12px;padding:12px 16px;margin-bottom:1rem;font-size:13px;color:var(--muted);line-height:1.6;">
+          ✅ <strong style="color:var(--verde);">¡Grupos guardados!</strong> Última etapa: completa las llaves.<br>
+          <span style="font-size:12px;">Etapa 2 de 2 — elige quién gana en 16avos, octavos, cuartos, semis y la final. ¡No olvides elegir el campeón!</span>
+        </div>
+        <div class="form-card" style="margin-bottom:1rem;">
+          <label>Selecciona tu nombre</label>
+          <select id="sel-jugador-elim" onchange="cargarElim()">
+            <option value="">-- Elige tu nombre --</option>
+          </select>
+        </div>
+        <div id="elim-aviso"></div>
+        <div id="elim-container"></div>
+        <div id="msg-elim"></div>
+        <button class="btn btn-rosa btn-full" id="btn-save-elim" onclick="guardarElim()" style="display:none;margin-top:4px;">
+          💾 Guardar pronósticos de eliminatorias
+        </button>
       </div>
-      <div class="form-card" style="margin-bottom:1rem;">
-        <label>Selecciona tu nombre</label>
-        <select id="sel-jugador-elim" onchange="cargarElim()">
-          <option value="">-- Elige tu nombre --</option>
-        </select>
-      </div>
-      <div id="elim-aviso"></div>
-      <div id="elim-container"></div>
-      <div id="msg-elim"></div>
-      <button class="btn btn-rosa btn-full" id="btn-save-elim" onclick="guardarElim()" style="display:none;margin-top:4px;">
-        💾 Guardar pronósticos de eliminatorias
-      </button>
     </div>
 
     <!-- ══ VIEW: RANKING ══ -->
@@ -2155,6 +2214,7 @@ function showView(v, el){
   if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); }
   if(v==='partidos') actualizarBarraAdmin();
   if(v==='simulador') initSimulador();
+  if(v==='eliminatorias'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2320,6 +2380,7 @@ function applyState(d, fromServer=false){
   if($id('view-proyecciones')?.classList.contains('active')) renderProyecciones();
   if($id('view-inscripcion')?.classList.contains('active')) cargarInscripcion();
   if($id('view-admin')?.classList.contains('active')) renderAdminScores();
+  if($id('view-eliminatorias')?.classList.contains('active')){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
 }
 
 function restoreLastPlayer(){
@@ -3460,6 +3521,157 @@ async function guardarElim(){
 // ══════════════════════════════════════════════════════════
 // FASE ELIMINATORIA KO — guardar predicciones
 // ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+// FASE ELIMINATORIA KO — UI por ronda
+// ══════════════════════════════════════════════════════════
+
+const KO_ROUND_LABELS = {r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
+let _koRound = 'r32';
+let _elimTab  = 'ko';
+
+function setElimTab(tab, el){
+  _elimTab = tab;
+  document.querySelectorAll('.elim-subtab').forEach(b=>b.classList.toggle('active', b===el));
+  $id('elim-tab-ko').style.display      = tab==='ko'     ? '' : 'none';
+  $id('elim-tab-bracket').style.display = tab==='bracket'? '' : 'none';
+  if(tab==='ko'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
+  if(tab==='bracket'){ cargarElim(); }
+}
+
+function setKORound(rnd, el){
+  _koRound = rnd;
+  document.querySelectorAll('.ko-round-tab').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  cargarKO();
+}
+
+function actualizarSelectorKO(){
+  const sel=$id('sel-jugador-ko'); if(!sel) return;
+  const prev=sel.value;
+  sel.innerHTML='<option value="">-- Elige tu nombre --</option>';
+  state.jugadores.forEach(j=>{
+    const opt=document.createElement('option');
+    opt.value=j.nombre; opt.textContent=j.nombre;
+    sel.appendChild(opt);
+  });
+  if(prev) sel.value=prev;
+}
+
+function cargarKO(){
+  const jugador=$id('sel-jugador-ko')?.value||'';
+  renderKORound(jugador, _koRound);
+}
+
+function renderKORoundTabs(){
+  const cont=$id('ko-round-tabs'); if(!cont) return;
+  const rounds=state.koConfig?.rounds||{};
+  cont.innerHTML=Object.entries(KO_ROUND_LABELS).map(([rnd,label])=>{
+    const cfg=rounds[rnd]||{};
+    const status=cfg.status||'pendiente';
+    const isActive=rnd===_koRound;
+    const cls=isActive?'active':status==='pendiente'?'pending':status==='cerrado'?'done':'';
+    return `<button class="ko-round-tab ${cls}" onclick="setKORound('${rnd}',this)">${label}</button>`;
+  }).join('');
+}
+
+function renderKORound(jugador, rnd){
+  const cont=$id('ko-round-content'); if(!cont) return;
+  const cfg=(state.koConfig?.rounds||{})[rnd]||{};
+  const status=cfg.status||'pendiente';
+  const slots=cfg.slots||[];
+  const pron=(state.pronosticos[jugador]?.ko||{})[rnd]||[];
+  const results=(state.scoresKO||{})[rnd]||[];
+
+  if(status==='pendiente'||!slots.length){
+    cont.innerHTML=`<div class="ko-status-banner pendiente">⏳ <strong>Próximamente</strong> — Los cruces de ${KO_ROUND_LABELS[rnd]} se publicarán al terminar la ronda anterior. Mantente atento.</div>`;
+    $id('btn-save-ko').style.display='none';
+    return;
+  }
+
+  let bannerHtml='';
+  if(status==='abierto'){
+    const dl=cfg.deadline?new Date(cfg.deadline).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    bannerHtml=`<div class="ko-status-banner abierto">🟡 <strong>Abierto</strong>${dl?' · Cierra '+dl:''} — Ingresa tus predicciones de marcador y guarda antes del primer partido.</div>`;
+    $id('btn-save-ko').style.display=jugador?'':'none';
+  } else {
+    bannerHtml=`<div class="ko-status-banner cerrado">🔒 <strong>Cerrado</strong> — Predicciones de ${KO_ROUND_LABELS[rnd]} ya no se aceptan.</div>`;
+    $id('btn-save-ko').style.display='none';
+  }
+
+  const cards=slots.map((slot,i)=>{
+    const pred=pron[i]||{};
+    const res=results[i]||null;
+    const local=slot.local||`Equipo ${2*i+1}`;
+    const visita=slot.visita||`Equipo ${2*i+2}`;
+
+    if(status==='abierto'){
+      return `<div class="ko-match-card">
+        <div class="ko-match-meta">Partido ${i+1}</div>
+        <div class="ko-match-teams">
+          <span class="ko-team">${flag(local)} ${local}</span>
+          <div class="ko-score-inputs">
+            <input class="pron-score-input" type="number" min="0" max="20" id="ko-${rnd}-${i}-g1" value="${pred.g1??''}" placeholder="0">
+            <span class="pron-vs">–</span>
+            <input class="pron-score-input" type="number" min="0" max="20" id="ko-${rnd}-${i}-g2" value="${pred.g2??''}" placeholder="0">
+          </div>
+          <span class="ko-team right">${flag(visita)} ${visita}</span>
+        </div>
+      </div>`;
+    }
+    // Cerrado — mostrar resultado vs predicción
+    if(res&&res.gL!=null){
+      const predObj=pred.g1!=null&&pred.g2!=null?{g1:pred.g1,g2:pred.g2}:null;
+      const pts=calcPtsKOPartido(predObj,res);
+      const ptsCls=pts===4?'pts4':pts>=2?'pts2':pts===1?'pts1':'pts0';
+      const ptsLabel=pts===4?'⭐ Exacto (4 pts)':pts>=2?`✓ Ganador (${pts} pts)`:pts===1?'± Un gol (1 pt)':'✗ Sin puntos';
+      const realStr=res.aet?`${res.gL}–${res.gV} (ET)`:`${res.gL}–${res.gV}`;
+      const predStr=predObj?`${pred.g1}–${pred.g2}`:'?–?';
+      return `<div class="ko-match-card result">
+        <div class="ko-match-meta">Partido ${i+1}</div>
+        <div class="ko-match-result-row">
+          <span>${flag(local)} ${local}</span>
+          <span class="ko-real-score">${realStr}</span>
+          <span>${flag(visita)} ${visita}</span>
+        </div>
+        <div class="ko-pred-row">Tu predicción: <strong>${predStr}</strong><span class="ko-pts-badge ${ptsCls}">${ptsLabel}</span></div>
+      </div>`;
+    }
+    // Cerrado pero sin resultado aún
+    const predStr=pred.g1!=null&&pred.g2!=null?`${pred.g1}–${pred.g2}`:'(sin predicción)';
+    return `<div class="ko-match-card">
+      <div class="ko-match-meta">Partido ${i+1}</div>
+      <div class="ko-match-result-row">
+        <span>${flag(local)} ${local}</span>
+        <span class="ko-real-score" style="color:var(--muted);">?–?</span>
+        <span>${flag(visita)} ${visita}</span>
+      </div>
+      <div class="ko-pred-row">Tu predicción: <strong>${predStr}</strong></div>
+    </div>`;
+  }).join('');
+
+  cont.innerHTML=bannerHtml+cards;
+}
+
+async function saveKORound(){
+  const jugador=$id('sel-jugador-ko')?.value;
+  if(!jugador){alert('Selecciona tu nombre primero');return;}
+  const rnd=_koRound;
+  const cfg=(state.koConfig?.rounds||{})[rnd]||{};
+  const slots=cfg.slots||[];
+  if(!slots.length){alert('Esta ronda aún no tiene cruces definidos');return;}
+  const preds=slots.map((_,i)=>{
+    const g1=parseInt($id(`ko-${rnd}-${i}-g1`)?.value??'');
+    const g2=parseInt($id(`ko-${rnd}-${i}-g2`)?.value??'');
+    return {g1:isNaN(g1)?null:g1, g2:isNaN(g2)?null:g2};
+  });
+  setLoad('btn-save-ko',true);
+  const r=await guardarKOPron(jugador,rnd,preds);
+  setLoad('btn-save-ko',false);
+  const msgEl=$id('msg-ko');
+  if(r.ok){ setMsg('msg-ko','✅ Predicciones guardadas','ok'); setTimeout(()=>{if(msgEl)msgEl.textContent='';},3000); }
+  else     { setMsg('msg-ko','Error: '+r.msg,'err'); }
+}
 
 // Guarda las predicciones KO de un jugador para una ronda específica.
 // preds: [{g1, g2}, ...] — uno por cada partido del cuadro de esa ronda.
