@@ -15,9 +15,11 @@
 // 3. Presionar ▶ Ejecutar (una sola vez)
 // → Desde ahí se sincroniza automáticamente cada 10 minutos
 //
-// SCORING:
+// SCORING FASE DE GRUPOS (sin cambios):
 //   Grupo 1°: +2pts | Grupo 2°: +1pt | Marcador exacto: +2pts adicionales
-//   Octavos: +10 | Cuartos: +20 | Semis: +30 | Finalista: +40 | Campeón: +80
+// SCORING FASE ELIMINATORIA (nuevo sistema, reemplaza bracket):
+//   Por partido: +1 gol local correcto · +1 gol visita correcto · +2 ganador = 4 pts máx
+//   Si va a alargue/penales: solo +2 por ganador (campo aet:true en ScoresKO)
 // ═══════════════════════════════════════════════════════
 
 // ─── CONFIGURAR AUTO-SYNC DESDE EL EDITOR ───────────────
@@ -114,6 +116,9 @@ function doGet(e) {
       case 'guardarResultados':       result = guardarResultados(p); break;
       case 'guardarResultadosGrupos': result = guardarResultadosGrupos(p); break;
       case 'guardarScores':           result = guardarScores(p); break;
+      case 'guardarKO':               result = guardarKO(p); break;
+      case 'guardarResultadosKO':     result = guardarResultadosKO(p); break;
+      case 'guardarKOConfig':         result = guardarKOConfig(p); break;
       case 'fetchResultadosAPI':      result = fetchResultadosAPI(p); break;
       case 'fetchResultadosZafronix': result = fetchResultadosZafronix(p); break;
       case 'guardarToken':            result = guardarToken(p); break;
@@ -148,13 +153,17 @@ function toArrGAS(v) {
 // ── READ ─────────────────────────────────────────────────
 
 function getAll() {
-  let scores = {};
-  try { scores = getScores(); } catch(e) { /* Scores sheet may not exist yet */ }
+  let scores = {}, scoresKO = {}, koConfig = {};
+  try { scores   = getScores();   } catch(e) {}
+  try { scoresKO = getScoresKO(); } catch(e) {}
+  try { koConfig = getKOConfig(); } catch(e) {}
   return {
-    jugadores:  getJugadores(),
+    jugadores:   getJugadores(),
     pronosticos: getPronosticos(),
     resultados:  getResultados(),
-    scores:      scores
+    scores:      scores,
+    scoresKO:    scoresKO,
+    koConfig:    koConfig
   };
 }
 
@@ -213,6 +222,41 @@ function getScores() {
     result[key] = { gL: gL, gV: gV };
   });
   return result;
+}
+
+// Lee resultados de partidos KO desde hoja ScoresKO.
+// Devuelve {r32:[{gL,gV,aet?,winner?},...], r16:[...], qf:[...], sf:[...], fin:[...]}
+function getScoresKO() {
+  const sh = getSheet('ScoresKO');
+  const data = sh.getDataRange().getValues();
+  if (data.length <= 1) return {};
+  const result = {};
+  data.slice(1).forEach(r => {
+    const rnd = String(r[0] || '').trim();
+    if (!rnd) return;
+    const slot = Number(r[1]);
+    if (!result[rnd]) result[rnd] = [];
+    while (result[rnd].length <= slot) result[rnd].push(null);
+    const gL = r[2] !== '' && r[2] !== null ? Number(r[2]) : null;
+    const gV = r[3] !== '' && r[3] !== null ? Number(r[3]) : null;
+    const aet = r[4] === true || String(r[4]).toLowerCase() === 'true';
+    const winner = String(r[5] || '').trim();
+    result[rnd][slot] = { gL, gV, aet: aet || undefined, winner: winner || undefined };
+  });
+  // Compactar nulls
+  Object.keys(result).forEach(rnd => {
+    result[rnd] = result[rnd].filter(Boolean);
+  });
+  return result;
+}
+
+// Lee configuración de rondas KO desde hoja KOConfig.
+// Devuelve {rounds:{r32:{status,deadline,slots:[{local,visita}]}, r16:..., ...}}
+function getKOConfig() {
+  const sh = getSheet('KOConfig');
+  const data = sh.getDataRange().getValues();
+  if (data.length <= 1) return {};
+  try { return JSON.parse(String(data[1][0] || '{}')); } catch(e) { return {}; }
 }
 
 function guardarScores(p) {
@@ -296,6 +340,85 @@ function guardarScoresAutoSync(scoresList) {
   }
 
   return { ok: true, added };
+}
+
+// ── KO WRITE ─────────────────────────────────────────────
+
+const KO_ROUNDS_VALID = ['r32','r16','qf','sf','fin'];
+
+// Guarda predicciones de marcadores KO de un jugador para una ronda.
+// p.nombre, p.ronda (r32|r16|qf|sf|fin), p.predicciones (JSON array [{g1,g2},...])
+function guardarKO(p) {
+  const nombre = (p.nombre || '').trim();
+  if (!nombre) throw new Error('Nombre requerido');
+  const ronda = (p.ronda || '').trim();
+  if (KO_ROUNDS_VALID.indexOf(ronda) === -1) throw new Error('Ronda inválida: ' + ronda);
+  let preds;
+  try { preds = JSON.parse(p.predicciones || '[]'); } catch(e) { preds = []; }
+
+  const sh = getSheet('Pronosticos');
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['nombre', 'pronostico']);
+  }
+  const rows = sh.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === nombre) {
+      let pron = {};
+      try { pron = JSON.parse(rows[i][1] || '{}'); } catch(e) {}
+      if (!pron.ko) pron.ko = {};
+      pron.ko[ronda] = preds;
+      sh.getRange(i + 1, 2).setValue(JSON.stringify(pron));
+      return { ok: true };
+    }
+  }
+  sh.appendRow([nombre, JSON.stringify({ ko: { [ronda]: preds } })]);
+  return { ok: true };
+}
+
+// Guarda resultados de partidos KO (con flag AET) en hoja ScoresKO.
+// p.ronda, p.resultados (JSON array [{slot,gL,gV,aet,winner},...])
+// Si el slot ya existe lo actualiza; si no, lo inserta.
+function guardarResultadosKO(p) {
+  const ronda = (p.ronda || '').trim();
+  if (KO_ROUNDS_VALID.indexOf(ronda) === -1) throw new Error('Ronda inválida: ' + ronda);
+  let resultados;
+  try { resultados = JSON.parse(p.resultados || '[]'); } catch(e) { resultados = []; }
+
+  const sh = getSheet('ScoresKO');
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['ronda', 'slot', 'gL', 'gV', 'aet', 'winner']);
+  }
+  const existing = sh.getDataRange().getValues();
+
+  resultados.forEach(r => {
+    const slot = Number(r.slot);
+    const aet  = r.aet ? true : false;
+    const winner = r.winner || '';
+    for (let i = 1; i < existing.length; i++) {
+      if (existing[i][0] === ronda && Number(existing[i][1]) === slot) {
+        sh.getRange(i + 1, 3, 1, 4).setValues([[r.gL, r.gV, aet, winner]]);
+        existing[i][2] = r.gL; existing[i][3] = r.gV;
+        existing[i][4] = aet;  existing[i][5] = winner;
+        return;
+      }
+    }
+    sh.appendRow([ronda, slot, r.gL, r.gV, aet, winner]);
+    existing.push([ronda, slot, r.gL, r.gV, aet, winner]);
+  });
+
+  return { ok: true, saved: resultados.length };
+}
+
+// Guarda configuración de rondas KO (status, deadlines, slots).
+// p.config = JSON con {rounds:{r32:{status,deadline,slots:[{local,visita}]}, ...}}
+function guardarKOConfig(p) {
+  let config;
+  try { config = JSON.parse(p.config || '{}'); } catch(e) { config = {}; }
+  const sh = getSheet('KOConfig');
+  if (sh.getLastRow() === 0) sh.appendRow(['config_json']);
+  if (sh.getLastRow() <= 1) sh.appendRow([JSON.stringify(config)]);
+  else sh.getRange(2, 1).setValue(JSON.stringify(config));
+  return { ok: true };
 }
 
 // ── WRITE ────────────────────────────────────────────────
@@ -547,6 +670,20 @@ function fetchResultadosZafronix(p) {
     const oct = new Set(), qua = new Set(), sem = new Set();
     let f1 = '', f2 = '', campeon = '';
 
+    // Mapa de stage Zafronix → ronda KO interna
+    const ZAFRONIX_STAGE_TO_KO = {
+      'round_of_16':   'r32',  // 16avos (16 partidos, primer KO del WC 2026)
+      'round_of_32':   'r32',  // nombre alternativo
+      'round_of_8':    'r16',  // 8vos (8 partidos)
+      'quarter_final': 'qf',   // cuartos (4 partidos)
+      'semi_final':    'sf',   // semis (2 partidos)
+      'final':         'fin'   // final (1 partido)
+    };
+
+    const koConfig = getKOConfig();
+    // koMatchesByRnd: {r32:[{local,visita,gL,gV,aet,winner},...], ...}
+    const koMatchesByRnd = {};
+
     matches.forEach(m => {
       const stage = m.stageNormalized || m.stage || '';
       const home = m.homeTeam ? mapName(m.homeTeam) : '';
@@ -555,16 +692,16 @@ function fetchResultadosZafronix(p) {
                      m.awayScore !== null && m.awayScore !== undefined;
 
       if (stage.indexOf('group') === 0) {
-        // Fase de grupos: guardar marcador (usar homeScore/awayScore, NO el campo result)
         if (played && home && away) {
           groupScores.push({ key: home + '|' + away, gL: m.homeScore, gV: m.awayScore });
         }
         return;
       }
-      // Eliminatorias: equipos que alcanzaron cada ronda (cuando ya están definidos)
-      if (stage === 'round_of_16')   { if (home) oct.add(home); if (away) oct.add(away); }
-      if (stage === 'quarter_final') { if (home) qua.add(home); if (away) qua.add(away); }
-      if (stage === 'semi_final')    { if (home) sem.add(home); if (away) sem.add(away); }
+
+      // Equipos que alcanzaron cada ronda (sistema legacy — se mantiene para compatibilidad)
+      if (stage === 'round_of_16' || stage === 'round_of_32') { if (home) oct.add(home); if (away) oct.add(away); }
+      if (stage === 'round_of_8' || stage === 'quarter_final') { if (home) qua.add(home); if (away) qua.add(away); }
+      if (stage === 'semi_final') { if (home) sem.add(home); if (away) sem.add(away); }
       if (stage === 'final') {
         if (home) f1 = home;
         if (away) f2 = away;
@@ -572,12 +709,35 @@ function fetchResultadosZafronix(p) {
           campeon = m.homeScore > m.awayScore ? home : m.awayScore > m.homeScore ? away : campeon;
         }
       }
+
+      // Nuevo sistema: guardar marcadores KO por slot (usando config de slots)
+      const koRnd = ZAFRONIX_STAGE_TO_KO[stage];
+      if (koRnd && played && home && away) {
+        if (!koMatchesByRnd[koRnd]) koMatchesByRnd[koRnd] = [];
+        const aet = !!(m.extraTime || m.penalties);
+        const winner = aet ? (m.homeScore > m.awayScore || (m.penalties && m.homePenalties > m.awayPenalties) ? 'local' : 'visita') : '';
+        koMatchesByRnd[koRnd].push({ local: home, visita: away, gL: m.homeScore, gV: m.awayScore, aet, winner });
+      }
     });
 
-    // fetchResultadosZafronix: no sobrescribir scores manuales del admin
-    if (groupScores.length > 0) {
-      guardarScoresAutoSync(groupScores);
-    }
+    // Guardar marcadores KO usando los slots definidos en koConfig
+    const koResultadosToSave = {};
+    Object.keys(koMatchesByRnd).forEach(rnd => {
+      const slots = (koConfig.rounds && koConfig.rounds[rnd] && koConfig.rounds[rnd].slots) || [];
+      if (!slots.length) return;
+      const results = [];
+      koMatchesByRnd[rnd].forEach(m => {
+        const slotIdx = slots.findIndex(s => s.local === m.local && s.visita === m.visita);
+        if (slotIdx === -1) return;
+        results.push({ slot: slotIdx, gL: m.gL, gV: m.gV, aet: m.aet, winner: m.winner });
+      });
+      if (results.length) {
+        koResultadosToSave[rnd] = results;
+        guardarResultadosKO({ ronda: rnd, resultados: JSON.stringify(results) });
+      }
+    });
+
+    if (groupScores.length > 0) guardarScoresAutoSync(groupScores);
 
     const resultadosObj = { oct: Array.from(oct), qua: Array.from(qua), sem: Array.from(sem), f1, f2, campeon };
 
@@ -597,7 +757,7 @@ function fetchResultadosZafronix(p) {
       else sh.getRange(2, 1, 1, 8).setValues([row]);
     }
 
-    return { ok: true, resultados: resultadosObj, scores: getScores(), matches: groupScores.length };
+    return { ok: true, resultados: resultadosObj, scores: getScores(), scoresKO: getScoresKO(), matches: groupScores.length };
   } catch(err) {
     return { error: 'Error al consultar Zafronix: ' + err.message };
   }
