@@ -1970,7 +1970,7 @@ const DATOS_2026 = [
 // ══════════════════════════════════════════════════════════
 // ESTADO
 // ══════════════════════════════════════════════════════════
-let state = { jugadores:[], pronosticos:{}, resultados:{}, scores:{} };
+let state = { jugadores:[], pronosticos:{}, resultados:{}, scores:{}, scoresKO:{}, koConfig:{} };
 let matchView = 'day';
 
 // ══════════════════════════════════════════════════════════
@@ -3518,7 +3518,7 @@ function renderRanking(){
             <th>Total</th>
             <th title="Puntos por marcadores exactos y resultados correctos">Partidos</th>
             <th title="Puntos por 1° y 2° lugar de grupo">Grupos</th>
-            <th title="Puntos fase eliminatoria">Elim.</th>
+            <th title="Puntos fase eliminatoria (marcadores por partido)">Llaves</th>
           </tr>
         </thead>
         <tbody>
@@ -3546,7 +3546,7 @@ function renderRanking(){
               </td>
               <td class="rank-pts-sub" style="color:${r.partidos>0?'var(--verde)':'var(--muted)'};">${r.partidos}</td>
               <td class="rank-pts-sub">${r.grupos}</td>
-              <td class="rank-pts-sub">${r.elim}</td>
+              <td class="rank-pts-sub">${r.ko||0}</td>
             </tr>
             <tr id="rd-${en}" class="rank-detail-row">
               <td colspan="6"><div class="rank-detail-inner"></div></td>
@@ -3832,13 +3832,55 @@ function calcPtsPartidos(pron){
   return pts;
 }
 
-function calcPtsTotal(pron, res){ return calcPtsGrupos(pron,res)+calcPtsElim(pron,res)+calcPtsPartidos(pron); }
+// ── Scoring fase eliminatoria (nuevo sistema, reemplaza calcPtsElim) ──
+// Rondas: r32 (16avos), r16 (8vos), qf (4tos), sf (semis), fin (final)
+// Cada slot posicional corresponde a un cruce del cuadro.
+// Si el partido fue a alargue/penales (aet:true), solo vale +2 por ganador.
+// Marcador a 90 min: +1 gol local correcto, +1 gol visita correcto, +2 ganador = 4 máx.
+function calcPtsKOPartido(pred, res){
+  if(!pred||!res||res.gL==null||res.gV==null) return 0;
+  if(res.aet){
+    // Fue a tiempo extra o penales — solo puntúa el ganador
+    const predDir=(pred.g1>pred.g2?1:pred.g1<pred.g2?-1:0);
+    // winner indica quién ganó después de ET/penales: 'local' o 'visita'
+    const realDir=res.winner==='local'?1:res.winner==='visita'?-1:0;
+    return predDir===realDir?2:0;
+  }
+  let pts=0;
+  if(pred.g1===res.gL) pts+=1;
+  if(pred.g2===res.gV) pts+=1;
+  const predDir=(pred.g1>pred.g2?1:pred.g1<pred.g2?-1:0);
+  const realDir=(res.gL>res.gV?1:res.gL<res.gV?-1:0);
+  if(predDir===realDir) pts+=2;
+  return pts;
+}
+
+const KO_ROUNDS=['r32','r16','qf','sf','fin'];
+
+function calcPtsKO(pron){
+  const ko=pron?.ko||{};
+  const scoresKO=state.scoresKO||{};
+  let pts=0;
+  KO_ROUNDS.forEach(rnd=>{
+    const preds=ko[rnd];
+    const results=scoresKO[rnd];
+    if(!preds||!results) return;
+    const arr=Array.isArray(preds)?preds:[preds];
+    arr.forEach((pred,i)=>{
+      const res=Array.isArray(results)?results[i]:results;
+      pts+=calcPtsKOPartido(pred,res);
+    });
+  });
+  return pts;
+}
+
+function calcPtsTotal(pron, res){ return calcPtsGrupos(pron,res)+calcPtsKO(pron)+calcPtsPartidos(pron); }
 
 function calcPtsDetalle(pron, res){
   const grupos=calcPtsGrupos(pron,res);
-  const elim=calcPtsElim(pron,res);
+  const ko=calcPtsKO(pron);
   const partidos=calcPtsPartidos(pron);
-  return { grupos, elim, partidos, total:grupos+elim+partidos };
+  return { grupos, ko, partidos, total:grupos+ko+partidos };
 }
 
 function buildDesglose(pron, res){
@@ -3890,22 +3932,30 @@ function buildDesglose(pron, res){
   });
   if(gItems.length) lines.push({title:'📊 Predicción de grupos',items:gItems});
 
-  // ── Eliminatorias ──
-  const eItems=[];
-  const rOct=toArr(res?.oct),rQua=toArr(res?.qua),rSem=toArr(res?.sem);
-  const rFin=[res?.f1||'',res?.f2||''].filter(Boolean), rCamp=res?.campeon||'';
-  const rounds=[
-    {key:'oct',label:'Octavos',r:rOct,pts:10,arr:elim.oct||[]},
-    {key:'qua',label:'Cuartos',r:rQua,pts:20,arr:elim.qua||[]},
-    {key:'sem',label:'Semis',r:rSem,pts:30,arr:elim.sem||[]},
-  ];
-  rounds.forEach(({label,r,pts,arr})=>{
-    if(!r.length) return;
-    arr.forEach(t=>{ eItems.push({label:`${label}: ${flag(t)} ${t}`,pred:'',real:'',pts:r.includes(t)?pts:0,tipo:r.includes(t)?'✓':'✗'}); });
+  // ── Fase Eliminatoria (nuevo sistema por partido) ──
+  const koItems=[];
+  const scoresKO=state.scoresKO||{};
+  const koPron=pron?.ko||{};
+  const koRoundLabels={r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
+  KO_ROUNDS.forEach(rnd=>{
+    const preds=koPron[rnd];
+    const results=scoresKO[rnd];
+    if(!preds) return;
+    const arr=Array.isArray(preds)?preds:[preds];
+    const cfg=(state.koConfig?.rounds||{})[rnd]||{};
+    arr.forEach((pred,i)=>{
+      const res=Array.isArray(results)?results[i]:results;
+      if(!res||res.gL==null) return; // resultado aún no disponible
+      const pts=calcPtsKOPartido(pred,res);
+      const predStr=pred?`${pred.g1}-${pred.g2}`:'?-?';
+      const realStr=res.aet?`${res.gL}-${res.gV} (${res.winner==='local'?'L':'V'} en ET)`:`${res.gL}-${res.gV}`;
+      const tipo=pts===4?'⭐ Exacto':pts>=2?'✓ Ganador':pts===1?'± Gol':'✗';
+      const slot=cfg.slots?.[i]||{};
+      const matchLabel=slot.local&&slot.visita?`${flag(slot.local)} ${slot.local} vs ${flag(slot.visita)} ${slot.visita}`:`${koRoundLabels[rnd]} partido ${i+1}`;
+      koItems.push({label:matchLabel,pred:predStr,real:realStr,pts,tipo});
+    });
   });
-  if(rFin.length){ const uFin=[...new Set([elim.f1,elim.f2])].filter(Boolean); uFin.forEach(t=>{ eItems.push({label:`Final: ${flag(t)} ${t}`,pred:'',real:'',pts:rFin.includes(t)?40:0,tipo:rFin.includes(t)?'✓':'✗'}); }); }
-  if(rCamp&&elim.campeon){ eItems.push({label:`Campeón: ${flag(elim.campeon)} ${elim.campeon}`,pred:'',real:'',pts:elim.campeon===rCamp?80:0,tipo:elim.campeon===rCamp?'✓':'✗'}); }
-  if(eItems.length) lines.push({title:'🏆 Eliminatorias',items:eItems});
+  if(koItems.length) lines.push({title:'🏆 Fase Eliminatoria',items:koItems});
 
   return lines;
 }
