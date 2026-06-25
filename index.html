@@ -2299,6 +2299,9 @@ function applyState(d, fromServer=false){
     state.scores=serverScores||localScores||state.scores||{};
     if(serverScores) _guardarScoresLocal();
   }
+  // Fase eliminatoria KO — siempre desde servidor (no hay caché local)
+  if(d.scoresKO) state.scoresKO=d.scoresKO;
+  if(d.koConfig)  state.koConfig=d.koConfig;
   renderLeaderboard();
   renderPozo();
   renderHome();
@@ -3452,6 +3455,27 @@ async function guardarElim(){
     }
   }
   finally{setLoad('btn-save-elim',false);}
+}
+
+// ══════════════════════════════════════════════════════════
+// FASE ELIMINATORIA KO — guardar predicciones
+// ══════════════════════════════════════════════════════════
+
+// Guarda las predicciones KO de un jugador para una ronda específica.
+// preds: [{g1, g2}, ...] — uno por cada partido del cuadro de esa ronda.
+async function guardarKOPron(jugador, ronda, preds){
+  if(!jugador||!ronda||!preds?.length) return {ok:false, msg:'Datos incompletos'};
+  try{
+    await api({action:'guardarKO', nombre:jugador, ronda, predicciones:JSON.stringify(preds)});
+    // Actualizar estado local
+    if(!state.pronosticos[jugador]) state.pronosticos[jugador]={};
+    if(!state.pronosticos[jugador].ko) state.pronosticos[jugador].ko={};
+    state.pronosticos[jugador].ko[ronda]=preds;
+    renderRanking();
+    return {ok:true};
+  }catch(e){
+    return {ok:false, msg:e.message};
+  }
 }
 
 // ══════════════════════════════════════════════════════════
