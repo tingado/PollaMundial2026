@@ -1668,6 +1668,49 @@ select option { background:#fff; }
         <button class="btn btn-full" style="margin-top:10px;background:var(--verde);color:#fff;font-weight:800;" onclick="guardarMarcadores()">💾 Guardar marcadores</button>
       </div>
 
+      <!-- RESULTADOS FASE ELIMINATORIA KO -->
+      <div class="admin-card" style="border-color:rgba(245,188,0,0.3);">
+        <div class="admin-title" style="color:var(--dorado);">🏆 Fase Eliminatoria KO — Configuración y Resultados</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;">
+          Define los cruces de cada ronda, abre/cierra predicciones y registra resultados (con flag si fue a alargue/penales).
+        </p>
+
+        <!-- Tabs de ronda -->
+        <div class="proy-group-tabs" id="admin-ko-tabs" style="margin-bottom:12px;"></div>
+
+        <!-- Config de la ronda (estado + deadline) -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:11px;">Estado de la ronda</label>
+            <select id="ko-cfg-status" style="margin-bottom:0;">
+              <option value="pendiente">🔒 Pendiente</option>
+              <option value="abierto">🟡 Abierto</option>
+              <option value="cerrado">✅ Cerrado</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;">Cierre predicciones</label>
+            <input id="ko-cfg-deadline" type="datetime-local" style="margin-bottom:0;">
+          </div>
+        </div>
+
+        <!-- Cruces (slots) + resultados por partido -->
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">CRUCES Y RESULTADOS</div>
+        <div id="admin-ko-slots-grid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+
+        <div id="msg-admin-ko" style="font-size:12px;margin-top:6px;"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-full" id="btn-ko-config" onclick="guardarConfigKO()"
+            style="background:rgba(245,188,0,0.15);border:1px solid rgba(245,188,0,0.4);color:var(--dorado);font-weight:800;">
+            💾 Guardar configuración
+          </button>
+          <button class="btn btn-full" id="btn-ko-results" onclick="guardarMarcadoresKO()"
+            style="background:var(--verde);color:#fff;font-weight:800;">
+            ⚽ Guardar resultados
+          </button>
+        </div>
+      </div>
+
       <div class="admin-card" style="border-color:rgba(255,61,90,0.2);">
         <div class="admin-title" style="color:var(--rojo);">⚠️ Zona de riesgo</div>
         <button class="btn btn-danger btn-full" onclick="resetear()">🗑️ Borrar todos los datos</button>
@@ -2211,7 +2254,7 @@ function showView(v, el){
   cargarDatos();
   if(v==='proyecciones') renderProyecciones();
   if(v==='inscripcion') cargarInscripcion();
-  if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); }
+  if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); renderAdminKO(); }
   if(v==='partidos') actualizarBarraAdmin();
   if(v==='simulador') initSimulador();
   if(v==='eliminatorias'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
@@ -2379,7 +2422,7 @@ function applyState(d, fromServer=false){
   restoreLastPlayer();
   if($id('view-proyecciones')?.classList.contains('active')) renderProyecciones();
   if($id('view-inscripcion')?.classList.contains('active')) cargarInscripcion();
-  if($id('view-admin')?.classList.contains('active')) renderAdminScores();
+  if($id('view-admin')?.classList.contains('active')){ renderAdminScores(); renderAdminKO(); }
   if($id('view-eliminatorias')?.classList.contains('active')){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
 }
 
@@ -4399,6 +4442,130 @@ function renderAdminScores(grupo){
 }
 
 function previewAdminScore(matchId){}  // visual hook, no-op for now
+
+// ── ADMIN: FASE ELIMINATORIA KO ──────────────────────────
+const KO_ROUND_SIZES = {r32:16, r16:8, qf:4, sf:2, fin:1};
+let _adminKORound = 'r32';
+
+function renderAdminKO(rnd){
+  if(rnd) _adminKORound = rnd;
+  const r = _adminKORound;
+
+  // Tabs
+  const tabs = $id('admin-ko-tabs');
+  if(tabs) tabs.innerHTML = Object.entries(KO_ROUND_LABELS).map(([rk,label])=>
+    `<button class="proy-tab${rk===r?' active':''}" onclick="renderAdminKO('${rk}')">${label}</button>`
+  ).join('');
+
+  const cfg   = (state.koConfig?.rounds||{})[r] || {};
+  const status   = cfg.status   || 'pendiente';
+  const deadline = cfg.deadline || '';
+  const slots    = cfg.slots    || [];
+  const results  = (state.scoresKO||{})[r] || [];
+
+  // Rellenar estado/deadline
+  const selStatus = $id('ko-cfg-status');
+  const inpDl     = $id('ko-cfg-deadline');
+  if(selStatus) selStatus.value = status;
+  if(inpDl) inpDl.value = deadline ? new Date(deadline).toISOString().slice(0,16) : '';
+
+  // Slots+resultados
+  const grid = $id('admin-ko-slots-grid'); if(!grid) return;
+  const size = KO_ROUND_SIZES[r];
+  grid.innerHTML = Array.from({length:size},(_,i)=>{
+    const slot = slots[i] || {};
+    const res  = results[i] || {};
+    const gL   = res.gL != null ? res.gL : '';
+    const gV   = res.gV != null ? res.gV : '';
+    const aet  = !!res.aet;
+    const win  = res.winner || '';
+    const played = gL !== '' && gV !== '';
+    return `<div class="match-card admin-edit${played?' played':''}" style="padding:10px 12px;">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:6px;">
+        <input type="text" id="ko-slot-${r}-${i}-local"  value="${esc(slot.local||'')}"  placeholder="Local"  style="font-size:12px;margin:0;">
+        <span style="color:var(--muted);font-size:12px;font-weight:700;">vs</span>
+        <input type="text" id="ko-slot-${r}-${i}-visita" value="${esc(slot.visita||'')}" placeholder="Visita" style="font-size:12px;margin:0;">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:var(--muted);min-width:60px;">P${i+1} Res:</span>
+        <input type="number" min="0" max="30" id="ko-res-${r}-${i}-gL" value="${gL}" placeholder="–" class="admin-score-input">
+        <span class="mc-sep">–</span>
+        <input type="number" min="0" max="30" id="ko-res-${r}-${i}-gV" value="${gV}" placeholder="–" class="admin-score-input">
+        <label style="display:flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;margin:0;">
+          <input type="checkbox" id="ko-res-${r}-${i}-aet" ${aet?'checked':''} onchange="toggleKOWinner('${r}',${i})">
+          ET/Pen
+        </label>
+        <select id="ko-res-${r}-${i}-winner" style="font-size:11px;padding:2px 4px;margin:0;display:${aet?'':'none'};">
+          <option value="">Ganador</option>
+          <option value="local"${win==='local'?' selected':''}>→ Local</option>
+          <option value="visita"${win==='visita'?' selected':''}>→ Visita</option>
+        </select>
+        ${played?'<span style="color:var(--verde);font-size:11px;font-weight:700;">✓</span>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleKOWinner(rnd,i){
+  const aetEl=$id(`ko-res-${rnd}-${i}-aet`);
+  const winEl=$id(`ko-res-${rnd}-${i}-winner`);
+  if(winEl) winEl.style.display=aetEl?.checked?'':'none';
+}
+
+async function guardarConfigKO(){
+  const r=_adminKORound;
+  const status=$id('ko-cfg-status')?.value||'pendiente';
+  const dlVal=$id('ko-cfg-deadline')?.value;
+  const deadline=dlVal?new Date(dlVal).toISOString():'';
+  const size=KO_ROUND_SIZES[r];
+  const slots=Array.from({length:size},(_,i)=>({
+    local:  ($id(`ko-slot-${r}-${i}-local`)?.value||'').trim(),
+    visita: ($id(`ko-slot-${r}-${i}-visita`)?.value||'').trim()
+  })).filter(s=>s.local||s.visita);
+
+  const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,deadline,slots}}};
+  setLoad('btn-ko-config',true,'Guardando...');
+  try{
+    await api({action:'guardarKOConfig',config:JSON.stringify(newConfig)});
+    state.koConfig=newConfig;
+    renderKORoundTabs();
+    setMsg('msg-admin-ko','✅ Configuración guardada','ok');
+  }catch(e){ setMsg('msg-admin-ko','Error: '+e.message,'err'); }
+  setLoad('btn-ko-config',false);
+}
+
+async function guardarMarcadoresKO(){
+  const r=_adminKORound;
+  const cfg=(state.koConfig?.rounds||{})[r]||{};
+  const slots=cfg.slots||[];
+  if(!slots.length){ setMsg('msg-admin-ko','Define los cruces primero','err'); return; }
+
+  const resultados=slots.map((_,i)=>{
+    const gL=parseInt($id(`ko-res-${r}-${i}-gL`)?.value??'');
+    const gV=parseInt($id(`ko-res-${r}-${i}-gV`)?.value??'');
+    const aet=!!$id(`ko-res-${r}-${i}-aet`)?.checked;
+    const winner=$id(`ko-res-${r}-${i}-winner`)?.value||'';
+    if(isNaN(gL)||isNaN(gV)) return null;
+    return {slot:i,gL,gV,aet:aet||undefined,winner:winner||undefined};
+  }).filter(Boolean);
+
+  if(!resultados.length){ setMsg('msg-admin-ko','No hay resultados completos para guardar','err'); return; }
+
+  setLoad('btn-ko-results',true,'Guardando...');
+  try{
+    await api({action:'guardarResultadosKO',ronda:r,resultados:JSON.stringify(resultados)});
+    if(!state.scoresKO) state.scoresKO={};
+    if(!state.scoresKO[r]) state.scoresKO[r]=[];
+    resultados.forEach(res=>{
+      while(state.scoresKO[r].length<=res.slot) state.scoresKO[r].push(null);
+      state.scoresKO[r][res.slot]={gL:res.gL,gV:res.gV,...(res.aet?{aet:true,winner:res.winner}:{})};
+    });
+    state.scoresKO[r]=state.scoresKO[r].filter(Boolean);
+    renderRanking();
+    setMsg('msg-admin-ko',`✅ ${resultados.length} resultado${resultados.length!==1?'s':''} guardado${resultados.length!==1?'s':''}`, 'ok');
+  }catch(e){ setMsg('msg-admin-ko','Error: '+e.message,'err'); }
+  setLoad('btn-ko-results',false);
+}
 
 async function guardarMarcadores(){
   const g = _adminScoresGrupo;
