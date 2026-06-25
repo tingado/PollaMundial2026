@@ -855,16 +855,39 @@ function getAutoSyncStatus() {
   return { active, hasToken };
 }
 
+// Cierra automáticamente las rondas KO cuyo deadline ya pasó.
+// Llamado desde autoSyncResultados (cada 10 min).
+function autoCloseKORounds() {
+  try {
+    const config = getKOConfig();
+    if (!config || !config.rounds) return 0;
+    const now = new Date();
+    let changed = 0;
+    Object.keys(config.rounds).forEach(rnd => {
+      const r = config.rounds[rnd];
+      if (r.status === 'abierto' && r.deadline && now > new Date(r.deadline)) {
+        r.status = 'cerrado';
+        changed++;
+      }
+    });
+    if (changed > 0) guardarKOConfig({ config: JSON.stringify(config) });
+    return changed;
+  } catch(e) {
+    return 0;
+  }
+}
+
 // Esta función es llamada por el trigger automático.
 // Prefiere Zafronix (tiene el Mundial 2026); usa football-data solo si no hay key de Zafronix.
 function autoSyncResultados() {
   try {
     const hasZafronix = !!PropertiesService.getScriptProperties().getProperty('ZAFRONIX_KEY');
     const result = hasZafronix ? fetchResultadosZafronix({}) : fetchResultadosAPI({});
+    const closed = autoCloseKORounds();
     // Log en hoja auxiliar para diagnóstico
     const logSh = getSheet('AutoSyncLog');
     if (logSh.getLastRow() > 500) logSh.deleteRows(2, 100); // evitar crecer indefinidamente
-    logSh.appendRow([new Date(), result.matches || 0, result.error || 'ok (' + (hasZafronix ? 'zafronix' : 'football-data') + ')']);
+    logSh.appendRow([new Date(), result.matches || 0, result.error || 'ok (' + (hasZafronix ? 'zafronix' : 'football-data') + ')' + (closed > 0 ? ' | cerró ' + closed + ' ronda(s) KO' : '')]);
   } catch(e) {
     const logSh = getSheet('AutoSyncLog');
     logSh.appendRow([new Date(), 0, 'ERROR: ' + e.message]);
