@@ -346,6 +346,33 @@ function guardarScoresAutoSync(scoresList) {
 
 const KO_ROUNDS_VALID = ['r32','r16','qf','sf','fin'];
 
+// Calendario FIFA 2026 por defecto (hora de Chile, UTC−4). Debe coincidir con
+// KO_CALENDAR_DEFAULTS del index.html. Apertura = fin fase anterior; cierre = 5 min antes del 1er partido.
+const KO_CALENDAR_DEFAULTS_GAS = {
+  r32: { apertura: '2026-06-27T20:00:00-04:00', cierre: '2026-06-28T14:55:00-04:00' },
+  r16: { apertura: '2026-07-03T20:00:00-04:00', cierre: '2026-07-04T11:55:00-04:00' },
+  qf:  { apertura: '2026-07-07T20:00:00-04:00', cierre: '2026-07-09T11:55:00-04:00' },
+  sf:  { apertura: '2026-07-11T20:00:00-04:00', cierre: '2026-07-14T14:55:00-04:00' },
+  fin: { apertura: '2026-07-15T20:00:00-04:00', cierre: '2026-07-19T11:55:00-04:00' }
+};
+
+// Estado efectivo de una ronda KO en el servidor (espejo de getEffectiveKOStatus del frontend).
+// Override manual del admin (status != 'auto') manda; si no, se calcula por fecha/hora.
+function koEffectiveStatus(ronda, config) {
+  config = config || getKOConfig();
+  const cfg = (config.rounds && config.rounds[ronda]) || {};
+  const ov = cfg.status;
+  if (ov && ov !== 'auto') return ov;
+  const def = KO_CALENDAR_DEFAULTS_GAS[ronda] || {};
+  const apertura = cfg.apertura || def.apertura || '';
+  const cierre   = cfg.deadline || def.cierre   || '';
+  const now = new Date();
+  if (apertura && now < new Date(apertura)) return 'pendiente';
+  if (cierre   && now >= new Date(cierre))  return 'cerrado';
+  if (apertura || cierre) return 'abierto';
+  return 'pendiente';
+}
+
 // Guarda predicciones de marcadores KO de un jugador para una ronda.
 // p.nombre, p.ronda (r32|r16|qf|sf|fin), p.predicciones (JSON array [{g1,g2},...])
 function guardarKO(p) {
@@ -353,6 +380,11 @@ function guardarKO(p) {
   if (!nombre) throw new Error('Nombre requerido');
   const ronda = (p.ronda || '').trim();
   if (KO_ROUNDS_VALID.indexOf(ronda) === -1) throw new Error('Ronda inválida: ' + ronda);
+  // Bloqueo real: solo se aceptan predicciones mientras la ronda esté ABIERTA.
+  const estado = koEffectiveStatus(ronda);
+  if (estado !== 'abierto') {
+    return { error: 'La ronda de ' + ronda + ' no está abierta para predicciones (estado: ' + estado + '). Espera a que se habilite o revisa que no haya cerrado.' };
+  }
   let preds;
   try { preds = JSON.parse(p.predicciones || '[]'); } catch(e) { preds = []; }
 
