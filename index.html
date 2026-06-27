@@ -417,6 +417,10 @@ select option { background:#fff; }
 .ko-hb-countdown.abrir{background:rgba(245,188,0,0.18);color:#92710a;}
 .ko-hb-countdown.abierto{background:rgba(0,200,83,0.15);color:#006830;}
 .ko-hb-cta{display:block;width:100%;margin-top:12px;padding:11px;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;background:var(--verde);color:#fff;}
+.ko-hb-cal-row{display:flex;gap:8px;margin-top:10px;}
+.ko-hb-cal{flex:1;padding:9px 6px;border:1px solid var(--border);border-radius:9px;background:#fff;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+.ko-hb-cal:active{background:rgba(233,30,140,0.06);}
+.ko-hb-cal-lbl{font-size:10px;color:var(--muted);margin-top:8px;text-align:center;}
 
 /* KO PREDICTIONS UI */
 .elim-subtabs{display:flex;gap:8px;margin-bottom:1rem;}
@@ -3717,6 +3721,14 @@ function renderKOHomeBanner(){
     countdown=cd?`⏳ Se habilita en ${cd}`:'⏳ Se habilita pronto';
     cdCls='abrir';
   }
+  // Botones "agregar a calendario" (solo si hay fecha de cierre)
+  const calRow = w.cierre ? `
+    <div class="ko-hb-cal-row">
+      <button class="ko-hb-cal" onclick="addToGoogleCalendar('${featured}')">📅 Google Calendar</button>
+      <button class="ko-hb-cal" onclick="downloadKOIcs('${featured}')">🍎 Apple / .ics</button>
+    </div>
+    <div class="ko-hb-cal-lbl">Agenda el recordatorio del cierre en tu celular</div>` : '';
+
   cont.innerHTML=`<div class="ko-home-banner ${mode}">
     <div class="ko-hb-eyebrow">${eyebrow}</div>
     <div class="ko-hb-title">${label}</div>
@@ -3724,7 +3736,54 @@ function renderKOHomeBanner(){
     <div class="ko-hb-row"><span class="lbl">🔴 Cierra:</span><span class="val">${fmtKOFecha(w.cierre)}</span></div>
     <div class="ko-hb-countdown ${cdCls}">${countdown}</div>
     ${cta}
+    ${calRow}
   </div>`;
+}
+
+// ── Recordatorio de calendario (Google Calendar / .ics) ──
+// Crea un evento de 30 min que TERMINA en el cierre de la ronda, con alarma 6h antes.
+function koFmtICSDate(d){
+  return new Date(d).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''); // 20260628T185500Z
+}
+function koCalEvent(rnd){
+  const w=getKOWindow(rnd);
+  const cierre=new Date(w.cierre);
+  const start=new Date(cierre.getTime()-30*60000); // 30 min antes del cierre
+  const title=`🔴 Cierre ${KO_ROUND_SHORT[rnd]} — Polla Mundial 2026`;
+  const details=`Último plazo para completar tus predicciones de ${KO_ROUND_LABELS[rnd]} en la Polla Mundial 2026.\n`+
+    `🟢 Se abrió: ${fmtKOFecha(w.apertura)}\n🔴 Cierra: ${fmtKOFecha(w.cierre)}\n\nCompleta tus llaves aquí: ${location.origin+location.pathname}`;
+  return { title, start, end:cierre, details };
+}
+function addToGoogleCalendar(rnd){
+  const e=koCalEvent(rnd);
+  const dates=koFmtICSDate(e.start)+'/'+koFmtICSDate(e.end);
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE'
+    +'&text='+encodeURIComponent(e.title)
+    +'&dates='+dates
+    +'&details='+encodeURIComponent(e.details);
+  window.open(url,'_blank');
+}
+function icsEsc(s){ return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n'); }
+function downloadKOIcs(rnd){
+  const e=koCalEvent(rnd);
+  const ics=[
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Polla Mundial 2026//ES','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:ko-'+rnd+'-cierre@pollamundial2026',
+    'DTSTAMP:'+koFmtICSDate(new Date()),
+    'DTSTART:'+koFmtICSDate(e.start),
+    'DTEND:'+koFmtICSDate(e.end),
+    'SUMMARY:'+icsEsc(e.title),
+    'DESCRIPTION:'+icsEsc(e.details),
+    'BEGIN:VALARM','TRIGGER:-PT6H','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(e.title),'END:VALARM',
+    'END:VEVENT','END:VCALENDAR'
+  ].join('\r\n');
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='polla-'+rnd+'-cierre.ics';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },200);
 }
 
 // Inicia un timer que refresca tabs y vista KO cada minuto (para countdown y cierre automático).
