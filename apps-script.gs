@@ -297,10 +297,23 @@ function guardarScores(p) {
  */
 function guardarScoresAutoSync(scoresList) {
   const sh = getSheet('Scores');
-  if (sh.getLastRow() === 0) {
-    sh.appendRow(['partido', 'gL', 'gV']);
+
+  // Limpia columnas basura más allá de la C (D, E, …) que rompen el setValues de 3 columnas.
+  if (sh.getLastRow() > 0 && sh.getLastColumn() > 3) {
+    sh.getRange(1, 4, sh.getLastRow(), sh.getLastColumn() - 3).clearContent();
   }
-  const existing = sh.getDataRange().getValues();
+
+  // Normaliza SIEMPRE cada fila a exactamente 3 columnas [partido, gL, gV],
+  // sin importar cuántas columnas tenga la hoja, para que el setValues de abajo
+  // (rango de 3 columnas) nunca falle por desajuste de columnas.
+  let modified = sh.getLastRow() === 0;
+  const existing = modified
+    ? [['partido', 'gL', 'gV']]
+    : sh.getDataRange().getValues().map(row => [
+        row[0] || '',
+        row[1] !== undefined && row[1] !== null ? row[1] : '',
+        row[2] !== undefined && row[2] !== null ? row[2] : ''
+      ]);
 
   // Build index: key → row index, and set of keys that already have a score
   const keyToRowIndex = {};
@@ -315,7 +328,6 @@ function guardarScoresAutoSync(scoresList) {
   }
 
   let added = 0;
-  let modified = false;
 
   scoresList.forEach(s => {
     if (!s.key || s.gL === undefined || s.gV === undefined) return;
