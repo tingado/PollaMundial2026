@@ -350,10 +350,10 @@ const KO_ROUNDS_VALID = ['r32','r16','qf','sf','fin'];
 // KO_CALENDAR_DEFAULTS del index.html. Apertura = fin fase anterior; cierre = 5 min antes del 1er partido.
 const KO_CALENDAR_DEFAULTS_GAS = {
   r32: { apertura: '2026-06-27T20:00:00-04:00', cierre: '2026-06-28T14:55:00-04:00' },
-  r16: { apertura: '2026-07-03T20:00:00-04:00', cierre: '2026-07-04T11:55:00-04:00' },
-  qf:  { apertura: '2026-07-07T20:00:00-04:00', cierre: '2026-07-09T11:55:00-04:00' },
+  r16: { apertura: '2026-07-03T20:00:00-04:00', cierre: '2026-07-04T12:55:00-04:00' },
+  qf:  { apertura: '2026-07-07T20:00:00-04:00', cierre: '2026-07-09T15:55:00-04:00' },
   sf:  { apertura: '2026-07-11T20:00:00-04:00', cierre: '2026-07-14T14:55:00-04:00' },
-  fin: { apertura: '2026-07-15T20:00:00-04:00', cierre: '2026-07-19T11:55:00-04:00' }
+  fin: { apertura: '2026-07-15T20:00:00-04:00', cierre: '2026-07-18T16:55:00-04:00' } // cierra antes del partido por 3er lugar (sáb 18)
 };
 
 // Estado efectivo de una ronda KO en el servidor (espejo de getEffectiveKOStatus del frontend).
