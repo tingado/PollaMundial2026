@@ -403,6 +403,21 @@ select option { background:#fff; }
 }
 .elim-counter strong { color:var(--rosa); }
 
+/* KO HOME BANNER */
+.ko-home-banner{border-radius:16px;padding:16px 18px;margin-bottom:1rem;border:1px solid;position:relative;overflow:hidden;}
+.ko-home-banner.abrir{background:linear-gradient(135deg,rgba(245,188,0,0.12),rgba(245,188,0,0.04));border-color:rgba(245,188,0,0.35);}
+.ko-home-banner.abierto{background:linear-gradient(135deg,rgba(0,200,83,0.12),rgba(0,200,83,0.04));border-color:rgba(0,200,83,0.35);}
+.ko-home-banner.cerrado{background:rgba(0,0,0,0.03);border-color:var(--border);}
+.ko-hb-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.ko-hb-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;line-height:1.1;margin-bottom:8px;}
+.ko-hb-row{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:3px;}
+.ko-hb-row .lbl{color:var(--muted);min-width:78px;}
+.ko-hb-row .val{font-weight:700;}
+.ko-hb-countdown{margin-top:10px;font-size:13px;font-weight:800;padding:6px 12px;border-radius:8px;display:inline-block;}
+.ko-hb-countdown.abrir{background:rgba(245,188,0,0.18);color:#92710a;}
+.ko-hb-countdown.abierto{background:rgba(0,200,83,0.15);color:#006830;}
+.ko-hb-cta{display:block;width:100%;margin-top:12px;padding:11px;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;background:var(--verde);color:#fff;}
+
 /* KO PREDICTIONS UI */
 .elim-subtabs{display:flex;gap:8px;margin-bottom:1rem;}
 .elim-subtab{flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;background:#f9fafb;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;}
@@ -1151,6 +1166,9 @@ select option { background:#fff; }
         </div>
       </div>
 
+      <!-- BANNER FASE ELIMINATORIA (apertura/cierre automático) -->
+      <div id="home-ko-banner"></div>
+
       <button class="home-cta" onclick="showView('inscripcion', $id('nav-inscripcion'))">
         📋 Inscríbete ahora — $10.000
       </button>
@@ -1678,20 +1696,31 @@ select option { background:#fff; }
         <!-- Tabs de ronda -->
         <div class="proy-group-tabs" id="admin-ko-tabs" style="margin-bottom:12px;"></div>
 
-        <!-- Config de la ronda (estado + deadline) -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <!-- Config de la ronda: apertura + cierre (calendario automático) -->
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">
+          🤖 <strong>Automático por fechas</strong> (hora de Chile): la ronda se <strong>abre</strong> y <strong>cierra</strong> sola según estas fechas. El selector de estado es solo un override manual de emergencia.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
           <div>
-            <label style="font-size:11px;">Estado de la ronda</label>
-            <select id="ko-cfg-status" style="margin-bottom:0;">
-              <option value="pendiente">🔒 Pendiente</option>
-              <option value="abierto">🟡 Abierto</option>
-              <option value="cerrado">✅ Cerrado</option>
-            </select>
+            <label style="font-size:11px;">🟢 Apertura (fin fase anterior)</label>
+            <input id="ko-cfg-apertura" type="datetime-local" style="margin-bottom:0;">
           </div>
           <div>
-            <label style="font-size:11px;">Cierre predicciones</label>
+            <label style="font-size:11px;">🔴 Cierre (5 min antes del 1er partido)</label>
             <input id="ko-cfg-deadline" type="datetime-local" style="margin-bottom:0;">
           </div>
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:end;margin-bottom:10px;">
+          <div>
+            <label style="font-size:11px;">Override estado</label>
+            <select id="ko-cfg-status" style="margin-bottom:0;">
+              <option value="auto">🤖 Automático</option>
+              <option value="pendiente">🔒 Forzar pendiente</option>
+              <option value="abierto">🟡 Forzar abierto</option>
+              <option value="cerrado">✅ Forzar cerrado</option>
+            </select>
+          </div>
+          <div id="ko-cfg-estado-actual" style="font-size:11px;color:var(--muted);padding-bottom:6px;"></div>
         </div>
 
         <!-- Cruces (slots) + resultados por partido -->
@@ -2224,6 +2253,8 @@ function renderHome(){
   const last=localStorage.getItem('p2026_last');
   const btn=$id('home-btn-pronos');
   if(btn) btn.style.display=(last&&state.jugadores.find(j=>j.nombre===last))?'block':'none';
+  // Banner de próxima fase eliminatoria
+  renderKOHomeBanner();
 }
 
 function irAMisPronos(){
@@ -3569,30 +3600,131 @@ async function guardarElim(){
 // FASE ELIMINATORIA KO — UI por ronda
 // ══════════════════════════════════════════════════════════
 
-const KO_ROUND_LABELS = {r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
+const KO_ROUND_LABELS = {r32:'16avos de final',r16:'8vos de final',qf:'Cuartos de final',sf:'Semifinales',fin:'Final'};
+const KO_ROUND_SHORT  = {r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
+const KO_ROUND_ORDER  = ['r32','r16','qf','sf','fin'];
+
+// ── CALENDARIO FIFA 2026 — apertura/cierre por ronda (hora de Chile, UTC−4) ──
+// apertura = al terminar la fase anterior · cierre = 5 min antes del 1er partido de la ronda.
+// El admin puede sobreescribir estas fechas en Admin → 🏆 Fase Eliminatoria KO.
+// (Las horas de cierre de R16/QF/SF/Final son provisionales hasta confirmar el horario FIFA.)
+const KO_CALENDAR_DEFAULTS = {
+  r32: { apertura:'2026-06-27T20:00:00-04:00', cierre:'2026-06-28T14:55:00-04:00' },
+  r16: { apertura:'2026-07-03T20:00:00-04:00', cierre:'2026-07-04T11:55:00-04:00' },
+  qf:  { apertura:'2026-07-07T20:00:00-04:00', cierre:'2026-07-09T11:55:00-04:00' },
+  sf:  { apertura:'2026-07-11T20:00:00-04:00', cierre:'2026-07-14T14:55:00-04:00' },
+  fin: { apertura:'2026-07-15T20:00:00-04:00', cierre:'2026-07-19T11:55:00-04:00' }
+};
+
 let _koRound = 'r32';
 let _elimTab  = 'ko';
 let _koRefreshTimer = null;
 
-// Devuelve el estado efectivo de la ronda considerando el deadline.
-// Si el admin la puso "abierto" pero ya pasó el deadline → es "cerrado" en el cliente.
-function getEffectiveKOStatus(rnd){
+// Ventana efectiva (apertura/cierre) de una ronda: config del admin tiene prioridad,
+// si no hay, usa el calendario FIFA por defecto.
+function getKOWindow(rnd){
   const cfg=(state.koConfig?.rounds||{})[rnd]||{};
-  const status=cfg.status||'pendiente';
-  if(status==='cerrado') return 'cerrado';
-  if(status==='abierto'&&cfg.deadline&&new Date()>new Date(cfg.deadline)) return 'cerrado';
-  return status;
+  const def=KO_CALENDAR_DEFAULTS[rnd]||{};
+  return { apertura: cfg.apertura||def.apertura||'', cierre: cfg.deadline||def.cierre||'' };
 }
 
-// Formatea tiempo restante hasta el deadline.
-function formatKOCountdown(deadline){
-  const diff=new Date(deadline)-new Date();
+// Estado efectivo de la ronda calculado automáticamente según fecha/hora actual.
+//   ahora < apertura          → 'pendiente'
+//   apertura ≤ ahora < cierre  → 'abierto'
+//   ahora ≥ cierre            → 'cerrado'
+// El admin puede forzar un estado manual (override) eligiendo distinto de 'auto'.
+function getEffectiveKOStatus(rnd){
+  const cfg=(state.koConfig?.rounds||{})[rnd]||{};
+  const ov=cfg.status;
+  if(ov && ov!=='auto') return ov; // override manual del admin (pendiente/abierto/cerrado)
+  const w=getKOWindow(rnd);
+  const now=new Date();
+  if(w.apertura && now < new Date(w.apertura)) return 'pendiente';
+  if(w.cierre   && now >= new Date(w.cierre))  return 'cerrado';
+  if(w.apertura || w.cierre) return 'abierto';
+  return 'pendiente'; // sin calendario → pendiente
+}
+
+// Conversión entre ISO (con offset) y el valor de un <input datetime-local>,
+// tratando SIEMPRE el valor del input como hora de Chile (UTC−4 en jun/jul 2026).
+function isoToChileInput(iso){
+  if(!iso) return '';
+  try{
+    const s=new Date(iso).toLocaleString('sv-SE',{timeZone:'America/Santiago'}); // "2026-06-28 14:55:00"
+    return s.replace(' ','T').slice(0,16);
+  }catch(e){ return ''; }
+}
+function chileInputToISO(val){
+  if(!val) return '';
+  return (val.length===16 ? val+':00' : val) + '-04:00';
+}
+
+// Formatea tiempo restante hasta una fecha (días/horas/min).
+function formatKOCountdown(target){
+  const diff=new Date(target)-new Date();
   if(diff<=0) return null;
-  const h=Math.floor(diff/3600000);
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor((diff%86400000)/3600000);
   const m=Math.floor((diff%3600000)/60000);
-  if(h>48) return `${Math.floor(h/24)} días`;
-  if(h>0)  return `${h}h ${m}min`;
+  if(d>0) return `${d}d ${h}h`;
+  if(h>0) return `${h}h ${m}min`;
   return `${m}min`;
+}
+
+// Formatea una fecha ISO en hora de Chile, legible.
+function fmtKOFecha(iso){
+  if(!iso) return '—';
+  try{
+    return new Date(iso).toLocaleString('es-CL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Santiago'});
+  }catch(e){ return iso; }
+}
+
+// ── BANNER CARÁTULA: próxima fase eliminatoria ──
+// Muestra la ronda relevante: la primera abierta, o si ninguna está abierta,
+// la próxima por abrir. Con countdown y CTA.
+function renderKOHomeBanner(){
+  const cont=$id('home-ko-banner'); if(!cont) return;
+  // ¿Hay alguna ronda con calendario configurado (default o admin)?
+  let featured=null, mode=null;
+  // Prioridad 1: ronda abierta ahora
+  for(const rnd of KO_ROUND_ORDER){
+    if(getEffectiveKOStatus(rnd)==='abierto'){ featured=rnd; mode='abierto'; break; }
+  }
+  // Prioridad 2: próxima ronda por abrir (pendiente con apertura futura)
+  if(!featured){
+    for(const rnd of KO_ROUND_ORDER){
+      const w=getKOWindow(rnd);
+      if(getEffectiveKOStatus(rnd)==='pendiente' && w.apertura && new Date(w.apertura)>new Date()){
+        featured=rnd; mode='abrir'; break;
+      }
+    }
+  }
+  // Si todas cerradas o sin calendario, no mostrar banner
+  if(!featured){ cont.innerHTML=''; return; }
+
+  const w=getKOWindow(featured);
+  const label=KO_ROUND_LABELS[featured];
+  let eyebrow, countdown, cdCls, cta='';
+  if(mode==='abierto'){
+    eyebrow='🟢 Fase abierta — ¡completa tus llaves!';
+    const cd=formatKOCountdown(w.cierre);
+    countdown=cd?`⏱️ Cierra en ${cd}`:'⏱️ Cierra pronto';
+    cdCls='abierto';
+    cta=`<button class="ko-hb-cta" onclick="showView('eliminatorias',null)">⚽ Completar ${KO_ROUND_SHORT[featured]} ahora</button>`;
+  }else{
+    eyebrow='🏆 Próxima fase eliminatoria';
+    const cd=formatKOCountdown(w.apertura);
+    countdown=cd?`⏳ Se habilita en ${cd}`:'⏳ Se habilita pronto';
+    cdCls='abrir';
+  }
+  cont.innerHTML=`<div class="ko-home-banner ${mode}">
+    <div class="ko-hb-eyebrow">${eyebrow}</div>
+    <div class="ko-hb-title">${label}</div>
+    <div class="ko-hb-row"><span class="lbl">🟢 Se abre:</span><span class="val">${fmtKOFecha(w.apertura)}</span></div>
+    <div class="ko-hb-row"><span class="lbl">🔴 Cierra:</span><span class="val">${fmtKOFecha(w.cierre)}</span></div>
+    <div class="ko-hb-countdown ${cdCls}">${countdown}</div>
+    ${cta}
+  </div>`;
 }
 
 // Inicia un timer que refresca tabs y vista KO cada minuto (para countdown y cierre automático).
@@ -3603,9 +3735,12 @@ function startKORefresh(){
       renderKORoundTabs();
       cargarKO();
     }
+    if($id('view-inicio')?.classList.contains('active')){
+      renderKOHomeBanner(); // countdown del banner de carátula en vivo
+    }
   },60000);
 }
-function stopKORefresh(){ if(_koRefreshTimer){clearInterval(_koRefreshTimer);_koRefreshTimer=null;} }
+function stopKORefresh(){ /* el timer global se mantiene para el banner de carátula */ }
 
 function setElimTab(tab, el){
   _elimTab = tab;
@@ -3642,7 +3777,7 @@ function cargarKO(){
 
 function renderKORoundTabs(){
   const cont=$id('ko-round-tabs'); if(!cont) return;
-  cont.innerHTML=Object.entries(KO_ROUND_LABELS).map(([rnd,label])=>{
+  cont.innerHTML=Object.entries(KO_ROUND_SHORT).map(([rnd,label])=>{
     const status=getEffectiveKOStatus(rnd);
     const isActive=rnd===_koRound;
     const cls=isActive?'active':status==='pendiente'?'pending':status==='cerrado'?'done':'';
@@ -3666,8 +3801,9 @@ function renderKORound(jugador, rnd){
 
   let bannerHtml='';
   if(status==='abierto'){
-    const countdown=cfg.deadline?formatKOCountdown(cfg.deadline):null;
-    const dlStr=cfg.deadline?new Date(cfg.deadline).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+    const cierre=getKOWindow(rnd).cierre;
+    const countdown=cierre?formatKOCountdown(cierre):null;
+    const dlStr=cierre?fmtKOFecha(cierre):'';
     const cdHtml=countdown?` · ⏱️ <strong style="color:#b45309;">Cierra en ${countdown}</strong> (${dlStr})`:(dlStr?` · Cierra ${dlStr}`:'');
     bannerHtml=`<div class="ko-status-banner abierto">🟡 <strong>Abierto</strong>${cdHtml} — Ingresa tus predicciones y guarda antes del primer partido.</div>`;
     $id('btn-save-ko').style.display=jugador?'':'none';
@@ -4487,21 +4623,32 @@ function renderAdminKO(rnd){
 
   // Tabs
   const tabs = $id('admin-ko-tabs');
-  if(tabs) tabs.innerHTML = Object.entries(KO_ROUND_LABELS).map(([rk,label])=>
+  if(tabs) tabs.innerHTML = Object.entries(KO_ROUND_SHORT).map(([rk,label])=>
     `<button class="proy-tab${rk===r?' active':''}" onclick="renderAdminKO('${rk}')">${label}</button>`
   ).join('');
 
   const cfg   = (state.koConfig?.rounds||{})[r] || {};
-  const status   = cfg.status   || 'pendiente';
-  const deadline = cfg.deadline || '';
+  const status   = cfg.status   || 'auto';
   const slots    = cfg.slots    || [];
   const results  = (state.scoresKO||{})[r] || [];
+  const koWin    = getKOWindow(r); // apertura/cierre efectivos (config o default FIFA)
 
-  // Rellenar estado/deadline
+  // Rellenar apertura/cierre/estado (en hora de Chile)
   const selStatus = $id('ko-cfg-status');
+  const inpAp     = $id('ko-cfg-apertura');
   const inpDl     = $id('ko-cfg-deadline');
   if(selStatus) selStatus.value = status;
-  if(inpDl) inpDl.value = deadline ? new Date(deadline).toISOString().slice(0,16) : '';
+  if(inpAp) inpAp.value = isoToChileInput(koWin.apertura);
+  if(inpDl) inpDl.value = isoToChileInput(koWin.cierre);
+
+  // Mostrar estado efectivo actual
+  const estLbl = $id('ko-cfg-estado-actual');
+  if(estLbl){
+    const ef=getEffectiveKOStatus(r);
+    const emoji=ef==='abierto'?'🟡':ef==='cerrado'?'✅':'🔒';
+    const txt=ef==='abierto'?'ABIERTA ahora':ef==='cerrado'?'CERRADA':'PENDIENTE (aún no abre)';
+    estLbl.innerHTML=`Estado actual: <strong>${emoji} ${txt}</strong>`;
+  }
 
   // Slots+resultados
   const grid = $id('admin-ko-slots-grid'); if(!grid) return;
@@ -4548,21 +4695,23 @@ function toggleKOWinner(rnd,i){
 
 async function guardarConfigKO(){
   const r=_adminKORound;
-  const status=$id('ko-cfg-status')?.value||'pendiente';
-  const dlVal=$id('ko-cfg-deadline')?.value;
-  const deadline=dlVal?new Date(dlVal).toISOString():'';
+  const status=$id('ko-cfg-status')?.value||'auto';
+  const apertura=chileInputToISO($id('ko-cfg-apertura')?.value);
+  const deadline=chileInputToISO($id('ko-cfg-deadline')?.value);
   const size=KO_ROUND_SIZES[r];
   const slots=Array.from({length:size},(_,i)=>({
     local:  ($id(`ko-slot-${r}-${i}-local`)?.value||'').trim(),
     visita: ($id(`ko-slot-${r}-${i}-visita`)?.value||'').trim()
   })).filter(s=>s.local||s.visita);
 
-  const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,deadline,slots}}};
+  const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,apertura,deadline,slots}}};
   setLoad('btn-ko-config',true,'Guardando...');
   try{
     await api({action:'guardarKOConfig',config:JSON.stringify(newConfig)});
     state.koConfig=newConfig;
     renderKORoundTabs();
+    renderKOHomeBanner();
+    renderAdminKO(r); // refresca el "estado actual"
     setMsg('msg-admin-ko','✅ Configuración guardada','ok');
   }catch(e){ setMsg('msg-admin-ko','Error: '+e.message,'err'); }
   setLoad('btn-ko-config',false);
@@ -4801,6 +4950,7 @@ initCountdown();
 renderHome();
 renderMatches();
 renderGroups();
+startKORefresh(); // timer para el banner de fase eliminatoria en la carátula
 
 if(SCRIPT_URL){
   // Persistir siempre el URL en localStorage para que todos los browsers lo tengan
