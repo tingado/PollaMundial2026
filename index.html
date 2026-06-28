@@ -4218,10 +4218,13 @@ function renderProyecciones(grupo){
   const cont = $id('proy-container');
   if(!tabs||!cont) return;
 
-  // Tabs de grupos
+  // Tabs de grupos + rondas de llaves que ya tienen cruces definidos
   const grupos = Object.keys(GRUPOS);
+  const koRounds = KO_ROUND_ORDER.filter(rnd=>((state.koConfig?.rounds||{})[rnd]?.slots||[]).length>0);
   tabs.innerHTML = grupos.map(gk=>
     `<button class="proy-tab${gk===g?' active':''}" onclick="renderProyecciones('${gk}')">Grupo ${gk}</button>`
+  ).join('') + koRounds.map(rnd=>
+    `<button class="proy-tab${rnd===g?' active':''}" style="background:${rnd===g?'var(--dorado)':'rgba(245,188,0,0.12)'};color:${rnd===g?'#111':'#92710a'};border-color:rgba(245,188,0,0.4);" onclick="renderProyecciones('${rnd}')">🏆 ${KO_ROUND_SHORT[rnd]}</button>`
   ).join('');
 
   const jugadores = state.jugadores;
@@ -4229,6 +4232,9 @@ function renderProyecciones(grupo){
     cont.innerHTML='<div style="color:var(--muted);text-align:center;padding:2rem;">Sin participantes inscritos.</div>';
     return;
   }
+
+  // ¿Pestaña de llaves seleccionada?
+  if(KO_ROUND_ORDER.includes(g)){ renderProyeccionesKO(g, cont, jugadores); return; }
 
   // Partidos del grupo seleccionado
   const matches = PARTIDOS.filter(p=>p.grupo===g);
@@ -4265,6 +4271,47 @@ function renderProyecciones(grupo){
       <div class="proy-match-header">
         <div class="proy-match-teams">${fi(pm.local)} ${esc(pm.local)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(pm.visita)} ${fi(pm.visita)}</div>
         <div class="proy-match-info">${fecha} ${resLabel}</div>
+      </div>
+      <div class="proy-grid">${preds}</div>
+    </div>`;
+  }).join('');
+}
+
+// Visor de predicciones de una ronda de llaves (igual que grupos, pero por slot KO).
+function renderProyeccionesKO(rnd, cont, jugadores){
+  const slots = ((state.koConfig?.rounds||{})[rnd]?.slots)||[];
+  const results = (state.scoresKO||{})[rnd]||[];
+  if(!slots.length){
+    cont.innerHTML='<div style="color:var(--muted);text-align:center;padding:2rem;">Aún no hay cruces definidos para esta ronda.</div>';
+    return;
+  }
+  cont.innerHTML = slots.map((slot,i)=>{
+    const local=slot.local||`Equipo ${2*i+1}`, visita=slot.visita||`Equipo ${2*i+2}`;
+    const rr = results[i];
+    const tieneRes = rr&&rr.gL!=null&&rr.gV!=null;
+    const resLabel = tieneRes ? `<span style="font-weight:700;color:var(--verde);">✓ ${rr.gL}–${rr.gV}${rr.aet?' ⏱️':''}</span>` : '';
+
+    const preds = jugadores.map(j=>{
+      const pron = state.pronosticos[j.nombre]||{};
+      const p = ((pron.ko||{})[rnd]||[])[i];
+      const tieneP = p&&p.g1!=null&&p.g2!=null;
+      let cls='';
+      if(tieneP&&tieneRes){
+        const pts=calcPtsKOPartido({g1:p.g1,g2:p.g2}, rr);
+        cls = pts===4?'result-ok':pts>0?'result-win':'result-wrong';
+      }
+      return `<div class="proy-pred${cls?' '+cls:''}">
+        <div class="proy-pred-name" title="${esc(j.nombre)}">${esc(j.nombre.split(' ')[0])}</div>
+        ${tieneP
+          ? `<div class="proy-pred-score">${p.g1}–${p.g2}</div>`
+          : `<div class="proy-pred-score no-pred">sin pred.</div>`}
+      </div>`;
+    }).join('');
+
+    return `<div class="proy-match-card">
+      <div class="proy-match-header">
+        <div class="proy-match-teams">${fi(local)} ${esc(local)} <span style="color:var(--muted);font-weight:400">vs</span> ${esc(visita)} ${fi(visita)}</div>
+        <div class="proy-match-info"><span>Partido ${i+1}</span> ${resLabel}</div>
       </div>
       <div class="proy-grid">${preds}</div>
     </div>`;
