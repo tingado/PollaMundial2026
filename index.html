@@ -5309,6 +5309,7 @@ function simGetNextMatch() {
 
 // Estado en memoria del simulador (muere al refrescar)
 let _simScores = {};   // {matchId: {gL: number, gV: number}}
+let _simScoresKO = {}; // {slotR32: {gL, gV}} — simulador de fase eliminatoria
 let _simDemo   = false;
 let _simTicker = null; // intervalo del reloj
 
@@ -5388,6 +5389,137 @@ function simCalcRanking(activoMatches) {
   }
 }
 
+// ── SIMULADOR FASE ELIMINATORIA (16avos) ──
+// Partidos de 16avos sin resultado real aún (los que se pueden simular).
+function simGetKOMatches(){
+  const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
+  const results = (state.scoresKO||{}).r32||[];
+  const out = [];
+  slots.forEach((s,i)=>{
+    const r = results[i];
+    if(r && r.gL!=null) return; // ya tiene resultado real → no se simula
+    out.push({ id:'r32-'+i, slot:i, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}` });
+  });
+  return out;
+}
+
+// Ranking proyectado inyectando los marcadores KO simulados en state.scoresKO.
+// Reutiliza calcPtsTotal (que ya incluye calcPtsKO) — no afecta grupos ni partidos.
+function simCalcRankingKO(matches){
+  const orig = state.scoresKO;
+  const realPtsMap = {};
+  state.jugadores.forEach(j=>{ realPtsMap[j.nombre]=calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados); });
+
+  const tmp = JSON.parse(JSON.stringify(orig||{}));
+  if(!tmp.r32) tmp.r32=[];
+  matches.forEach(m=>{
+    const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
+    while(tmp.r32.length<=m.slot) tmp.r32.push(null);
+    tmp.r32[m.slot]={gL:sc.gL,gV:sc.gV};
+  });
+
+  state.scoresKO=tmp;
+  try{
+    return state.jugadores.map(j=>{
+      const pron=state.pronosticos[j.nombre]||{};
+      const total=calcPtsTotal(pron,state.resultados);
+      const basePts=realPtsMap[j.nombre];
+      const simPts=total-basePts;
+      const detail=matches.map(m=>{
+        const pred=((pron.ko||{}).r32||[])[m.slot];
+        const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
+        const predObj=pred&&pred.g1!=null&&pred.g2!=null?{g1:pred.g1,g2:pred.g2}:null;
+        const pts=calcPtsKOPartido(predObj,{gL:sc.gL,gV:sc.gV});
+        return {local:m.local,visita:m.visita,pred:predObj?`${pred.g1}-${pred.g2}`:null,sim:`${sc.gL}-${sc.gV}`,pts};
+      });
+      return {nombre:j.nombre, basePts, simPts, total, detail};
+    }).sort((a,b)=>b.total-a.total||b.basePts-a.basePts);
+  } finally { state.scoresKO=orig; }
+}
+
+function simUpdateScoreKO(slot, side, val){
+  if(!_simScoresKO[slot]) _simScoresKO[slot]={gL:0,gV:0};
+  _simScoresKO[slot][side]=Math.max(0, parseInt(val,10)||0);
+  simRefreshRanking();
+}
+
+// Renderiza el simulador en modo fase eliminatoria.
+function simRenderKO(matches, timeStr){
+  const root = $id('sim-root'); if(!root) return;
+  matches.forEach(m=>{ if(!_simScoresKO[m.slot]) _simScoresKO[m.slot]={gL:0,gV:0}; });
+
+  const cardsHtml = matches.map(m=>{
+    const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
+    return `
+    <div class="sim-card">
+      <span class="sim-group-badge" style="background:rgba(245,188,0,0.15);color:#b8860b;">16AVOS</span>
+      <span class="sim-minute" style="background:rgba(245,188,0,0.15);color:#b8860b;">PRÓXIMO</span>
+      <span class="sim-team">${esc(m.local)}</span>
+      <div class="sim-score-wrap">
+        <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gL}"
+               oninput="simUpdateScoreKO(${m.slot},'gL',this.value)" onchange="simUpdateScoreKO(${m.slot},'gL',this.value)"
+               inputmode="numeric" pattern="[0-9]*" id="sik-${m.slot}-gL">
+        <span class="sim-score-sep">–</span>
+        <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gV}"
+               oninput="simUpdateScoreKO(${m.slot},'gV',this.value)" onchange="simUpdateScoreKO(${m.slot},'gV',this.value)"
+               inputmode="numeric" pattern="[0-9]*" id="sik-${m.slot}-gV">
+      </div>
+      <span class="sim-team vis">${esc(m.visita)}</span>
+    </div>`;
+  }).join('');
+
+  const ranking = simCalcRankingKO(matches);
+  const rankingHtml = ranking.length ? ranking.map((r,i)=>{
+    const medal=['🥇','🥈','🥉'][i]||(i+1);
+    const arrow=r.simPts>0?`<span class="sim-arrow up">▲ +${r.simPts}</span>`:`<span class="sim-arrow" style="opacity:0.3">–</span>`;
+    const detailHtml=r.detail.filter(d=>d.pred).map(d=>{
+      const lbl=d.pts===4?'+4 exacto':d.pts>=2?`+${d.pts} ganador`:d.pts===1?'+1 gol':'0 pts';
+      return `<span style="font-size:10px;color:${d.pts===4?'var(--verde)':d.pts>=1?'var(--dorado)':'var(--rojo)'};">${esc(d.local)} vs ${esc(d.visita)}: pred ${d.pred} | sim ${d.sim} → ${lbl}</span>`;
+    }).join('<br>');
+    return `<tr class="${i<3?'sim-advances':''}">
+      <td class="sim-pos">${medal}</td>
+      <td><div style="font-weight:600;font-size:13px;">${esc(r.nombre)}</div>
+        <div style="margin-top:3px;display:flex;flex-direction:column;gap:1px;">${detailHtml}</div></td>
+      <td style="text-align:center;color:var(--muted);font-size:12px;">${r.basePts}</td>
+      <td style="text-align:center;">${arrow}</td>
+      <td class="sim-pts-cell" style="text-align:center;">${r.total}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Sin participantes registrados aún</td></tr>`;
+
+  root.innerHTML = `
+  <div class="sim-banner">
+    <div class="sim-banner-dot"></div>
+    <div class="sim-banner-label">🏆 Simulación Llaves — 16avos</div>
+    <div class="sim-banner-clock" id="sim-clock">${timeStr}</div>
+    <div class="sim-banner-sub">Sandbox temporal — simula los marcadores de 16avos y ve cómo quedaría el ranking. No se guarda nada.</div>
+  </div>
+  <div class="sim-demo-bar"><div>
+    <div class="sim-demo-label">⏭️ Partidos de 16avos por jugar (${matches.length})</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px;">Pon un marcador y mira el ranking proyectado. Scoring de llaves: +1 gol local, +1 gol visita, +2 ganador = 4 exacto.</div>
+  </div></div>
+  <div class="sim-matches">${cardsHtml}</div>
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--muted);margin-bottom:10px;">RANKING PROYECTADO DE LA POLLA</div>
+  <div class="sim-tables"><div class="sim-table-wrap">
+    <div class="sim-table-header">Si estos fueran los resultados reales…</div>
+    <table class="sim-table"><thead><tr>
+      <th>#</th><th style="text-align:left;">Jugador</th>
+      <th title="Puntos reales actuales">Real</th><th title="Puntos del simulador">Sim</th><th title="Total proyectado">Total</th>
+    </tr></thead><tbody id="sim-ranking-tbody">${rankingHtml}</tbody></table>
+    <div style="padding:6px 14px 6px;font-size:10px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;">
+      <span>🌟 Exacto +4</span><span>🏆 Ganador +2</span><span>± Un gol +1</span><span>✗ 0 pts</span>
+    </div>
+  </div></div>
+  <div class="sim-sandbox-note">🔒 Simulación en sandbox — no se escribe nada. Recarga para reiniciar.</div>`;
+
+  if(!_simTicker){
+    _simTicker=setInterval(()=>{
+      const view=$id('view-simulador');
+      if(!view||!view.classList.contains('active')){ clearInterval(_simTicker); _simTicker=null; return; }
+      const el=$id('sim-clock'); if(el) el.textContent=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    },1000);
+  }
+}
+
 /** Renderiza el simulador completo */
 function simRender() {
   const root = $id('sim-root');
@@ -5401,6 +5533,12 @@ function simRender() {
   if(useDemo) _simDemo = true;
 
   const activoMatches = useDemo ? simGetNextMatch() : liveMatches;
+
+  // Si ya no quedan partidos de grupos, pasar al simulador de fase eliminatoria.
+  if(activoMatches.length === 0){
+    const koMatches = simGetKOMatches();
+    if(koMatches.length){ simRenderKO(koMatches, timeStr); return; }
+  }
 
   // Inicializar scores en cero para partidos sin valor aún
   activoMatches.forEach(m => {
@@ -5554,7 +5692,14 @@ function simRefreshRanking() {
   if(!tbody) return;
 
   const liveMatches = simGetLiveMatches();
-  const activoMatches = liveMatches.length > 0 ? liveMatches : simGetNextMatch();
+  let activoMatches = liveMatches.length > 0 ? liveMatches : simGetNextMatch();
+
+  // Modo fase eliminatoria: si no hay partidos de grupos, usar 16avos + scoring KO
+  if(activoMatches.length === 0){
+    const koMatches = simGetKOMatches();
+    if(koMatches.length){ simRefreshRankingKO(koMatches); return; }
+  }
+
   const ranking = simCalcRanking(activoMatches);
 
   tbody.innerHTML = ranking.map((r, i) => {
@@ -5581,9 +5726,32 @@ function simRefreshRanking() {
   }).join('');
 }
 
+/** Recalcula solo el tbody del ranking en modo fase eliminatoria */
+function simRefreshRankingKO(koMatches){
+  const tbody = $id('sim-ranking-tbody'); if(!tbody) return;
+  const ranking = simCalcRankingKO(koMatches);
+  tbody.innerHTML = ranking.map((r,i)=>{
+    const medal=['🥇','🥈','🥉'][i]||(i+1);
+    const arrow=r.simPts>0?`<span class="sim-arrow up">▲ +${r.simPts}</span>`:`<span class="sim-arrow" style="opacity:0.3">–</span>`;
+    const detailHtml=r.detail.filter(d=>d.pred).map(d=>{
+      const lbl=d.pts===4?'+4':d.pts>=2?`+${d.pts}`:d.pts===1?'+1':'0';
+      return `<span style="font-size:10px;color:${d.pts===4?'var(--verde)':d.pts>=1?'var(--dorado)':'var(--rojo)'};">${esc(d.local)} vs ${esc(d.visita)}: ${d.pred} | ${d.sim} → ${lbl}</span>`;
+    }).join('<br>');
+    return `<tr class="${i<3?'sim-advances':''}">
+      <td class="sim-pos">${medal}</td>
+      <td><div style="font-weight:600;font-size:13px;">${esc(r.nombre)}</div>
+        <div style="margin-top:3px;display:flex;flex-direction:column;gap:1px;">${detailHtml}</div></td>
+      <td style="text-align:center;color:var(--muted);font-size:12px;">${r.basePts}</td>
+      <td style="text-align:center;">${arrow}</td>
+      <td class="sim-pts-cell" style="text-align:center;">${r.total}</td>
+    </tr>`;
+  }).join('');
+}
+
 /** Punto de entrada al navegar a la vista del simulador */
 function initSimulador() {
   _simScores = {};
+  _simScoresKO = {};
   if(_simTicker) { clearInterval(_simTicker); _simTicker = null; }
   simRender();
 }
