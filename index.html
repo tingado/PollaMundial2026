@@ -1727,6 +1727,18 @@ select option { background:#fff; }
           <div id="ko-cfg-estado-actual" style="font-size:11px;color:var(--muted);padding-bottom:6px;"></div>
         </div>
 
+        <!-- Importador rápido de cruces (pegar bracket) -->
+        <details style="margin-bottom:12px;background:rgba(96,200,255,0.05);border:1px solid rgba(96,200,255,0.25);border-radius:10px;padding:10px 12px;">
+          <summary style="cursor:pointer;font-size:12px;font-weight:700;color:#1e6fa0;">📋 Importar cruces (pegar lista) — más rápido que tipear</summary>
+          <p style="font-size:11px;color:var(--muted);margin:8px 0;line-height:1.5;">
+            Pega un partido por línea (local primero). Acepta separadores <strong>vs</strong>, <strong>-</strong> o <strong>|</strong>.
+            Normaliza nombres en inglés (Croatia→Croacia). Ej:<br>
+            <code style="font-size:10px;">Mexico vs Croatia<br>Spain - Morocco<br>Brazil | Senegal</code>
+          </p>
+          <textarea id="ko-import-text" rows="6" placeholder="México vs Croacia&#10;España vs Marruecos&#10;..." style="width:100%;font-size:12px;font-family:monospace;margin-bottom:6px;"></textarea>
+          <button class="btn btn-full" onclick="importarCrucesKO()" style="background:rgba(96,200,255,0.15);border:1px solid rgba(96,200,255,0.4);color:#1e6fa0;font-weight:700;font-size:12px;padding:7px;">⬇️ Cargar en los cruces</button>
+        </details>
+
         <!-- Cruces (slots) + resultados por partido -->
         <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">CRUCES Y RESULTADOS</div>
         <div id="admin-ko-slots-grid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
@@ -4750,6 +4762,62 @@ function toggleKOWinner(rnd,i){
   const aetEl=$id(`ko-res-${rnd}-${i}-aet`);
   const winEl=$id(`ko-res-${rnd}-${i}-winner`);
   if(winEl) winEl.style.display=aetEl?.checked?'':'none';
+}
+
+// ── Importador de cruces KO (pegar bracket) ──
+// Mapea nombres en inglés / variantes al nombre que usa la app.
+const KO_NAME_ALIASES = {
+  'mexico':'México','korea republic':'Corea del Sur','south korea':'Corea del Sur','korea':'Corea del Sur',
+  'czechia':'Chequia','czech republic':'Chequia','south africa':'Sudáfrica','canada':'Canadá',
+  'switzerland':'Suiza','bosnia and herzegovina':'Bosnia y Herzegovina','bosnia':'Bosnia y Herzegovina',
+  'qatar':'Qatar','brazil':'Brasil','morocco':'Marruecos','scotland':'Escocia','haiti':'Haití',
+  'united states':'Estados Unidos','usa':'Estados Unidos','us':'Estados Unidos','paraguay':'Paraguay',
+  'australia':'Australia','turkey':'Turquía','turkiye':'Turquía','germany':'Alemania','ecuador':'Ecuador',
+  'ivory coast':'Costa de Marfil','cote divoire':'Costa de Marfil','curacao':'Curazao',
+  'netherlands':'Países Bajos','holland':'Países Bajos','japan':'Japón','sweden':'Suecia',
+  'tunisia':'Túnez','belgium':'Bélgica','egypt':'Egipto','iran':'Irán','new zealand':'Nueva Zelanda',
+  'spain':'España','uruguay':'Uruguay','saudi arabia':'Arabia Saudita','cape verde':'Cabo Verde',
+  'cabo verde':'Cabo Verde','france':'Francia','norway':'Noruega','senegal':'Senegal','iraq':'Irak',
+  'argentina':'Argentina','austria':'Austria','algeria':'Algeria','jordan':'Jordania','portugal':'Portugal',
+  'colombia':'Colombia','uzbekistan':'Uzbekistán','dr congo':'R.D. del Congo','congo dr':'R.D. del Congo',
+  'england':'Inglaterra','croatia':'Croacia','ghana':'Ghana','panama':'Panamá'
+};
+function koCanon(s){ return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z ]/g,'').trim(); }
+function koNormalizeName(raw){
+  let s=String(raw).trim();
+  // quitar banderas/emojis y códigos de posición tipo "1A", "2B", "W49", "3°"
+  s=s.replace(/[\u{1F1E6}-\u{1F1FF}]/gu,'').replace(/^\s*(\d[A-L]|[A-L]\d|W\d+|3r[od]+|3°)\s+[-:.]?\s*/i,'').trim();
+  const key=koCanon(s);
+  if(KO_NAME_ALIASES[key]) return KO_NAME_ALIASES[key];
+  if(FLAGS[s]) return s; // ya es nombre de la app
+  const hit=Object.keys(FLAGS).find(n=>koCanon(n)===key);
+  return hit||s;
+}
+function importarCrucesKO(){
+  const r=_adminKORound;
+  const txt=$id('ko-import-text')?.value||'';
+  const lines=txt.split('\n').map(l=>l.trim()).filter(Boolean);
+  const pairs=[];
+  lines.forEach(l=>{
+    const parts=l.split(/\s+vs\.?\s+|\s+v\s+|\s*\|\s*|\s+[-–—]\s+/i);
+    if(parts.length>=2 && parts[0] && parts[1]){
+      pairs.push([koNormalizeName(parts[0]), koNormalizeName(parts[1])]);
+    }
+  });
+  if(!pairs.length){ setMsg('msg-admin-ko','No se detectaron pares. Usa "Equipo1 vs Equipo2" por línea.','err'); return; }
+  const size=KO_ROUND_SIZES[r];
+  let llenos=0, sinBandera=[];
+  for(let i=0;i<size && i<pairs.length;i++){
+    const a=$id(`ko-slot-${r}-${i}-local`), b=$id(`ko-slot-${r}-${i}-visita`);
+    if(a){a.value=pairs[i][0];} if(b){b.value=pairs[i][1];}
+    [pairs[i][0],pairs[i][1]].forEach(n=>{ if(n && !FLAGS[n]) sinBandera.push(n); });
+    llenos++;
+  }
+  let msg=`✓ ${llenos} cruces cargados.`;
+  if(pairs.length>size) msg+=` (Se ignoraron ${pairs.length-size} líneas extra.)`;
+  if(sinBandera.length) msg+=` ⚠️ Revisa estos nombres (no coinciden con la app): ${[...new Set(sinBandera)].join(', ')}.`;
+  msg+=' Revisa y presiona "Guardar configuración".';
+  setMsg('msg-admin-ko',msg, sinBandera.length?'warn':'ok');
 }
 
 async function guardarConfigKO(){
