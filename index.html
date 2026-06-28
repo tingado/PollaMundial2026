@@ -469,6 +469,10 @@ select option { background:#fff; }
 .bx { opacity:0.38; pointer-events:none; font-style:italic; }
 .bt + .bt { border-top:1px solid var(--border); }
 .bt-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bt-sc { margin-left:auto; font-weight:800; font-size:11px; color:var(--text); min-width:14px; text-align:right; }
+.bt.bw .bt-sc { color:var(--verde); }
+.bt-aet { position:absolute; top:2px; right:3px; font-size:9px; color:var(--dorado); }
+.br-col:not(:first-child) .bm, .bm { position:relative; }
 .bt-pick { padding:0; overflow:visible; }
 .bt-pick select { border:none; background:transparent; font-size:11px; width:100%;
   padding:5px 7px; cursor:pointer; color:var(--text); outline:none; }
@@ -1335,8 +1339,17 @@ select option { background:#fff; }
 
       <!-- Sub-tabs: Predicciones KO (nuevo) vs Bracket inicial (existente) -->
       <div class="elim-subtabs">
-        <button class="elim-subtab active" onclick="setElimTab('ko',this)">⚽ Predicciones KO</button>
+        <button class="elim-subtab active" onclick="setElimTab('ko',this)">⚽ Predicciones</button>
+        <button class="elim-subtab" onclick="setElimTab('cuadro',this)">🗺️ Cuadro</button>
         <button class="elim-subtab" onclick="setElimTab('bracket',this)">📋 Bracket inicial</button>
+      </div>
+
+      <!-- ── PESTAÑA CUADRO GENERAL (panorama de llaves, en vivo) ── -->
+      <div id="elim-tab-cuadro" style="display:none;">
+        <div style="background:rgba(96,200,255,0.06);border:1px solid rgba(96,200,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.5;">
+          🗺️ Panorama de la fase eliminatoria. Los ganadores avanzan solos a medida que se cargan los resultados. <span style="white-space:nowrap;">✻ = se definió en alargue/penales.</span>
+        </div>
+        <div id="ko-bracket-container"></div>
       </div>
 
       <!-- ── PESTAÑA PREDICCIONES KO (nuevo sistema) ── -->
@@ -2470,7 +2483,7 @@ function applyState(d, fromServer=false){
   if($id('view-proyecciones')?.classList.contains('active')) renderProyecciones();
   if($id('view-inscripcion')?.classList.contains('active')) cargarInscripcion();
   if($id('view-admin')?.classList.contains('active')){ renderAdminScores(); renderAdminKO(); }
-  if($id('view-eliminatorias')?.classList.contains('active')){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); }
+  if($id('view-eliminatorias')?.classList.contains('active')){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); if($id('elim-tab-cuadro')?.style.display!=='none') renderKOBracket(); }
 }
 
 function restoreLastPlayer(){
@@ -3817,9 +3830,107 @@ function setElimTab(tab, el){
   _elimTab = tab;
   document.querySelectorAll('.elim-subtab').forEach(b=>b.classList.toggle('active', b===el));
   $id('elim-tab-ko').style.display      = tab==='ko'     ? '' : 'none';
+  $id('elim-tab-cuadro').style.display  = tab==='cuadro' ? '' : 'none';
   $id('elim-tab-bracket').style.display = tab==='bracket'? '' : 'none';
   if(tab==='ko'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); startKORefresh(); }
+  if(tab==='cuadro'){ stopKORefresh(); renderKOBracket(); }
   if(tab==='bracket'){ stopKORefresh(); cargarElim(); }
+}
+
+// ── CUADRO GENERAL DE LLAVES (panorama, avance automático) ──
+// Determina el ganador de un partido KO: 'a' (local), 'b' (visita) o null.
+function koWinnerSide(a, b, res){
+  if(!a||!b||a==='?'||b==='?') return null;
+  if(!res||res.gL==null||res.gV==null) return null;
+  if(res.aet) return res.winner==='local'?'a':res.winner==='visita'?'b':null;
+  if(res.gL>res.gV) return 'a';
+  if(res.gV>res.gL) return 'b';
+  return null;
+}
+// Construye {r32,r16,qf,sf,fin} a partir de los cruces configurados + resultados,
+// avanzando ganadores con el emparejado estándar (2k, 2k+1 → siguiente[k]).
+function buildKOBracket(){
+  const cfg=state.koConfig?.rounds||{};
+  const sk=state.scoresKO||{};
+  const mk=(a,b,res)=>({a:a||'',b:b||'',res:res||null,w:koWinnerSide(a,b,res||null)});
+
+  // R32 desde los slots configurados
+  const r32=[];
+  const r32slots=(cfg.r32&&cfg.r32.slots)||[];
+  for(let i=0;i<16;i++){
+    const s=r32slots[i]||{};
+    r32.push(mk(s.local,s.visita,(sk.r32||[])[i]));
+  }
+  // Rondas siguientes: usa slots del admin si existen, si no avanza ganadores.
+  function nextRound(key, prev){
+    const slots=(cfg[key]&&cfg[key].slots)||null;
+    const res=sk[key]||[];
+    const n=prev.length/2;
+    const out=[];
+    for(let k=0;k<n;k++){
+      let a,b;
+      if(slots&&slots[k]&&(slots[k].local||slots[k].visita)){
+        a=slots[k].local; b=slots[k].visita;
+      }else{
+        const m1=prev[2*k], m2=prev[2*k+1];
+        a=m1?(m1.w==='a'?m1.a:m1.w==='b'?m1.b:''):'';
+        b=m2?(m2.w==='a'?m2.a:m2.w==='b'?m2.b:''):'';
+      }
+      out.push(mk(a,b,res[k]));
+    }
+    return out;
+  }
+  const r16=nextRound('r16',r32);
+  const qf =nextRound('qf', r16);
+  const sf =nextRound('sf', qf);
+  const fin=nextRound('fin',sf);
+  return {r32,r16,qf,sf,fin:fin[0]||mk('','',null)};
+}
+
+function renderKOBracket(){
+  const cont=$id('ko-bracket-container'); if(!cont) return;
+  const cfg=state.koConfig?.rounds||{};
+  if(!(cfg.r32&&cfg.r32.slots&&cfg.r32.slots.length)){
+    cont.innerHTML='<div style="color:var(--muted);text-align:center;padding:2rem;font-size:13px;">El cuadro aparecerá cuando se carguen los cruces de 16avos.</div>';
+    return;
+  }
+  const c=buildKOBracket();
+  const rounds=[
+    {key:'r32',label:'16avos',matches:c.r32},
+    {key:'r16',label:'8vos',  matches:c.r16},
+    {key:'qf', label:'4tos',  matches:c.qf},
+    {key:'sf', label:'Semis', matches:c.sf},
+    {key:'fin',label:'Final', matches:[c.fin]},
+  ];
+  function side(name, score, win){
+    return `<div class="bt${win?' bw':''}">${fi(name)}<span class="bt-name">${esc(name||'—')}</span>${score!==''?`<span class="bt-sc">${score}</span>`:''}</div>`;
+  }
+  function brMatch(m){
+    if(!m||(!m.a&&!m.b)) return `<div class="bm bx"></div>`;
+    const played=m.res&&m.res.gL!=null;
+    const sa=played?m.res.gL:'', sb=played?m.res.gV:'';
+    const aet=played&&m.res.aet?'<span class="bt-aet">✻</span>':'';
+    return `<div class="bm">
+      ${side(m.a,sa,m.w==='a')}
+      ${side(m.b,sb,m.w==='b')}
+      ${aet}
+    </div>`;
+  }
+  function pairs(matches){
+    if(matches.length===1) return brMatch(matches[0]);
+    let h='';
+    for(let i=0;i<matches.length;i+=2){
+      h+=`<div class="br-group">${brMatch(matches[i])}${i+1<matches.length?brMatch(matches[i+1]):''}</div>`;
+    }
+    return h;
+  }
+  const champ=c.fin&&c.fin.w?(c.fin.w==='a'?c.fin.a:c.fin.b):'';
+  cont.innerHTML=`<div class="bracket-scroll"><div class="br-rounds">${
+    rounds.map(r=>`<div class="br-col">
+      <div class="br-col-title">${r.label}</div>
+      <div class="br-col-matches">${pairs(r.matches)}${r.key==='fin'&&champ?`<div class="br-champion"><div class="br-champion-crown">🏆</div><div class="br-champion-name">${fi(champ)} ${esc(champ)}</div></div>`:''}</div>
+    </div>`).join('')}
+  </div></div>`;
 }
 
 function setKORound(rnd, el){
@@ -4780,7 +4891,10 @@ const KO_NAME_ALIASES = {
   'cabo verde':'Cabo Verde','france':'Francia','norway':'Noruega','senegal':'Senegal','iraq':'Irak',
   'argentina':'Argentina','austria':'Austria','algeria':'Algeria','jordan':'Jordania','portugal':'Portugal',
   'colombia':'Colombia','uzbekistan':'Uzbekistán','dr congo':'R.D. del Congo','congo dr':'R.D. del Congo',
-  'england':'Inglaterra','croatia':'Croacia','ghana':'Ghana','panama':'Panamá'
+  'rd congo':'R.D. del Congo','rdc':'R.D. del Congo','democratic republic of the congo':'R.D. del Congo',
+  'congo':'R.D. del Congo','rd del congo':'R.D. del Congo','korea republic':'Corea del Sur',
+  'england':'Inglaterra','croatia':'Croacia','ghana':'Ghana','panama':'Panamá',
+  'mexico ':'México','países bajos':'Países Bajos','paises bajos':'Países Bajos'
 };
 function koCanon(s){ return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z ]/g,'').trim(); }
 function koNormalizeName(raw){
@@ -4826,10 +4940,13 @@ async function guardarConfigKO(){
   const apertura=chileInputToISO($id('ko-cfg-apertura')?.value);
   const deadline=chileInputToISO($id('ko-cfg-deadline')?.value);
   const size=KO_ROUND_SIZES[r];
-  const slots=Array.from({length:size},(_,i)=>({
-    local:  ($id(`ko-slot-${r}-${i}-local`)?.value||'').trim(),
-    visita: ($id(`ko-slot-${r}-${i}-visita`)?.value||'').trim()
-  })).filter(s=>s.local||s.visita);
+  // Normaliza los nombres al formato de la app al guardar (Croatia→Croacia, RD Congo→R.D. del Congo…)
+  // para que el auto-sync de la API empareje bien los resultados.
+  const slots=Array.from({length:size},(_,i)=>{
+    const local =($id(`ko-slot-${r}-${i}-local`)?.value||'').trim();
+    const visita=($id(`ko-slot-${r}-${i}-visita`)?.value||'').trim();
+    return { local: local?koNormalizeName(local):'', visita: visita?koNormalizeName(visita):'' };
+  }).filter(s=>s.local||s.visita);
 
   const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,apertura,deadline,slots}}};
   setLoad('btn-ko-config',true,'Guardando...');
@@ -4870,8 +4987,9 @@ async function guardarMarcadoresKO(){
       while(state.scoresKO[r].length<=res.slot) state.scoresKO[r].push(null);
       state.scoresKO[r][res.slot]={gL:res.gL,gV:res.gV,...(res.aet?{aet:true,winner:res.winner}:{})};
     });
-    state.scoresKO[r]=state.scoresKO[r].filter(Boolean);
+    // No compactar: el índice debe seguir siendo el slot (ver getScoresKO en backend)
     renderRanking();
+    if($id('elim-tab-cuadro')?.style.display!=='none') renderKOBracket();
     setMsg('msg-admin-ko',`✅ ${resultados.length} resultado${resultados.length!==1?'s':''} guardado${resultados.length!==1?'s':''}`, 'ok');
   }catch(e){ setMsg('msg-admin-ko','Error: '+e.message,'err'); }
   setLoad('btn-ko-results',false);
