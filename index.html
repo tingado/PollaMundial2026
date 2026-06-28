@@ -2483,7 +2483,7 @@ function applyState(d, fromServer=false){
   if($id('view-proyecciones')?.classList.contains('active')) renderProyecciones();
   if($id('view-inscripcion')?.classList.contains('active')) cargarInscripcion();
   if($id('view-admin')?.classList.contains('active')){ renderAdminScores(); renderAdminKO(); }
-  if($id('view-eliminatorias')?.classList.contains('active')){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); if($id('elim-tab-cuadro')?.style.display!=='none') renderKOBracket(); }
+  if($id('view-eliminatorias')?.classList.contains('active')){ actualizarSelectorKO(); renderKORoundTabs(); if(!(_koDirty&&_elimTab==='ko'&&getEffectiveKOStatus(_koRound)==='abierto')) cargarKO(); if($id('elim-tab-cuadro')?.style.display!=='none') renderKOBracket(); }
 }
 
 function restoreLastPlayer(){
@@ -3648,6 +3648,7 @@ const KO_CALENDAR_DEFAULTS = {
 let _koRound = 'r32';
 let _elimTab  = 'ko';
 let _koRefreshTimer = null;
+let _koDirty = false; // true cuando el jugador está escribiendo predicciones sin guardar
 
 // Ventana efectiva (apertura/cierre) de una ronda: config del admin tiene prioridad,
 // si no hay, usa el calendario FIFA por defecto.
@@ -3817,12 +3818,28 @@ function startKORefresh(){
   _koRefreshTimer=setInterval(()=>{
     if($id('view-eliminatorias')?.classList.contains('active')&&_elimTab==='ko'){
       renderKORoundTabs();
-      cargarKO();
+      // NO re-dibujar el formulario si el jugador está escribiendo (borraría sus
+      // predicciones sin guardar). Solo refrescamos el contador de cuenta regresiva.
+      if(_koDirty && getEffectiveKOStatus(_koRound)==='abierto'){
+        updateKOCountdown();
+      } else {
+        cargarKO();
+      }
     }
     if($id('view-inicio')?.classList.contains('active')){
       renderKOHomeBanner(); // countdown del banner de carátula en vivo
     }
   },60000);
+}
+
+// Actualiza solo el texto de cuenta regresiva del banner de ronda abierta,
+// sin re-dibujar el formulario (preserva lo que el jugador está escribiendo).
+function updateKOCountdown(){
+  const el=$id('ko-cd'); if(!el) return;
+  const cierre=getKOWindow(_koRound).cierre;
+  const cd=cierre?formatKOCountdown(cierre):null;
+  const dlStr=cierre?fmtKOFecha(cierre):'';
+  el.innerHTML = cd?`· ⏱️ <strong style="color:#b45309;">Cierra en ${cd}</strong> (${dlStr})`:(dlStr?`· Cierra ${dlStr}`:'');
 }
 function stopKORefresh(){ /* el timer global se mantiene para el banner de carátula */ }
 
@@ -3969,6 +3986,7 @@ function renderKORoundTabs(){
 
 function renderKORound(jugador, rnd){
   const cont=$id('ko-round-content'); if(!cont) return;
+  _koDirty=false; // render limpio: el formulario refleja el estado guardado
   const cfg=(state.koConfig?.rounds||{})[rnd]||{};
   const status=getEffectiveKOStatus(rnd);  // respeta deadline automáticamente
   const slots=cfg.slots||[];
@@ -3986,8 +4004,8 @@ function renderKORound(jugador, rnd){
     const cierre=getKOWindow(rnd).cierre;
     const countdown=cierre?formatKOCountdown(cierre):null;
     const dlStr=cierre?fmtKOFecha(cierre):'';
-    const cdHtml=countdown?` · ⏱️ <strong style="color:#b45309;">Cierra en ${countdown}</strong> (${dlStr})`:(dlStr?` · Cierra ${dlStr}`:'');
-    bannerHtml=`<div class="ko-status-banner abierto">🟡 <strong>Abierto</strong>${cdHtml} — Ingresa tus predicciones y guarda antes del primer partido.</div>`;
+    const cdHtml=countdown?`· ⏱️ <strong style="color:#b45309;">Cierra en ${countdown}</strong> (${dlStr})`:(dlStr?`· Cierra ${dlStr}`:'');
+    bannerHtml=`<div class="ko-status-banner abierto">🟡 <strong>Abierto</strong> <span id="ko-cd">${cdHtml}</span> — Ingresa tus predicciones y guarda antes del primer partido.</div>`;
     $id('btn-save-ko').style.display=jugador?'':'none';
   } else {
     bannerHtml=`<div class="ko-status-banner cerrado">🔒 <strong>Cerrado</strong> — Predicciones de ${KO_ROUND_LABELS[rnd]} ya no se aceptan.</div>`;
@@ -4006,9 +4024,9 @@ function renderKORound(jugador, rnd){
         <div class="ko-match-teams">
           <span class="ko-team">${flag(local)} ${local}</span>
           <div class="ko-score-inputs">
-            <input class="pron-score-input" type="number" min="0" max="20" id="ko-${rnd}-${i}-g1" value="${pred.g1??''}" placeholder="0">
+            <input class="pron-score-input" type="number" min="0" max="20" id="ko-${rnd}-${i}-g1" value="${pred.g1??''}" placeholder="0" oninput="_koDirty=true">
             <span class="pron-vs">–</span>
-            <input class="pron-score-input" type="number" min="0" max="20" id="ko-${rnd}-${i}-g2" value="${pred.g2??''}" placeholder="0">
+            <input class="pron-score-input" type="number" min="0" max="20" id="ko-${rnd}-${i}-g2" value="${pred.g2??''}" placeholder="0" oninput="_koDirty=true">
           </div>
           <span class="ko-team right">${flag(visita)} ${visita}</span>
         </div>
@@ -4064,7 +4082,7 @@ async function saveKORound(){
   const r=await guardarKOPron(jugador,rnd,preds);
   setLoad('btn-save-ko',false);
   const msgEl=$id('msg-ko');
-  if(r.ok){ setMsg('msg-ko','✅ Predicciones guardadas','ok'); setTimeout(()=>{if(msgEl)msgEl.textContent='';},3000); }
+  if(r.ok){ _koDirty=false; setMsg('msg-ko','✅ Predicciones guardadas','ok'); setTimeout(()=>{if(msgEl)msgEl.textContent='';},3000); }
   else     { setMsg('msg-ko','Error: '+r.msg,'err'); }
 }
 
