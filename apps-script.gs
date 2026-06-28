@@ -243,10 +243,9 @@ function getScoresKO() {
     const winner = String(r[5] || '').trim();
     result[rnd][slot] = { gL, gV, aet: aet || undefined, winner: winner || undefined };
   });
-  // Compactar nulls
-  Object.keys(result).forEach(rnd => {
-    result[rnd] = result[rnd].filter(Boolean);
-  });
+  // NO compactar: el índice del array debe seguir siendo el número de slot,
+  // para que predicción[i] y resultado[i] correspondan al mismo partido aunque
+  // los partidos terminen en distinto orden (slots con null = sin resultado aún).
   return result;
 }
 
