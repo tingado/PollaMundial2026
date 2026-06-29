@@ -5394,13 +5394,13 @@ function simCalcRanking(activoMatches) {
 function simGetKOMatches(){
   const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
   const results = (state.scoresKO||{}).r32||[];
-  const out = [];
-  slots.forEach((s,i)=>{
+  for(let i=0;i<slots.length;i++){
+    const s = slots[i];
     const r = results[i];
-    if(r && r.gL!=null) return; // ya tiene resultado real → no se simula
-    out.push({ id:'r32-'+i, slot:i, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}` });
-  });
-  return out;
+    if(r && r.gL!=null) continue; // ya tiene resultado real
+    return [{ id:'r32-'+i, slot:i, local:s?.local||`Equipo ${2*i+1}`, visita:s?.visita||`Equipo ${2*i+2}` }];
+  }
+  return [];
 }
 
 // Ranking proyectado inyectando los marcadores KO simulados en state.scoresKO.
