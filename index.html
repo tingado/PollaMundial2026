@@ -5398,7 +5398,7 @@ function simGetKOMatches(){
     const s = slots[i];
     const r = results[i];
     if(r && r.gL!=null) continue; // ya tiene resultado real
-    return [{ id:'r32-'+i, slot:i, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}` }];
+    return [{ id:'r32-'+i, slot:i, local:s?.local||`Equipo ${2*i+1}`, visita:s?.visita||`Equipo ${2*i+2}` }];
   }
   return [];
 }
