@@ -5398,6 +5398,7 @@ function simGetKOMatches(){
     const r = results[i];
     if(r && r.gL!=null) continue; // ya tiene resultado real → no se simula
     const s = slots[i];
+    if(!s) continue;
     return [{ id:'r32-'+i, slot:i, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}` }];
   }
   return [];
@@ -5734,8 +5735,8 @@ function simRefreshRankingKO(koMatches){
     const medal=['🥇','🥈','🥉'][i]||(i+1);
     const arrow=r.simPts>0?`<span class="sim-arrow up">▲ +${r.simPts}</span>`:`<span class="sim-arrow" style="opacity:0.3">–</span>`;
     const detailHtml=r.detail.filter(d=>d.pred).map(d=>{
-      const lbl=d.pts===4?'+4':d.pts>=2?`+${d.pts}`:d.pts===1?'+1':'0';
-      return `<span style="font-size:10px;color:${d.pts===4?'var(--verde)':d.pts>=1?'var(--dorado)':'var(--rojo)'};">${esc(d.local)} vs ${esc(d.visita)}: ${d.pred} | ${d.sim} → ${lbl}</span>`;
+      const lbl=d.pts===4?'+4 exacto':d.pts>=2?`+${d.pts} ganador`:d.pts===1?'+1 gol':'0 pts';
+      return `<span style="font-size:10px;color:${d.pts===4?'var(--verde)':d.pts>=1?'var(--dorado)':'var(--rojo)'};">${esc(d.local)} vs ${esc(d.visita)}: pred ${d.pred} | sim ${d.sim} → ${lbl}</span>`;
     }).join('<br>');
     return `<tr class="${i<3?'sim-advances':''}">
       <td class="sim-pos">${medal}</td>
