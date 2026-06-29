@@ -4037,7 +4037,7 @@ function renderKORound(jugador, rnd){
       const predObj=pred.g1!=null&&pred.g2!=null?{g1:pred.g1,g2:pred.g2}:null;
       const pts=calcPtsKOPartido(predObj,res);
       const ptsCls=pts===4?'pts4':pts>=2?'pts2':pts===1?'pts1':'pts0';
-      const ptsLabel=pts===4?'⭐ Exacto (4 pts)':pts>=2?`✓ Ganador (${pts} pts)`:pts===1?'± Un gol (1 pt)':'✗ Sin puntos';
+      const ptsLabel=res.aet?'⏱️ ET/Pen — 0 pts':pts===4?'⭐ Exacto (4 pts)':pts>=2?`✓ Ganador (${pts} pts)`:pts===1?'± Un gol (1 pt)':'✗ Sin puntos';
       const realStr=res.aet?`${res.gL}–${res.gV} (ET)`:`${res.gL}–${res.gV}`;
       const predStr=predObj?`${pred.g1}–${pred.g2}`:'?–?';
       return `<div class="ko-match-card result">
@@ -4536,11 +4536,8 @@ function calcPtsPartidos(pron){
 function calcPtsKOPartido(pred, res){
   if(!pred||!res||res.gL==null||res.gV==null) return 0;
   if(res.aet){
-    // Fue a tiempo extra o penales — solo puntúa el ganador
-    const predDir=(pred.g1>pred.g2?1:pred.g1<pred.g2?-1:0);
-    // winner indica quién ganó después de ET/penales: 'local' o 'visita'
-    const realDir=res.winner==='local'?1:res.winner==='visita'?-1:0;
-    return predDir===realDir?2:0;
+    // ET o penales — no puntúa nadie
+    return 0;
   }
   let pts=0;
   if(pred.g1===res.gL) pts+=1;
@@ -4645,7 +4642,7 @@ function buildDesglose(pron, res){
       const pts=calcPtsKOPartido(pred,res);
       const predStr=pred?`${pred.g1}-${pred.g2}`:'?-?';
       const realStr=res.aet?`${res.gL}-${res.gV} (${res.winner==='local'?'L':'V'} en ET)`:`${res.gL}-${res.gV}`;
-      const tipo=pts===4?'⭐ Exacto':pts>=2?'✓ Ganador':pts===1?'± Gol':'✗';
+      const tipo=res.aet?'⏱️ ET/Pen':pts===4?'⭐ Exacto':pts>=2?'✓ Ganador':pts===1?'± Gol':'✗';
       const slot=cfg.slots?.[i]||{};
       const matchLabel=slot.local&&slot.visita?`${flag(slot.local)} ${slot.local} vs ${flag(slot.visita)} ${slot.visita}`:`${koRoundLabels[rnd]} partido ${i+1}`;
       koItems.push({label:matchLabel,pred:predStr,real:realStr,pts,tipo});
