@@ -6021,12 +6021,23 @@ async function shareRankingPNG() {
     ctx.textAlign = 'center';
     ctx.fillText('PollaMundial2026 · tingado.github.io/PollaMundial2026', W/2, fy + 22);
 
+    // Texto plano del ranking
+    const sorted = [...jugadores]
+      .map(j => ({ j, pts: calcPtsDetalle(state.pronosticos[j.nombre]||{}, state.resultados).total }))
+      .sort((a, b) => b.pts - a.pts);
+    const rankText = ['🏆 Polla Mundial 2026', `📅 ${fecha}`, '']
+      .concat(sorted.map(({j, pts}, i) => `${i+1}. ${j.nombre} — ${pts} pts`))
+      .concat(['', '🌐 tingado.github.io/PollaMundial2026'])
+      .join('\n');
+
     const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     const fname = `ranking-mundial-${fecha.replace(/\//g,'-')}.png`;
     const file  = new File([blob], fname, { type: 'image/png' });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: '🏆 Ranking Polla Mundial 2026' });
+      await navigator.share({ files: [file], title: '🏆 Polla Mundial 2026', text: rankText });
+    } else if (navigator.share) {
+      await navigator.share({ title: '🏆 Polla Mundial 2026', text: rankText });
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
