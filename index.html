@@ -1083,6 +1083,7 @@ select option { background:#fff; }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -1409,6 +1410,7 @@ select option { background:#fff; }
       <div style="display:flex;gap:8px;margin-bottom:1rem;">
         <button class="btn btn-sm" id="tab-ranking-tabla" onclick="switchRankingTab('tabla')" style="flex:1;font-size:13px;padding:8px 0;background:var(--rosa);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;">🏆 Tabla</button>
         <button class="btn btn-sm" id="tab-ranking-evol" onclick="switchRankingTab('evol')" style="flex:1;font-size:13px;padding:8px 0;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;">📈 Evolución</button>
+        <button class="btn btn-sm" id="btn-share-ranking" onclick="shareRankingPNG()" title="Compartir tabla" style="flex:0 0 auto;font-size:18px;padding:8px 12px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;">📸</button>
       </div>
       <div id="ranking-container">
         <div style="color:var(--muted);text-align:center;padding:2rem;">Conecta el backend para ver el ranking</div>
@@ -5916,6 +5918,37 @@ function buildEvolutionData() {
   }));
 
   return { labels, datasets };
+}
+
+async function shareRankingPNG() {
+  const btn = $id('btn-share-ranking');
+  const target = $id('ranking-container');
+  if (!target || typeof html2canvas === 'undefined') return;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const canvas = await html2canvas(target, {
+      backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0f0f1a',
+      scale: 2,
+      useCORS: true,
+    });
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const fecha = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'-');
+    const file = new File([blob], `ranking-mundial-${fecha}.png`, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: '🏆 Ranking Polla Mundial 2026' });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = file.name; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') alert('No se pudo generar la imagen.');
+  } finally {
+    btn.textContent = '📸';
+    btn.disabled = false;
+  }
 }
 
 function switchRankingTab(tab) {
