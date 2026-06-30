@@ -5977,13 +5977,11 @@ async function shareRankingPNG() {
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(W, y + ROW_H - 0.5); ctx.stroke();
 
-      // posición (texto, sin emoji)
       ctx.font = 'bold 12px Arial, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillStyle = i < 3 ? '#f5bc00' : '#666';
       ctx.fillText(i < 3 ? posLabels[i] : `${i+1}`, PAD + 14, cy + 4);
 
-      // avatar
       const ax = PAD + 44;
       ctx.beginPath();
       ctx.arc(ax, cy, 16, 0, Math.PI * 2);
@@ -5994,14 +5992,12 @@ async function shareRankingPNG() {
       ctx.textAlign = 'center';
       ctx.fillText((nombre || '?')[0].toUpperCase(), ax, cy + 5);
 
-      // nombre
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 14px Arial, sans-serif';
       ctx.textAlign = 'left';
       const n = nombre.length > 20 ? nombre.slice(0, 19) + '.' : nombre;
       ctx.fillText(n, PAD + 68, cy + 5);
 
-      // puntos
       ctx.fillStyle = '#e91e8c';
       ctx.font = 'bold 20px Arial, sans-serif';
       ctx.textAlign = 'right';
@@ -6011,7 +6007,6 @@ async function shareRankingPNG() {
       ctx.fillText('pts', W - PAD, cy + 7);
     });
 
-    // footer
     const fy = HDR_H + rows.length * ROW_H;
     ctx.fillStyle = '#0a0a18';
     ctx.fillRect(0, fy, W, FOOT_H);
@@ -6020,25 +6015,22 @@ async function shareRankingPNG() {
     ctx.textAlign = 'center';
     ctx.fillText('tingado.github.io/PollaMundial2026', W/2, fy + 20);
 
-    // Texto plano
     const rankText = ['** POLLA MUNDIAL 2026 **', fecha, '']
       .concat(rows.map(({ nombre, pts }, i) => `${i+1}. ${nombre} - ${pts} pts`))
       .concat(['', 'tingado.github.io/PollaMundial2026'])
       .join('\n');
 
-    // Obtener blob: preferir toBlob, fallback toDataURL
     let blob;
     if (cv.toBlob) {
       blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     } else {
       const dataURL = cv.toDataURL('image/png');
-      const res = await fetch(dataURL);
-      blob = await res.blob();
+      const res2 = await fetch(dataURL);
+      blob = await res2.blob();
     }
 
     const fname = `ranking-mundial-${fecha.replace(/\//g,'-')}.png`;
 
-    // Intentar share con archivo; si falla, share solo texto; si no hay share, descarga
     if (navigator.canShare) {
       const file = new File([blob], fname, { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) {
