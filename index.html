@@ -5795,13 +5795,13 @@ let _evolChart = null;
 
 function evolToggle(idx) {
   if (!_evolChart) return;
-  const meta = _evolChart.getDatasetMeta(idx);
-  meta.hidden = !meta.hidden;
+  const visible = _evolChart.isDatasetVisible(idx);
+  _evolChart.setDatasetVisibility(idx, !visible);
   _evolChart.update();
-  // Actualizar estilo del chip
   const chip = document.querySelector(`[data-evol-idx="${idx}"]`);
-  if (chip) chip.style.opacity = meta.hidden ? '0.35' : '1';
+  if (chip) chip.style.opacity = visible ? '0.35' : '1';
 }
+
 
 const EVOL_COLORS = [
   '#e91e8c','#2196f3','#4caf50','#ff9800','#9c27b0',
@@ -5847,7 +5847,6 @@ function buildEvolutionData() {
   if (!grupoPartidos.length && !koEvents.length) return null;
 
   // ── 3. Calcular snapshot de calcPtsTotal en cada punto ──
-  // Acumulamos scores incrementalmente para evitar mutar state globalmente
   const labels    = ['Inicio'];
   const rawData   = jugadores.map(() => [0]);
 
@@ -5859,44 +5858,40 @@ function buildEvolutionData() {
     tempScores[key] = res;
     labels.push(flag(p.local)+' '+p.local.slice(0,3)+'-'+p.visita.slice(0,3)+' '+flag(p.visita));
 
-    // Snapshot: calcPtsTotal con resultados hasta aquí
-    state.scores   = {...tempScores};
-    state.scoresKO = {};          // sin KO aún
-    state.resultados = {};        // sin bonus grupos aún
+    state.scores     = tempScores;
+    state.scoresKO   = {};
+    state.resultados = {};
 
     jugadores.forEach((j, ji) => {
-      const pts = calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados);
-      rawData[ji].push(pts);
+      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados));
     });
   });
 
-  // Bonus grupos: restaurar resultados reales (para que calcPtsGrupos cuente el bonus)
+  // Bonus grupos
   if (origResultados?.grupos && Object.keys(origResultados.grupos).length) {
     labels.push('🏁 Bonus Grupos');
-    state.scores     = {...tempScores};
+    state.scores     = tempScores;
     state.scoresKO   = {};
     state.resultados = origResultados;
     jugadores.forEach((j, ji) => {
-      const pts = calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados);
-      rawData[ji].push(pts);
+      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados));
     });
   }
 
   // KO: añadir resultado partido a partido
   const tempKO = {};
   koEvents.forEach(ev => {
-    if (!tempKO[ev.rnd]) tempKO[ev.rnd] = [...((origScoresKO||{})[ev.rnd]||[])].map(()=>null);
+    if (!tempKO[ev.rnd]) tempKO[ev.rnd] = new Array((origScoresKO?.[ev.rnd]||[]).length).fill(null);
     while (tempKO[ev.rnd].length <= ev.slot) tempKO[ev.rnd].push(null);
     tempKO[ev.rnd][ev.slot] = ev.res;
     labels.push(ev.label);
 
-    state.scores     = {...tempScores};
-    state.scoresKO   = JSON.parse(JSON.stringify(tempKO));
+    state.scores     = tempScores;
+    state.scoresKO   = tempKO;
     state.resultados = origResultados;
 
     jugadores.forEach((j, ji) => {
-      const pts = calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados);
-      rawData[ji].push(pts);
+      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados));
     });
   });
 
@@ -5904,6 +5899,7 @@ function buildEvolutionData() {
   state.scores     = origScores;
   state.scoresKO   = origScoresKO;
   state.resultados = origResultados;
+
 
   const datasets = jugadores.map((j, idx) => ({
     label: j.nombre,
