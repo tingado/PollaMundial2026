@@ -4549,6 +4549,7 @@ function calcPtsPartidos(pron){
 // Marcador a 90 min: +1 gol local correcto, +1 gol visita correcto, +2 ganador = 4 máx.
 function calcPtsKOPartido(pred, res){
   if(!pred||!res||res.gL==null||res.gV==null) return 0;
+  if(pred.g1==null||pred.g2==null) return 0;
   if(res.aet){
     // ET o penales — solo puntúan los goles de 90 min, sin bonus ganador
     let pts=0;
@@ -5922,10 +5923,16 @@ function switchRankingTab(tab) {
 }
 
 function renderEvolucionChart() {
-  const data = buildEvolutionData();
   const canvas = $id('evol-chart');
   if (!canvas) return;
 
+  if (typeof Chart === 'undefined') {
+    canvas.style.display = 'none';
+    $id('evol-legend').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Gráfico no disponible sin conexión.</div>';
+    return;
+  }
+
+  const data = buildEvolutionData();
   if (_evolChart) { _evolChart.destroy(); _evolChart = null; }
 
   if (!data) {
@@ -5975,11 +5982,11 @@ function renderEvolucionChart() {
 
   // Leyenda manual
   $id('evol-legend').innerHTML = data.datasets
-    .sort((a, b) => (b.data[b.data.length-1]?.y || 0) - (a.data[a.data.length-1]?.y || 0))
+    .sort((a, b) => (b.data[b.data.length-1] || 0) - (a.data[a.data.length-1] || 0))
     .map(ds => `<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;background:${ds.borderColor}22;border:1px solid ${ds.borderColor}55;">
       <span style="width:10px;height:10px;border-radius:50%;background:${ds.borderColor};display:inline-block;flex-shrink:0;"></span>
       <span style="color:var(--text);font-weight:600;">${esc(ds.label)}</span>
-      <span style="color:${ds.borderColor};font-weight:700;">${ds.data[ds.data.length-1]?.y ?? 0} pts</span>
+      <span style="color:${ds.borderColor};font-weight:700;">${ds.data[ds.data.length-1] ?? 0} pts</span>
     </div>`).join('');
 }
 </script>
