@@ -1082,6 +1082,7 @@ select option { background:#fff; }
   .sim-table td, .sim-table th { padding:6px 6px; }
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -1405,8 +1406,21 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">📊 Ranking Detallado</div>
       </div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem;">
+        <button class="btn btn-sm" id="tab-ranking-tabla" onclick="switchRankingTab('tabla')" style="flex:1;font-size:13px;padding:8px 0;background:var(--rosa);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;">🏆 Tabla</button>
+        <button class="btn btn-sm" id="tab-ranking-evol" onclick="switchRankingTab('evol')" style="flex:1;font-size:13px;padding:8px 0;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;">📈 Evolución</button>
+      </div>
       <div id="ranking-container">
         <div style="color:var(--muted);text-align:center;padding:2rem;">Conecta el backend para ver el ranking</div>
+      </div>
+      <div id="ranking-evol-container" style="display:none;">
+        <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--muted);">
+          📈 Evolución de puntos acumulados a lo largo del torneo, partido a partido.
+        </div>
+        <div style="position:relative;width:100%;height:340px;">
+          <canvas id="evol-chart"></canvas>
+        </div>
+        <div id="evol-legend" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:center;font-size:12px;"></div>
       </div>
     </div>
 
@@ -4535,6 +4549,7 @@ function calcPtsPartidos(pron){
 // Marcador a 90 min: +1 gol local correcto, +1 gol visita correcto, +2 ganador = 4 máx.
 function calcPtsKOPartido(pred, res){
   if(!pred||!res||res.gL==null||res.gV==null) return 0;
+  if(pred.g1==null||pred.g2==null) return 0;
   if(res.aet){
     // ET o penales — solo puntúan los goles de 90 min, sin bonus ganador
     let pts=0;
@@ -5770,6 +5785,209 @@ if('serviceWorker' in navigator){
     // Buscar actualización del SW en cada carga
     if(reg.update) reg.update();
   }).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════════════
+// GRÁFICO DE EVOLUCIÓN DE PUNTAJES
+// ══════════════════════════════════════════════════════════
+
+let _evolChart = null;
+
+const EVOL_COLORS = [
+  '#e91e8c','#2196f3','#4caf50','#ff9800','#9c27b0',
+  '#00bcd4','#f44336','#8bc34a','#ff5722','#3f51b5',
+  '#009688','#ffc107','#607d8b','#e91e63','#795548',
+  '#673ab7','#03a9f4','#cddc39','#ff6f00','#1b5e20'
+];
+
+function buildEvolutionData() {
+  const jugadores = state.jugadores;
+  if (!jugadores.length) return null;
+  const scores = state.scores || {};
+  const resultados = state.resultados || {};
+
+  // ── 1. Partidos de grupos con resultado, ordenados por fecha+hora ──
+  const grupoPartidos = PARTIDOS
+    .filter(p => {
+      if (!p.grupo || p.grupo.length !== 1) return false;
+      const res = scores[p.local+'|'+p.visita] || scores[p.id];
+      return res && res.gL != null && res.gV != null;
+    })
+    .sort((a, b) => {
+      const da = new Date(a.fecha + 'T' + (a.hora||'00:00') + ':00');
+      const db = new Date(b.fecha + 'T' + (b.hora||'00:00') + ':00');
+      return da - db;
+    });
+
+  // ── 2. Determinar si hay bonus de clasificación disponible ──
+  const hayBonusGrupos = resultados.grupos && Object.keys(resultados.grupos).length > 0;
+
+  // ── 3. Partidos KO con resultado (en orden de ronda → slot) ──
+  const koEvents = [];
+  const koSlotLabels = { r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', fin:'Final' };
+  KO_ROUNDS.forEach(rnd => {
+    const slots = (state.koConfig?.rounds?.[rnd]?.slots) || [];
+    const results = (state.scoresKO||{})[rnd] || [];
+    slots.forEach((s, i) => {
+      const res = results[i];
+      if (!res || res.gL == null) return;
+      const loc = s.local || `Equipo ${2*i+1}`;
+      const vis = s.visita || `Equipo ${2*i+2}`;
+      koEvents.push({ rnd, slot: i, res,
+        label: flag(loc)+' '+loc.slice(0,3)+'-'+vis.slice(0,3)+' '+flag(vis)+' ('+koSlotLabels[rnd]+')' });
+    });
+  });
+
+  if (!grupoPartidos.length && !koEvents.length) return null;
+
+  // ── 4. Calcular puntos incrementales por jugador ──
+  const labels = ['Inicio'];
+  const rawData = jugadores.map(() => [0]); // rawData[j][event] = cumulative pts
+
+  // Grupo: por cada partido acumular pts de grupos-victoria + pts de partido
+  grupoPartidos.forEach(p => {
+    const res = scores[p.local+'|'+p.visita] || scores[p.id];
+    labels.push(flag(p.local)+' '+p.local.slice(0,3)+'-'+p.visita.slice(0,3)+' '+flag(p.visita));
+    jugadores.forEach((j, ji) => {
+      const pron = state.pronosticos[j.nombre] || {};
+      const pg = (pron.grupos||{})[p.grupo] || {};
+      // pts de predicción de grupos (victoria del equipo predicho)
+      let delta = 0;
+      if (res.gL > res.gV) { // local ganó
+        if (pg.p1 === p.local) delta += 2;
+        else if (pg.p2 === p.local) delta += 1;
+      } else if (res.gV > res.gL) { // visita ganó
+        if (pg.p1 === p.visita) delta += 2;
+        else if (pg.p2 === p.visita) delta += 1;
+      }
+      // pts de marcador exacto / resultado correcto
+      delta += calcPtsPartido(pron.partidos?.[p.id], res);
+      rawData[ji].push(rawData[ji][rawData[ji].length-1] + delta);
+    });
+  });
+
+  // Bonus clasificación de grupos (si está disponible)
+  if (hayBonusGrupos && grupoPartidos.length) {
+    labels.push('🏁 Bonus Grupos');
+    jugadores.forEach((j, ji) => {
+      const pron = state.pronosticos[j.nombre] || {};
+      const pg = pron.grupos || {};
+      const rg = resultados.grupos || {};
+      let bonus = 0;
+      Object.keys(GRUPOS).forEach(g => {
+        const pp = pg[g] || {}, rr = rg[g] || {};
+        if (pp.p1 && rr.p1 && pp.p1 === rr.p1) bonus += 3;
+        if (pp.p2 && rr.p2 && pp.p2 === rr.p2) bonus += 2;
+      });
+      rawData[ji].push(rawData[ji][rawData[ji].length-1] + bonus);
+    });
+  }
+
+  // KO partidos
+  koEvents.forEach(ev => {
+    labels.push(ev.label);
+    jugadores.forEach((j, ji) => {
+      const pron = state.pronosticos[j.nombre] || {};
+      const pred = (pron.ko?.[ev.rnd] || [])[ev.slot];
+      const delta = calcPtsKOPartido(pred, ev.res);
+      rawData[ji].push(rawData[ji][rawData[ji].length-1] + delta);
+    });
+  });
+
+  const datasets = jugadores.map((j, idx) => ({
+    label: j.nombre,
+    data: rawData[idx],
+    borderColor: EVOL_COLORS[idx % EVOL_COLORS.length],
+    backgroundColor: EVOL_COLORS[idx % EVOL_COLORS.length] + '22',
+    borderWidth: 2,
+    pointRadius: 2,
+    pointHoverRadius: 5,
+    tension: 0.3,
+    fill: false,
+  }));
+
+  return { labels, datasets };
+}
+
+function switchRankingTab(tab) {
+  const isTabla = tab === 'tabla';
+  $id('ranking-container').style.display = isTabla ? '' : 'none';
+  $id('ranking-evol-container').style.display = isTabla ? 'none' : '';
+  $id('tab-ranking-tabla').style.background = isTabla ? 'var(--rosa)' : 'var(--card)';
+  $id('tab-ranking-tabla').style.color = isTabla ? '#fff' : 'var(--text)';
+  $id('tab-ranking-tabla').style.border = isTabla ? 'none' : '1px solid var(--border)';
+  $id('tab-ranking-evol').style.background = isTabla ? 'var(--card)' : 'var(--rosa)';
+  $id('tab-ranking-evol').style.color = isTabla ? 'var(--text)' : '#fff';
+  $id('tab-ranking-evol').style.border = isTabla ? '1px solid var(--border)' : 'none';
+  if (!isTabla) renderEvolucionChart();
+}
+
+function renderEvolucionChart() {
+  const canvas = $id('evol-chart');
+  if (!canvas) return;
+
+  if (typeof Chart === 'undefined') {
+    canvas.style.display = 'none';
+    $id('evol-legend').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Gráfico no disponible sin conexión.</div>';
+    return;
+  }
+
+  const data = buildEvolutionData();
+  if (_evolChart) { _evolChart.destroy(); _evolChart = null; }
+
+  if (!data) {
+    canvas.style.display = 'none';
+    $id('evol-legend').innerHTML = '<div style="color:var(--muted);text-align:center;padding:2rem;">Aún no hay resultados para mostrar la evolución.</div>';
+    return;
+  }
+  canvas.style.display = '';
+
+  _evolChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: data.datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: items => items[0]?.label || '',
+            label: item => ` ${item.dataset.label}: ${item.parsed.y} pts`,
+          },
+          backgroundColor: '#1a1a2e',
+          titleColor: '#fff',
+          bodyColor: '#ccc',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+        },
+      },
+      scales: {
+        x: {
+          ticks: { display: false },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.07)' },
+          ticks: { color: '#aaa', font: { size: 11 } },
+        },
+      },
+    },
+  });
+
+  // Leyenda manual
+  $id('evol-legend').innerHTML = data.datasets
+    .sort((a, b) => (b.data[b.data.length-1] || 0) - (a.data[a.data.length-1] || 0))
+    .map(ds => `<div style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;background:${ds.borderColor}22;border:1px solid ${ds.borderColor}55;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${ds.borderColor};display:inline-block;flex-shrink:0;"></span>
+      <span style="color:var(--text);font-weight:600;">${esc(ds.label)}</span>
+      <span style="color:${ds.borderColor};font-weight:700;">${ds.data[ds.data.length-1] ?? 0} pts</span>
+    </div>`).join('');
 }
 </script>
 
