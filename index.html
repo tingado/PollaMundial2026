@@ -5933,7 +5933,7 @@ async function shareRankingPNG() {
       .map(j => ({ nombre: j.nombre, pts: calcPtsDetalle(state.pronosticos[j.nombre]||{}, state.resultados).total }))
       .sort((a, b) => b.pts - a.pts);
 
-    const DPR    = window.devicePixelRatio || 2;
+    const DPR    = Math.min(window.devicePixelRatio || 2, 2);
     const W      = 400;
     const PAD    = 18;
     const ROW_H  = 50;
@@ -5990,7 +5990,7 @@ async function shareRankingPNG() {
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 14px Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText((nombre || '?')[0].toUpperCase(), ax, cy + 5);
+      ctx.fillText(Array.from(nombre || '?')[0].toUpperCase(), ax, cy + 5);
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 14px Arial, sans-serif';
@@ -6025,8 +6025,12 @@ async function shareRankingPNG() {
       blob = await new Promise(res => cv.toBlob(res, 'image/png'));
     } else {
       const dataURL = cv.toDataURL('image/png');
-      const res2 = await fetch(dataURL);
-      blob = await res2.blob();
+      const parts = dataURL.split(',');
+      const byteString = atob(parts[1]);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let k = 0; k < byteString.length; k++) ia[k] = byteString.charCodeAt(k);
+      blob = new Blob([ab], { type: 'image/png' });
     }
 
     const fname = `ranking-mundial-${fecha.replace(/\//g,'-')}.png`;
@@ -6034,8 +6038,12 @@ async function shareRankingPNG() {
     if (navigator.canShare) {
       const file = new File([blob], fname, { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Polla Mundial 2026', text: rankText });
-        return;
+        try {
+          await navigator.share({ files: [file], title: 'Polla Mundial 2026', text: rankText });
+          return;
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') return;
+        }
       }
     }
     if (navigator.share) {
