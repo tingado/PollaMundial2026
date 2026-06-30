@@ -4551,10 +4551,12 @@ function calcPtsKOPartido(pred, res){
   if(!pred||!res||res.gL==null||res.gV==null) return 0;
   if(pred.g1==null||pred.g2==null) return 0;
   if(res.aet){
-    // ET o penales — solo puntúan los goles de 90 min, sin bonus ganador
+    // ET o penales: resultado a los 90' fue empate
+    // +1 gol local correcto, +1 gol visita correcto, +2 si predijo empate (tendencia)
     let pts=0;
     if(pred.g1===res.gL) pts+=1;
     if(pred.g2===res.gV) pts+=1;
+    if(pred.g1===pred.g2) pts+=2; // predijo empate → 90' fue empate → +2 tendencia
     return pts;
   }
   let pts=0;
