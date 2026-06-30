@@ -5928,13 +5928,18 @@ async function shareRankingPNG() {
     const jugadores = state.jugadores || [];
     if (!jugadores.length) { alert('Sin datos de ranking.'); return; }
 
-    const DPR   = 2;
-    const W     = 420;
-    const PAD   = 20;
-    const ROW_H = 52;
-    const HDR_H = 70;
-    const FOOT_H= 36;
-    const H     = HDR_H + jugadores.length * ROW_H + FOOT_H + PAD;
+    // Ordenar por puntaje
+    const rows = [...jugadores]
+      .map(j => ({ nombre: j.nombre, pts: calcPtsDetalle(state.pronosticos[j.nombre]||{}, state.resultados).total }))
+      .sort((a, b) => b.pts - a.pts);
+
+    const DPR    = window.devicePixelRatio || 2;
+    const W      = 400;
+    const PAD    = 18;
+    const ROW_H  = 50;
+    const HDR_H  = 72;
+    const FOOT_H = 32;
+    const H      = HDR_H + rows.length * ROW_H + FOOT_H;
 
     const cv  = document.createElement('canvas');
     cv.width  = W * DPR;
@@ -5947,98 +5952,102 @@ async function shareRankingPNG() {
     ctx.fillRect(0, 0, W, H);
 
     // header
-    ctx.fillStyle = '#e91e8c';
+    ctx.fillStyle = '#c41263';
     ctx.fillRect(0, 0, W, HDR_H);
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 20px system-ui, sans-serif';
+    ctx.font = 'bold 18px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🏆 Ranking Polla Mundial 2026', W/2, 30);
+    ctx.fillText('RANKING POLLA MUNDIAL 2026', W/2, 28);
     const fecha = new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
-    ctx.font = '13px system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.font = '13px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.fillText(fecha, W/2, 52);
 
-    // filas
-    const medals = ['🥇','🥈','🥉'];
-    const avatarColors = ['#e91e8c','#2196f3','#4caf50','#ff9800','#9c27b0','#00bcd4','#f44336','#8bc34a','#ff5722','#3f51b5','#009688','#ffc107','#607d8b','#e91e63','#795548'];
+    const avatarColors = ['#c41263','#2196f3','#4caf50','#ff9800','#9c27b0','#00bcd4','#f44336','#8bc34a','#ff5722','#3f51b5','#009688','#ffc107','#607d8b','#c2185b','#795548'];
+    const posLabels = ['1ro','2do','3ro'];
 
-    jugadores.forEach((j, i) => {
-      const y = HDR_H + i * ROW_H;
-      // fila alterna
-      ctx.fillStyle = i % 2 === 0 ? '#161626' : '#1a1a2e';
+    rows.forEach(({ nombre, pts }, i) => {
+      const y  = HDR_H + i * ROW_H;
+      const cy = y + ROW_H / 2;
+
+      ctx.fillStyle = i % 2 === 0 ? '#14142a' : '#1a1a38';
       ctx.fillRect(0, y, W, ROW_H);
 
-      // separador
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
       ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, y + ROW_H); ctx.lineTo(W, y + ROW_H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(W, y + ROW_H - 0.5); ctx.stroke();
 
-      const cx = PAD + 16;
-      const cy = y + ROW_H/2;
-
-      // posición / medalla
-      ctx.font = 'bold 14px system-ui, sans-serif';
+      // posición (texto, sin emoji)
+      ctx.font = 'bold 12px Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillStyle = i < 3 ? '#fff' : '#888';
-      ctx.fillText(i < 3 ? medals[i] : `${i+1}`, cx, cy + 5);
+      ctx.fillStyle = i < 3 ? '#f5bc00' : '#666';
+      ctx.fillText(i < 3 ? posLabels[i] : `${i+1}`, PAD + 14, cy + 4);
 
-      // avatar círculo
+      // avatar
       const ax = PAD + 44;
       ctx.beginPath();
-      ctx.arc(ax, cy, 17, 0, Math.PI*2);
+      ctx.arc(ax, cy, 16, 0, Math.PI * 2);
       ctx.fillStyle = avatarColors[i % avatarColors.length];
       ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px system-ui, sans-serif';
+      ctx.font = 'bold 14px Arial, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText((j.nombre||'?')[0].toUpperCase(), ax, cy + 5);
+      ctx.fillText((nombre || '?')[0].toUpperCase(), ax, cy + 5);
 
       // nombre
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px system-ui, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px Arial, sans-serif';
       ctx.textAlign = 'left';
-      const nombre = j.nombre || '';
-      ctx.fillText(nombre.length > 18 ? nombre.slice(0,17)+'…' : nombre, PAD + 68, cy - 5);
+      const n = nombre.length > 20 ? nombre.slice(0, 19) + '.' : nombre;
+      ctx.fillText(n, PAD + 68, cy + 5);
 
       // puntos
-      const pron = state.pronosticos[j.nombre] || {};
-      const det  = calcPtsDetalle(pron, state.resultados);
-      const pts  = det.total;
       ctx.fillStyle = '#e91e8c';
-      ctx.font = 'bold 22px system-ui, sans-serif';
+      ctx.font = 'bold 20px Arial, sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText(pts, W - PAD, cy + 8);
-      ctx.fillStyle = '#888';
-      ctx.font = '11px system-ui, sans-serif';
-      ctx.fillText('pts', W - PAD - 4, cy - 6);
+      ctx.fillText(String(pts), W - PAD - 28, cy + 7);
+      ctx.fillStyle = '#999';
+      ctx.font = '11px Arial, sans-serif';
+      ctx.fillText('pts', W - PAD, cy + 7);
     });
 
     // footer
-    const fy = HDR_H + jugadores.length * ROW_H;
-    ctx.fillStyle = '#0f0f1a';
-    ctx.fillRect(0, fy, W, FOOT_H + PAD);
-    ctx.fillStyle = '#555';
-    ctx.font = '11px system-ui, sans-serif';
+    const fy = HDR_H + rows.length * ROW_H;
+    ctx.fillStyle = '#0a0a18';
+    ctx.fillRect(0, fy, W, FOOT_H);
+    ctx.fillStyle = '#444';
+    ctx.font = '11px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('PollaMundial2026 · tingado.github.io/PollaMundial2026', W/2, fy + 22);
+    ctx.fillText('tingado.github.io/PollaMundial2026', W/2, fy + 20);
 
-    // Texto plano del ranking
-    const sorted = [...jugadores]
-      .map(j => ({ j, pts: calcPtsDetalle(state.pronosticos[j.nombre]||{}, state.resultados).total }))
-      .sort((a, b) => b.pts - a.pts);
-    const rankText = ['🏆 Polla Mundial 2026', `📅 ${fecha}`, '']
-      .concat(sorted.map(({j, pts}, i) => `${i+1}. ${j.nombre} — ${pts} pts`))
-      .concat(['', '🌐 tingado.github.io/PollaMundial2026'])
+    // Texto plano
+    const rankText = ['** POLLA MUNDIAL 2026 **', fecha, '']
+      .concat(rows.map(({ nombre, pts }, i) => `${i+1}. ${nombre} - ${pts} pts`))
+      .concat(['', 'tingado.github.io/PollaMundial2026'])
       .join('\n');
 
-    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
-    const fname = `ranking-mundial-${fecha.replace(/\//g,'-')}.png`;
-    const file  = new File([blob], fname, { type: 'image/png' });
+    // Obtener blob: preferir toBlob, fallback toDataURL
+    let blob;
+    if (cv.toBlob) {
+      blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    } else {
+      const dataURL = cv.toDataURL('image/png');
+      const res = await fetch(dataURL);
+      blob = await res.blob();
+    }
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: '🏆 Polla Mundial 2026', text: rankText });
-    } else if (navigator.share) {
-      await navigator.share({ title: '🏆 Polla Mundial 2026', text: rankText });
+    const fname = `ranking-mundial-${fecha.replace(/\//g,'-')}.png`;
+
+    // Intentar share con archivo; si falla, share solo texto; si no hay share, descarga
+    if (navigator.canShare) {
+      const file = new File([blob], fname, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Polla Mundial 2026', text: rankText });
+        return;
+      }
+    }
+    if (navigator.share) {
+      await navigator.share({ title: 'Polla Mundial 2026', text: rankText });
     } else {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -6046,7 +6055,7 @@ async function shareRankingPNG() {
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     }
   } catch(e) {
-    if (e.name !== 'AbortError') alert('No se pudo generar la imagen: ' + e.message);
+    if (e.name !== 'AbortError') alert('Error: ' + (e.message || e));
   } finally {
     btn.textContent = '📸';
     btn.disabled = false;
