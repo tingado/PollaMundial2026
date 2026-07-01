@@ -1240,10 +1240,11 @@ select option { background:#fff; }
     <div id="view-partidos" class="view">
       <div class="view-header">
         <div class="view-title">📅 Partidos</div>
-        <div class="view-tabs">
-          <button class="view-tab active" onclick="setMatchView('day',this)">Por Día</button>
-          <button class="view-tab" onclick="setMatchView('group',this)">Por Grupo</button>
-        </div>
+      </div>
+      <div class="proy-group-tabs" id="partidos-round-tabs" style="margin-bottom:10px;"></div>
+      <div class="view-tabs" id="partidos-day-group-tabs">
+        <button class="view-tab active" onclick="setMatchView('day',this)">Por Día</button>
+        <button class="view-tab" onclick="setMatchView('group',this)">Por Grupo</button>
       </div>
       <!-- Selector para predicciones de partidos -->
       <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:1rem;">
@@ -2151,6 +2152,7 @@ const DATOS_2026 = [
 // ══════════════════════════════════════════════════════════
 let state = { jugadores:[], pronosticos:{}, resultados:{}, scores:{}, scoresKO:{}, koConfig:{} };
 let matchView = 'day';
+let partidosRound = 'grupos'; // 'grupos' | 'r32' | 'r16' | 'qf' | 'sf' | 'fin'
 
 // ══════════════════════════════════════════════════════════
 // CACHÉ
@@ -2740,8 +2742,72 @@ function renderMatchCard(p){
     </div>`;
 }
 
+// Pestañas de ronda en la vista Partidos: Grupos + cada ronda de llaves.
+// Solo cambia qué se muestra (lectura); no toca predicciones ni puntajes.
+const PARTIDOS_ROUND_LABELS = {grupos:'Grupos', r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', fin:'Final'};
+function renderPartidosRoundTabs(){
+  const cont=$id('partidos-round-tabs'); if(!cont) return;
+  const rounds=['grupos',...KO_ROUNDS];
+  cont.innerHTML = rounds.map(r=>
+    `<button class="proy-tab${partidosRound===r?' active':''}" onclick="setPartidosRound('${r}')">${PARTIDOS_ROUND_LABELS[r]}</button>`
+  ).join('');
+}
+function setPartidosRound(rnd){
+  partidosRound = rnd;
+  renderPartidosRoundTabs();
+  $id('partidos-day-group-tabs').style.display = rnd==='grupos' ? '' : 'none';
+  renderMatches();
+}
+
+// Tarjeta de solo lectura para un partido de llaves (fixture + resultado si existe).
+function renderKOMatchCardReadOnly(rnd, slot, res){
+  const local = slot?.local || '';
+  const visita = slot?.visita || '';
+  const conocidos = local && visita;
+  const hasScore = res && res.gL!=null && res.gV!=null;
+  const aetTag = hasScore && res.aet ? ' <span style="font-size:10px;color:var(--dorado);">(ET/Pen)</span>' : '';
+  const estado = hasScore
+    ? `✅ Finalizado${aetTag}`
+    : (conocidos ? '⏳ Por jugarse' : '🔒 Cruce pendiente');
+  return `
+    <div class="match-card">
+      <div class="match-meta">
+        <span class="group-badge">${KO_ROUND_LABELS[rnd]}</span>
+        <span>${estado}</span>
+      </div>
+      <div class="match-teams">
+        <div class="match-team">
+          <div class="match-flag">${conocidos?flag(local):'🏳️'}</div>
+          <div class="match-team-name">${esc(local||'Por definir')}</div>
+          <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gL:'-'}</div>
+        </div>
+        <div class="match-team">
+          <div class="match-flag">${conocidos?flag(visita):'🏳️'}</div>
+          <div class="match-team-name">${esc(visita||'Por definir')}</div>
+          <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gV:'-'}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderMatches(){
   const cont=$id('matches-container');
+
+  if(partidosRound!=='grupos'){
+    const rnd=partidosRound;
+    const slots=(state.koConfig?.rounds?.[rnd]?.slots)||[];
+    const results=(state.scoresKO||{})[rnd]||[];
+    if(!slots.length){
+      cont.innerHTML=`<div style="color:var(--muted);text-align:center;padding:2rem;font-size:13px;">Los cruces de ${KO_ROUND_LABELS[rnd]} aún no se han publicado.</div>`;
+      return;
+    }
+    cont.innerHTML=`<div class="day-section">
+      <div class="day-label">🏆 ${KO_ROUND_LABELS[rnd]}</div>
+      <div class="matches-grid">${slots.map((s,i)=>renderKOMatchCardReadOnly(rnd,s,results[i])).join('')}</div>
+    </div>`;
+    return;
+  }
+
   if(matchView==='day'){
     const byDay={};
     PARTIDOS.forEach(p=>{ if(!byDay[p.fecha])byDay[p.fecha]=[]; byDay[p.fecha].push(p); });
@@ -5342,6 +5408,7 @@ async function sincronizar(){
 initFacts();
 initCountdown();
 renderHome();
+renderPartidosRoundTabs();
 renderMatches();
 renderGroups();
 startKORefresh(); // timer para el banner de fase eliminatoria en la carátula
