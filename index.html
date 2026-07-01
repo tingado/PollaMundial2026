@@ -1099,10 +1099,10 @@ select option { background:#fff; }
       <button id="nav-inicio"       class="nav-btn active" onclick="showView('inicio',this)">🏠 Inicio</button>
       <button id="nav-partidos"     class="nav-btn" onclick="showView('partidos',this)">📅 Partidos</button>
       <button id="nav-grupos"       class="nav-btn" onclick="showView('grupos',this)">🏟️ Grupos</button>
-      <button id="nav-pronosticos"  class="nav-btn" onclick="showView('pronosticos',this)">🎯 Pronósticos</button>
       <button id="nav-eliminatorias" class="nav-btn" onclick="showView('eliminatorias',this)">🏆 Llaves</button>
       <button id="nav-ranking"      class="nav-btn" onclick="showView('ranking',this)">📊 Ranking</button>
       <button id="nav-proyecciones" class="nav-btn" onclick="showView('proyecciones',this)">👁️ Predicciones</button>
+      <button id="nav-pronosticos"  class="nav-btn" onclick="showView('pronosticos',this)" style="display:none;">🎯 Pronósticos</button>
       <button id="nav-inscripcion"  class="nav-btn" onclick="showView('inscripcion',this)">📋 Inscripción</button>
       <button id="nav-calculos"     class="nav-btn" onclick="showView('calculos',this)">🧮 Cómo se calcula</button>
       <button id="nav-bases"        class="nav-btn" onclick="showView('bases',this)">📜 Bases</button>
@@ -1290,6 +1290,9 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">🎯 Pronósticos de Grupos</div>
       </div>
+      <button class="btn btn-ghost" onclick="showView('proyecciones',$id('nav-proyecciones'))" style="margin-bottom:1rem;font-size:12px;padding:8px 12px;">
+        👁️ Ver predicciones de todos los participantes
+      </button>
       <div class="wizard-steps">
         <div class="wizard-step active">1 · Grupos</div>
         <div class="wizard-step">2 · Llaves</div>
@@ -1433,6 +1436,9 @@ select option { background:#fff; }
       <div class="view-header">
         <div class="view-title">👁️ Predicciones por Partido</div>
       </div>
+      <button class="btn btn-rosa" onclick="showView('pronosticos',null)" style="margin-bottom:1rem;font-size:12px;padding:8px 12px;">
+        ✍️ Ingresar / editar mi pronóstico de grupos
+      </button>
       <div style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Mira lo que pronosticó cada participante en cada partido. Filtra por grupo.</div>
       <div class="proy-group-tabs" id="proy-tabs"></div>
       <div id="proy-container">
@@ -2838,12 +2844,12 @@ function renderKOMatchCardReadOnly(rnd, slot, res){
       </div>
       <div class="match-teams">
         <div class="match-team">
-          <div class="match-flag">${local?flag(local):'🏳️'}</div>
+          <div class="match-flag">${local?fi(local):'🏳️'}</div>
           <div class="match-team-name">${esc(local||'Por definir')}</div>
           <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gL:'-'}</div>
         </div>
         <div class="match-team">
-          <div class="match-flag">${visita?flag(visita):'🏳️'}</div>
+          <div class="match-flag">${visita?fi(visita):'🏳️'}</div>
           <div class="match-team-name">${esc(visita||'Por definir')}</div>
           <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gV:'-'}</div>
         </div>
@@ -3627,7 +3633,7 @@ function renderCuadro(){
         </div>`;
       }
       return `<div class="bt${won?' bw':''}" onclick="cuadroPickWinner('${round}',${idx},'${side}')">
-        <span>${flag(t)}</span><span class="bt-name">${t}</span>
+        <span>${fi(t)}</span><span class="bt-name">${t}</span>
         ${won?'<span style="color:var(--verde);margin-left:auto;font-size:10px;">▶</span>':''}
       </div>`;
     }
@@ -3675,7 +3681,7 @@ function renderCuadro(){
               ${renderPairs(r.matches,r.key)}
               ${r.key==='fin'&&champion?`<div class="br-champion">
                 <div class="br-champion-crown">🏆</div>
-                <div class="br-champion-name">${flag(champion)} ${champion}</div>
+                <div class="br-champion-name">${fi(champion)} ${champion}</div>
               </div>`:''}
             </div>
           </div>`).join('')}
