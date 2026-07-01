@@ -5458,7 +5458,10 @@ function getR32Fecha(local, visita) {
 function simGetKOMatches(){
   const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
   const results = (state.scoresKO||{}).r32||[];
-  const hoy = new Date().toISOString().slice(0,10);
+  // Fecha LOCAL (no UTC): toISOString() usaría UTC y se adelantaría de día
+  // en la noche chilena (UTC-4), saltándose partidos del día actual.
+  const now = new Date();
+  const hoy = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
   // Construir candidatos con fecha
   const candidatos = [];
