@@ -5409,17 +5409,51 @@ function simCalcRanking(activoMatches) {
 }
 
 // ── SIMULADOR FASE ELIMINATORIA (16avos) ──
-// Partidos de 16avos sin resultado real aún (los que se pueden simular).
-// Devuelve TODOS los slots sin resultado, no solo el primero.
+
+// Calendario oficial FIFA World Cup 2026 — 16avos de Final
+// Clave: "Local|Visita" (orden tal como aparece en koConfig)
+// Fecha en formato YYYY-MM-DD hora local Chile (UTC-4 en invierno)
+const KO_R32_FECHAS = {
+  // Jornada 1 — 28 jun
+  'Alemania|Paraguay':       '2026-06-28',
+  'Francia|Suecia':          '2026-06-28',
+  // Jornada 2 — 29 jun
+  'Sudáfrica|Canadá':        '2026-06-29',
+  'Países Bajos|Marruecos':  '2026-06-29',
+  // Jornada 3 — 30 jun
+  'Brasil|Japón':            '2026-06-30',
+  'Costa de Marfil|Noruega': '2026-06-30',
+  'México|Ecuador':          '2026-06-30',
+  // Jornada 4 — 1 jul
+  'Estados Unidos|BiH':      '2026-07-01',
+  'Bélgica|Senegal':         '2026-07-01',
+  'Inglaterra|RD Congo':     '2026-07-01',
+  // Jornada 5 — 2 jul
+  'Portugal|Croacia':        '2026-07-02',
+  'España|Austria':          '2026-07-02',
+  'Suiza|Argelia':           '2026-07-02',
+  // Jornada 6 — 3 jul
+  'Argentina|Cabo Verde':    '2026-07-03',
+  'Australia|Egipto':        '2026-07-03',
+  'Colombia|Ghana':          '2026-07-03',
+};
+
+// Partidos de 16avos sin resultado real y cuya fecha ya llegó.
+// Devuelve todos los slots activos (fecha <= hoy) sin resultado.
 function simGetKOMatches(){
   const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
   const results = (state.scoresKO||{}).r32||[];
+  const hoy = new Date().toISOString().slice(0,10); // YYYY-MM-DD
   const out = [];
   for(let i=0;i<slots.length;i++){
     const s = slots[i];
     const r = results[i];
     if(r && r.gL!=null) continue; // ya tiene resultado real
     if(!s?.local && !s?.visita) continue; // slot vacío
+    // Filtrar por fecha: solo mostrar partidos cuya fecha ya llegó
+    const key = `${s.local}|${s.visita}`;
+    const fecha = KO_R32_FECHAS[key] || KO_R32_FECHAS[`${s.visita}|${s.local}`] || hoy;
+    if(fecha > hoy) continue; // partido futuro, no mostrar aún
     out.push({ id:'r32-'+i, slot:i, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}` });
   }
   return out;
@@ -5998,7 +6032,8 @@ async function shareRankingPNG() {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 14px Arial, sans-serif';
       ctx.textAlign = 'left';
-      const n = nombre.length > 20 ? nombre.slice(0, 19) + '.' : nombre;
+      const nombreArr = Array.from(nombre || '');
+      const n = nombreArr.length > 20 ? nombreArr.slice(0, 19).join('') + '.' : nombre;
       ctx.fillText(n, PAD + 68, cy + 5);
 
       ctx.fillStyle = '#e91e8c';
