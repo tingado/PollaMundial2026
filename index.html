@@ -1132,7 +1132,7 @@ select option { background:#fff; }
 
     <!-- COUNTDOWN -->
     <div class="countdown-bar">
-      <div class="cd-label">⏱ Inicio del Mundial</div>
+      <div class="cd-label" id="cd-label">⏱ Inicio del Mundial</div>
       <div class="cd-units" id="cd-units">
         <div class="cd-unit"><span class="cd-num" id="cd-d">--</span><span class="cd-sub">días</span></div>
         <div class="cd-sep">:</div>
@@ -1142,6 +1142,7 @@ select option { background:#fff; }
         <div class="cd-sep">:</div>
         <div class="cd-unit"><span class="cd-num" id="cd-s">--</span><span class="cd-sub">seg</span></div>
       </div>
+      <div class="cd-partidos" id="cd-partidos" style="display:none;font-size:12px;color:var(--muted);margin-top:4px;font-weight:600;"></div>
     </div>
 
     <!-- URL BANNER -->
@@ -1239,10 +1240,11 @@ select option { background:#fff; }
     <div id="view-partidos" class="view">
       <div class="view-header">
         <div class="view-title">📅 Partidos</div>
-        <div class="view-tabs">
-          <button class="view-tab active" onclick="setMatchView('day',this)">Por Día</button>
-          <button class="view-tab" onclick="setMatchView('group',this)">Por Grupo</button>
-        </div>
+      </div>
+      <div class="proy-group-tabs" id="partidos-round-tabs" style="margin-bottom:10px;"></div>
+      <div class="view-tabs" id="partidos-day-group-tabs">
+        <button class="view-tab active" onclick="setMatchView('day',this)">Por Día</button>
+        <button class="view-tab" onclick="setMatchView('group',this)">Por Grupo</button>
       </div>
       <!-- Selector para predicciones de partidos -->
       <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:1rem;">
@@ -1357,9 +1359,9 @@ select option { background:#fff; }
       <!-- ── PESTAÑA PREDICCIONES KO (nuevo sistema) ── -->
       <div id="elim-tab-ko">
         <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.5;">
-          ⚽ Nuevo sistema: predice el <strong>marcador exacto</strong> de cada partido.<br>
-          +1 gol local · +1 gol visita · +2 ganador = <strong style="color:var(--dorado);">4 pts</strong> máximo por partido.
-          Si va a alargue/penales, solo puntúa el ganador (+2).
+          ⚽ Predice el <strong>marcador exacto</strong> de cada partido (a los 90').<br>
+          +1 gol local correcto · +1 gol visita correcto · +2 tendencia (ganador o empate) = <strong style="color:var(--dorado);">4 pts</strong> máximo por partido.<br>
+          Si el partido termina empatado y se define en alargue/penales, el resultado a los 90' sigue siendo empate para el puntaje — los goles de alargue/penales <strong>no suman</strong>.
         </div>
         <div class="form-card" style="margin-bottom:1rem;">
           <label>Selecciona tu nombre</label>
@@ -1501,22 +1503,29 @@ select option { background:#fff; }
           <div class="score-row"><span>✓ Resultado correcto (W/E/L)</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
           <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>⚽ Marcador exacto (ej: 2–1)</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase de Grupos</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase de Grupos — en vivo, partido a partido</div>
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
-          <div class="score-row"><span>🥇 1° lugar de grupo correcto</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
-          <div class="score-row"><span>🥈 2° lugar de grupo correcto</span><span style="color:var(--verde);font-weight:700;">+1 pt</span></div>
+          <div class="score-row"><span>🥇 Ganó tu equipo predicho como 1°</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
+          <div class="score-row"><span>🥈 Ganó tu equipo predicho como 2°</span><span style="color:var(--verde);font-weight:700;">+1 pt</span></div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase Eliminatoria</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Bonus fin de fase de grupos</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
+          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>🥇 Acierto exacto 1° lugar del grupo</span><span style="color:var(--verde);font-weight:700;">+3 pts</span></div>
+          <div class="score-row"><span>🥈 Acierto exacto 2° lugar del grupo</span><span style="color:var(--dorado);font-weight:700;">+2 pts</span></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase Eliminatoria — marcador exacto por partido</div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <div class="score-row"><span>Equipo en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
-          <div class="score-row"><span>Finalista (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
+          <div class="score-row"><span>Gol local correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row"><span>Gol visita correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>Tendencia (ganador o empate) correcta</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);">
-            <span>🏆 Campeón correcto</span>
-            <span style="color:var(--dorado);font-weight:700;">+80 pts</span>
+            <span>⭐ Marcador exacto (máximo por partido)</span>
+            <span style="color:var(--dorado);font-weight:700;">4 pts</span>
           </div>
         </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
+          Si un partido de llaves va a alargue o penales, el resultado a los 90' sigue siendo empate para el puntaje — los goles del alargue/penales no suman.
+        </p>
       </div>
     </div>
 
@@ -1553,33 +1562,48 @@ select option { background:#fff; }
 
       <div class="form-card">
         <div class="form-title">⚽ Fase de Grupos — Puntos</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Por cada grupo (A hasta L), predices qué equipo termina primero y segundo.</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Por cada grupo (A hasta L), predices qué equipo termina primero y segundo. Sumas puntos de dos formas: en vivo, partido a partido, y con un bonus al terminar el grupo.</p>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:4px 0 6px;">En vivo — cada vez que juega un equipo de tu top-2</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
           <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);">
-            <span>🥇 1° lugar del grupo correcto</span>
+            <span>🥇 Ganó el equipo que predijiste como 1°</span>
             <span style="color:var(--verde);font-weight:800;font-size:15px;">+2 pts</span>
           </div>
           <div class="score-row" style="background:rgba(16,163,74,0.05);border:1px solid rgba(16,163,74,0.15);">
-            <span>🥈 2° lugar del grupo correcto</span>
+            <span>🥈 Ganó el equipo que predijiste como 2°</span>
             <span style="color:var(--verde);font-weight:800;font-size:15px;">+1 pt</span>
           </div>
         </div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:4px 0 6px;">Bonus al terminar el grupo</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);">
+            <span>🥇 Acertaste exacto el 1° lugar</span>
+            <span style="color:var(--verde);font-weight:800;font-size:15px;">+3 pts</span>
+          </div>
+          <div class="score-row" style="background:rgba(16,163,74,0.05);border:1px solid rgba(16,163,74,0.15);">
+            <span>🥈 Acertaste exacto el 2° lugar</span>
+            <span style="color:var(--dorado);font-weight:800;font-size:15px;">+2 pts</span>
+          </div>
+        </div>
         <div style="margin-top:1rem;padding:10px 13px;background:#f9fafb;border-radius:9px;font-size:12px;color:var(--muted);">
-          Máximo en grupos: <strong style="color:var(--rosa);">12 grupos × 3 pts = 36 pts</strong>
+          Bonus máximo en grupos: <strong style="color:var(--rosa);">12 grupos × 5 pts = 60 pts</strong> (más lo que sumes en vivo durante la fase).
         </div>
       </div>
 
       <div class="form-card">
         <div class="form-title">🏆 Fase Eliminatoria — Puntos</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">A partir de 16avos predices el <strong>marcador exacto</strong> de cada partido (a los 90 minutos).</p>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <div class="score-row"><span>Equipo correcto en Octavos (16 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo correcto en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo correcto en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
-          <div class="score-row"><span>Finalista correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
+          <div class="score-row"><span>Gol local correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row"><span>Gol visita correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);"><span>Tendencia correcta (ganador o empate a los 90')</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);border:1px solid rgba(245,188,0,0.25);">
-            <span>🏆 Campeón del Mundo correcto</span>
-            <span style="color:var(--dorado);font-weight:800;font-size:15px;">+80 pts</span>
+            <span>⭐ Marcador exacto — máximo por partido</span>
+            <span style="color:var(--dorado);font-weight:800;font-size:15px;">4 pts</span>
           </div>
+        </div>
+        <div style="margin-top:1rem;padding:10px 13px;background:#f9fafb;border-radius:9px;font-size:12px;color:var(--muted);line-height:1.6;">
+          ⏱️ <strong>Alargue y penales:</strong> si el partido termina empatado a los 90' y se define después, el resultado que cuenta para el puntaje sigue siendo el empate a los 90' — los goles de alargue/penales no se contabilizan.
         </div>
       </div>
 
@@ -1607,12 +1631,13 @@ select option { background:#fff; }
         <div class="form-title">💡 Ejemplo Práctico</div>
         <div style="font-size:13px;line-height:1.8;color:var(--text);">
           <p>Predices en el <strong>Grupo A</strong>: 1° México, 2° Corea del Sur.</p>
-          <p>Al terminar el grupo, México quedó 1° ✅ → <strong style="color:var(--verde);">+2 pts</strong></p>
-          <p>Corea del Sur quedó 3° ❌ → 0 pts</p><br>
-          <p>Predices que <strong>Argentina</strong> llega a Semis.</p>
-          <p>Argentina llega a Semis ✅ → <strong style="color:var(--verde);">+30 pts</strong></p><br>
-          <p>Predices <strong>México 2–1 Sudáfrica</strong>, el resultado real es 2–1 ✅ → <strong style="color:var(--verde);">+2 pts</strong> (marcador exacto)</p><br>
-          <p style="color:var(--muted);font-size:12px;">💡 Los pronósticos cierran el 11 de junio. ¡Guarda antes!</p>
+          <p>México gana su primer partido de grupo ✅ → <strong style="color:var(--verde);">+2 pts</strong> (en vivo, era tu 1°)</p>
+          <p>Al terminar el grupo, México quedó 1° ✅ → <strong style="color:var(--verde);">+3 pts</strong> (bonus exacto)</p>
+          <p>Corea del Sur quedó 3° ❌ → 0 pts de bonus</p><br>
+          <p>Predices <strong>México 2–1 Sudáfrica</strong> (partido de grupos), el resultado real es 2–1 ✅ → <strong style="color:var(--verde);">+2 pts</strong> (marcador exacto)</p><br>
+          <p>En 16avos predices <strong>Argentina 2–0 Cabo Verde</strong>. El resultado real a los 90' es 2–0 ✅ → <strong style="color:var(--verde);">+4 pts</strong> (1 gol local + 1 gol visita + 2 tendencia)</p>
+          <p>Si el resultado real hubiese sido 1–1 y Argentina gana en penales, tu predicción de 2–0 solo suma <strong style="color:var(--dorado);">0 pts</strong> (ni los goles ni la tendencia coinciden con el 90').</p><br>
+          <p style="color:var(--muted);font-size:12px;">💡 Cada fase tiene su propio plazo de cierre — revisa la fecha en cada pestaña antes de que empiece.</p>
         </div>
       </div>
     </div>
@@ -1623,8 +1648,10 @@ select option { background:#fff; }
         <div class="view-title">⚙️ Admin</div>
       </div>
 
+      <div class="proy-group-tabs" id="admin-section-tabs" style="margin-bottom:12px;"></div>
+
       <!-- PARTICIPANTES -->
-      <div class="admin-card" style="border-color:rgba(233,30,140,0.25);">
+      <div class="admin-card admin-panel" id="admin-panel-players" style="border-color:rgba(233,30,140,0.25);">
         <div class="admin-title" style="display:flex;align-items:center;justify-content:space-between;">
           <span>👥 Participantes inscritos</span>
           <button onclick="invalidarCache();cargarDatos(true);" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;">🔄 Recargar</button>
@@ -1635,7 +1662,7 @@ select option { background:#fff; }
       </div>
 
       <!-- API SYNC -->
-      <div class="admin-card" style="border-color:rgba(96,200,255,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-sync" style="border-color:rgba(96,200,255,0.2);">
         <div class="admin-title" style="color:#60c8ff;">🔌 Sincronización con API</div>
         <div class="api-badge api-off" id="api-badge">
           <div class="api-dot"></div>
@@ -1679,7 +1706,7 @@ select option { background:#fff; }
       </div>
 
       <!-- RESULTADOS DE GRUPOS -->
-      <div class="admin-card" style="border-color:rgba(245,188,0,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-grupos" style="border-color:rgba(245,188,0,0.2);">
         <div class="admin-title">🏟️ Resultados Finales de Grupos</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Ingresa quién terminó 1° y 2° en cada grupo al finalizar la fase de grupos.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="admin-grupos-grid"></div>
@@ -1688,7 +1715,7 @@ select option { background:#fff; }
       </div>
 
       <!-- RESULTADO MANUAL -->
-      <div class="admin-card" style="border-color:rgba(245,188,0,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-manual" style="border-color:rgba(245,188,0,0.2);">
         <div class="admin-title">✍️ Ingreso Manual de Resultados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Actualiza a medida que avanza el torneo.</p>
         <label>8 Mejores Terceros (en orden de bracket, separados por coma)</label>
@@ -1710,7 +1737,7 @@ select option { background:#fff; }
       </div>
 
       <!-- MARCADORES DE PARTIDOS -->
-      <div class="admin-card" style="border-color:rgba(22,163,74,0.25);">
+      <div class="admin-card admin-panel" id="admin-panel-scores" style="border-color:rgba(22,163,74,0.25);">
         <div class="admin-title" style="color:var(--verde);">⚽ Marcadores de Partidos Jugados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;">Ingresa el resultado de cada partido que ya se jugó. Solo afecta puntos de marcador exacto/resultado.</p>
         <div class="proy-group-tabs" id="admin-scores-tabs" style="margin-bottom:10px;"></div>
@@ -1720,7 +1747,7 @@ select option { background:#fff; }
       </div>
 
       <!-- RESULTADOS FASE ELIMINATORIA KO -->
-      <div class="admin-card" style="border-color:rgba(245,188,0,0.3);">
+      <div class="admin-card admin-panel" id="admin-panel-ko" style="border-color:rgba(245,188,0,0.3);">
         <div class="admin-title" style="color:var(--dorado);">🏆 Fase Eliminatoria KO — Configuración y Resultados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;">
           Define los cruces de cada ronda, abre/cierra predicciones y registra resultados (con flag si fue a alargue/penales).
@@ -1785,7 +1812,7 @@ select option { background:#fff; }
         </div>
       </div>
 
-      <div class="admin-card" style="border-color:rgba(255,61,90,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-danger" style="border-color:rgba(255,61,90,0.2);">
         <div class="admin-title" style="color:var(--rojo);">⚠️ Zona de riesgo</div>
         <button class="btn btn-danger btn-full" onclick="resetear()">🗑️ Borrar todos los datos</button>
       </div>
@@ -1803,16 +1830,24 @@ select option { background:#fff; }
           <div style="font-weight:700;color:var(--rosa);margin-bottom:4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Partidos (72 partidos de grupos)</div>
           <div class="score-row"><span>Marcador exacto (ej: 2-1 y salió 2-1)</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
           <div class="score-row"><span>Resultado correcto (ganador o empate, sin el marcador exacto)</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
-          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Grupos (1° y 2° de cada grupo)</div>
-          <div class="score-row"><span>Acierto exacto 1° lugar del grupo</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
-          <div class="score-row"><span>Acierto exacto 2° lugar del grupo</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
-          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Eliminatorias</div>
-          <div class="score-row"><span>Equipo clasifica a Octavos (16avos)</span><span style="color:var(--verde);font-weight:800;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo clasifica a Cuartos de Final</span><span style="color:var(--verde);font-weight:800;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo clasifica a Semifinal</span><span style="color:var(--verde);font-weight:800;">+30 pts</span></div>
-          <div class="score-row"><span>Equipo llega a la Final</span><span style="color:var(--verde);font-weight:800;">+40 pts</span></div>
-          <div class="score-row" style="background:rgba(245,188,0,0.08);"><span>🏆 Campeón del mundo</span><span style="color:var(--dorado);font-weight:800;">+80 pts</span></div>
+
+          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Grupos — en vivo, partido a partido</div>
+          <div class="score-row"><span>Ganó el equipo que predijiste como 1°</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
+          <div class="score-row"><span>Ganó el equipo que predijiste como 2°</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
+
+          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Grupos — bonus al terminar la fase</div>
+          <div class="score-row"><span>Acierto exacto 1° lugar del grupo</span><span style="color:var(--verde);font-weight:800;">+3 pts</span></div>
+          <div class="score-row"><span>Acierto exacto 2° lugar del grupo</span><span style="color:var(--dorado);font-weight:800;">+2 pts</span></div>
+
+          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Eliminatorias — marcador exacto por partido (16avos a la final)</div>
+          <div class="score-row"><span>Gol local correcto</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
+          <div class="score-row"><span>Gol visita correcto</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
+          <div class="score-row"><span>Tendencia correcta (ganador o empate a los 90')</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
+          <div class="score-row" style="background:rgba(245,188,0,0.08);"><span>⭐ Marcador exacto — máximo por partido</span><span style="color:var(--dorado);font-weight:800;">4 pts</span></div>
         </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px;">
+          ⏱️ <strong>Alargue y penales:</strong> si un partido de llaves termina empatado a los 90' y se define después, el resultado que cuenta para el puntaje sigue siendo el empate a los 90' — los goles de alargue/penales no se contabilizan.
+        </p>
       </div>
 
       <div class="form-card">
@@ -1874,10 +1909,9 @@ select option { background:#fff; }
         <div class="form-title">📋 Reglas Generales</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted);line-height:1.7;">
           <div>• La inscripción tiene un costo de <strong style="color:var(--text);">$10.000 CLP</strong> por persona. El pago se coordina directamente con el administrador.</div>
-          <div>• Cada participante debe completar sus pronósticos en <strong style="color:var(--text);">2 etapas</strong> antes del <strong style="color:var(--text);">11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.<br>
-            <span style="font-size:12px;">— Etapa 1: marcadores exactos de los 72 partidos de grupos<br>
-            — Etapa 2: completar las llaves hasta el campeón (el cuadro se arma con los clasificados reales)</span></div>
-          <div>• Los pronósticos de cada etapa deben guardarse por separado usando los botones correspondientes.</div>
+          <div>• Los pronósticos de los <strong style="color:var(--text);">72 partidos de grupos</strong> deben guardarse antes del <strong style="color:var(--text);">11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.</div>
+          <div>• Las predicciones de <strong style="color:var(--text);">llaves (16avos, 8vos, 4tos, semis, final)</strong> se habilitan ronda por ronda, apenas se conocen los cruces reales de esa ronda, y cierran automáticamente antes del primer partido de la ronda.</div>
+          <div>• Los pronósticos de cada ronda deben guardarse por separado usando los botones correspondientes.</div>
           <div>• Los resultados oficiales se ingresan por el administrador. En caso de error en el ingreso, el administrador puede corregirlos antes del cómputo final.</div>
           <div>• El ranking se actualiza automáticamente cada vez que el administrador ingresa nuevos resultados.</div>
           <div>• Solo participan en el reparto quienes hayan pagado su entrada y tengan pronósticos guardados.</div>
@@ -1973,6 +2007,8 @@ let SCRIPT_URL = DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
+// Kickoff de la Gran Final (MetLife Stadium, 19 jul 2026, 15:00 ET).
+const FECHA_FIN_MUNDIAL = new Date('2026-07-19T15:00:00-04:00');
 const FECHA_APERTURA_LLAVES = new Date('2026-06-27T00:00:00-04:00');
 const MONTO_ENTRADA = 10000;
 const APP_URL = 'https://tingado.github.io/PollaMundial2026';
@@ -2148,6 +2184,7 @@ const DATOS_2026 = [
 // ══════════════════════════════════════════════════════════
 let state = { jugadores:[], pronosticos:{}, resultados:{}, scores:{}, scoresKO:{}, koConfig:{} };
 let matchView = 'day';
+let partidosRound = 'grupos'; // 'grupos' | 'r32' | 'r16' | 'qf' | 'sf' | 'fin'
 
 // ══════════════════════════════════════════════════════════
 // CACHÉ
@@ -2205,23 +2242,85 @@ function setLoad(id,on,txt='Guardando...'){
 // ══════════════════════════════════════════════════════════
 // COUNTDOWN
 // ══════════════════════════════════════════════════════════
+// Cuenta partidos jugados (con resultado real) vs el total del torneo (104).
+function contarPartidosRestantes(){
+  const totalGrupos = PARTIDOS.length;
+  const totalKO = Object.values(KO_ROUND_SIZES).reduce((a,b)=>a+b,0);
+  const total = totalGrupos + totalKO;
+
+  const scores = state.scores||{};
+  const jugadosGrupos = PARTIDOS.filter(p=>{
+    const r = scores[p.local+'|'+p.visita] || scores[p.id];
+    return r && r.gL!=null && r.gV!=null;
+  }).length;
+
+  const scoresKO = state.scoresKO||{};
+  const jugadosKO = KO_ROUNDS.reduce((acc,rnd)=>{
+    const arr = scoresKO[rnd]||[];
+    return acc + arr.filter(r=>r && r.gL!=null && r.gV!=null).length;
+  },0);
+
+  const jugados = jugadosGrupos + jugadosKO;
+  return { total, jugados, restantes: total - jugados };
+}
+
 function initCountdown(){
   function tick(){
-    const diff = FECHA_INICIO - new Date();
-    if(diff <= 0){
-      $id('cd-units').innerHTML = '<div class="cd-started">⚽ ¡EL MUNDIAL YA EMPEZÓ!</div>';
+    const now = new Date();
+    const label = $id('cd-label');
+    const partidosEl = $id('cd-partidos');
+
+    if(now < FECHA_INICIO){
+      // Antes del Mundial: cuenta regresiva al partido inaugural.
+      label.textContent = '⏱ Inicio del Mundial';
+      partidosEl.style.display = 'none';
+      const diff = FECHA_INICIO - now;
+      renderUnidades(diff);
       return;
     }
+
+    if(now < FECHA_FIN_MUNDIAL){
+      // Mundial en curso: cuenta regresiva a la Gran Final + partidos restantes.
+      label.textContent = '🏁 Faltan para la Gran Final';
+      const diff = FECHA_FIN_MUNDIAL - now;
+      renderUnidades(diff);
+      const { total, jugados, restantes } = contarPartidosRestantes();
+      partidosEl.style.display = '';
+      partidosEl.textContent = total>0
+        ? `⚽ ${restantes} de ${total} partidos por jugar (${jugados} jugados)`
+        : '';
+      return;
+    }
+
+    // El Mundial terminó.
+    label.textContent = '';
+    partidosEl.style.display = 'none';
+    $id('cd-units').innerHTML = '<div class="cd-started">🏆 ¡EL MUNDIAL TERMINÓ! Gracias por participar</div>';
+  }
+
+  function renderUnidades(diff){
     const d = Math.floor(diff/86400000);
     const h = Math.floor((diff%86400000)/3600000);
     const m = Math.floor((diff%3600000)/60000);
     const s = Math.floor((diff%60000)/1000);
     const pad = n => String(n).padStart(2,'0');
+    // Puede haberse reemplazado por el mensaje de "terminó" en un tick previo.
+    if(!$id('cd-d')){
+      $id('cd-units').innerHTML = `
+        <div class="cd-unit"><span class="cd-num" id="cd-d">--</span><span class="cd-sub">días</span></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span class="cd-num" id="cd-h">--</span><span class="cd-sub">horas</span></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span class="cd-num" id="cd-m">--</span><span class="cd-sub">min</span></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span class="cd-num" id="cd-s">--</span><span class="cd-sub">seg</span></div>`;
+    }
     $id('cd-d').textContent = d;
     $id('cd-h').textContent = pad(h);
     $id('cd-m').textContent = pad(m);
     $id('cd-s').textContent = pad(s);
   }
+
   tick();
   setInterval(tick, 1000);
 }
@@ -2313,6 +2412,35 @@ function irAMisPronos(){
 function openMoreSheet(){ $id('more-overlay').classList.add('open'); }
 function closeMoreSheet(){ $id('more-overlay').classList.remove('open'); }
 
+// ══════════════════════════════════════════════════════════
+// ADMIN — pestañas de sección (solo reorganiza la UI, no toca datos)
+// ══════════════════════════════════════════════════════════
+const ADMIN_SECTIONS = [
+  { id:'players', label:'👥 Jugadores' },
+  { id:'sync',    label:'🔌 API Sync' },
+  { id:'grupos',  label:'🏟️ Grupos' },
+  { id:'manual',  label:'✍️ Manual' },
+  { id:'scores',  label:'⚽ Marcadores' },
+  { id:'ko',      label:'🏆 Llaves' },
+  { id:'danger',  label:'⚠️ Riesgo' },
+];
+let _adminActiveTab = 'players';
+function renderAdminSectionTabs(){
+  const cont=$id('admin-section-tabs'); if(!cont) return;
+  cont.innerHTML = ADMIN_SECTIONS.map(s=>
+    `<button class="proy-tab${_adminActiveTab===s.id?' active':''}" onclick="setAdminTab('${s.id}')">${s.label}</button>`
+  ).join('');
+  setAdminTab(_adminActiveTab, true);
+}
+function setAdminTab(id, skipTabRender){
+  _adminActiveTab = id;
+  ADMIN_SECTIONS.forEach(s=>{
+    const panel=$id('admin-panel-'+s.id);
+    if(panel) panel.style.display = (s.id===id) ? '' : 'none';
+  });
+  if(!skipTabRender) renderAdminSectionTabs();
+}
+
 function showView(v, el){
   if(v==='admin'){
     const ok=sessionStorage.getItem('adminOk')==='1';
@@ -2330,7 +2458,7 @@ function showView(v, el){
   cargarDatos();
   if(v==='proyecciones') renderProyecciones();
   if(v==='inscripcion') cargarInscripcion();
-  if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); renderAdminKO(); }
+  if(v==='admin'){ renderAdminSectionTabs(); renderAdminScores(); cargarAutoSyncStatus(); renderAdminKO(); }
   if(v==='partidos') actualizarBarraAdmin();
   if(v==='simulador') initSimulador();
   if(v==='eliminatorias'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); startKORefresh(); }
@@ -2675,8 +2803,72 @@ function renderMatchCard(p){
     </div>`;
 }
 
+// Pestañas de ronda en la vista Partidos: Grupos + cada ronda de llaves.
+// Solo cambia qué se muestra (lectura); no toca predicciones ni puntajes.
+const PARTIDOS_ROUND_LABELS = {grupos:'Grupos', r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', fin:'Final'};
+function renderPartidosRoundTabs(){
+  const cont=$id('partidos-round-tabs'); if(!cont) return;
+  const rounds=['grupos',...KO_ROUNDS];
+  cont.innerHTML = rounds.map(r=>
+    `<button class="proy-tab${partidosRound===r?' active':''}" onclick="setPartidosRound('${r}')">${PARTIDOS_ROUND_LABELS[r]}</button>`
+  ).join('');
+}
+function setPartidosRound(rnd){
+  partidosRound = rnd;
+  renderPartidosRoundTabs();
+  $id('partidos-day-group-tabs').style.display = rnd==='grupos' ? '' : 'none';
+  renderMatches();
+}
+
+// Tarjeta de solo lectura para un partido de llaves (fixture + resultado si existe).
+function renderKOMatchCardReadOnly(rnd, slot, res){
+  const local = slot?.local || '';
+  const visita = slot?.visita || '';
+  const conocidos = local && visita;
+  const hasScore = res && res.gL!=null && res.gV!=null;
+  const aetTag = hasScore && res.aet ? ' <span style="font-size:10px;color:var(--dorado);">(ET/Pen)</span>' : '';
+  const estado = hasScore
+    ? `✅ Finalizado${aetTag}`
+    : (conocidos ? '⏳ Por jugarse' : '🔒 Cruce pendiente');
+  return `
+    <div class="match-card">
+      <div class="match-meta">
+        <span class="group-badge">${KO_ROUND_LABELS[rnd]}</span>
+        <span>${estado}</span>
+      </div>
+      <div class="match-teams">
+        <div class="match-team">
+          <div class="match-flag">${local?flag(local):'🏳️'}</div>
+          <div class="match-team-name">${esc(local||'Por definir')}</div>
+          <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gL:'-'}</div>
+        </div>
+        <div class="match-team">
+          <div class="match-flag">${visita?flag(visita):'🏳️'}</div>
+          <div class="match-team-name">${esc(visita||'Por definir')}</div>
+          <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gV:'-'}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderMatches(){
   const cont=$id('matches-container');
+
+  if(partidosRound!=='grupos'){
+    const rnd=partidosRound;
+    const slots=(state.koConfig?.rounds?.[rnd]?.slots)||[];
+    const results=(state.scoresKO||{})[rnd]||[];
+    if(!slots.length){
+      cont.innerHTML=`<div style="color:var(--muted);text-align:center;padding:2rem;font-size:13px;">Los cruces de ${KO_ROUND_LABELS[rnd]} aún no se han publicado.</div>`;
+      return;
+    }
+    cont.innerHTML=`<div class="day-section">
+      <div class="day-label">🏆 ${KO_ROUND_LABELS[rnd]}</div>
+      <div class="matches-grid">${slots.map((s,i)=>renderKOMatchCardReadOnly(rnd,s,results[i])).join('')}</div>
+    </div>`;
+    return;
+  }
+
   if(matchView==='day'){
     const byDay={};
     PARTIDOS.forEach(p=>{ if(!byDay[p.fecha])byDay[p.fecha]=[]; byDay[p.fecha].push(p); });
@@ -5277,6 +5469,7 @@ async function sincronizar(){
 initFacts();
 initCountdown();
 renderHome();
+renderPartidosRoundTabs();
 renderMatches();
 renderGroups();
 startKORefresh(); // timer para el banner de fase eliminatoria en la carátula
@@ -5436,6 +5629,7 @@ const KO_R32_SCHEDULE = [
 // substring normalizado (tolera variantes de nombre: "Bosnia y Herzegovina",
 // "Congo" vs "RD Congo", etc.)
 function getR32Kickoff(local, visita) {
+  if (!local || !visita) return null;
   const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   const nL = norm(local), nV = norm(visita);
   for(const e of KO_R32_SCHEDULE){
