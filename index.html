@@ -1359,9 +1359,9 @@ select option { background:#fff; }
       <!-- ── PESTAÑA PREDICCIONES KO (nuevo sistema) ── -->
       <div id="elim-tab-ko">
         <div style="background:rgba(245,188,0,0.07);border:1px solid rgba(245,188,0,0.2);border-radius:12px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:var(--muted);line-height:1.5;">
-          ⚽ Nuevo sistema: predice el <strong>marcador exacto</strong> de cada partido.<br>
-          +1 gol local · +1 gol visita · +2 ganador = <strong style="color:var(--dorado);">4 pts</strong> máximo por partido.
-          Si va a alargue/penales, solo puntúa el ganador (+2).
+          ⚽ Predice el <strong>marcador exacto</strong> de cada partido (a los 90').<br>
+          +1 gol local correcto · +1 gol visita correcto · +2 tendencia (ganador o empate) = <strong style="color:var(--dorado);">4 pts</strong> máximo por partido.<br>
+          Si el partido termina empatado y se define en alargue/penales, el resultado a los 90' sigue siendo empate para el puntaje — los goles de alargue/penales <strong>no suman</strong>.
         </div>
         <div class="form-card" style="margin-bottom:1rem;">
           <label>Selecciona tu nombre</label>
@@ -1503,22 +1503,29 @@ select option { background:#fff; }
           <div class="score-row"><span>✓ Resultado correcto (W/E/L)</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
           <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>⚽ Marcador exacto (ej: 2–1)</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase de Grupos</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase de Grupos — en vivo, partido a partido</div>
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
-          <div class="score-row"><span>🥇 1° lugar de grupo correcto</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
-          <div class="score-row"><span>🥈 2° lugar de grupo correcto</span><span style="color:var(--verde);font-weight:700;">+1 pt</span></div>
+          <div class="score-row"><span>🥇 Ganó tu equipo predicho como 1°</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
+          <div class="score-row"><span>🥈 Ganó tu equipo predicho como 2°</span><span style="color:var(--verde);font-weight:700;">+1 pt</span></div>
         </div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase Eliminatoria</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Bonus fin de fase de grupos</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;">
+          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>🥇 Acierto exacto 1° lugar del grupo</span><span style="color:var(--verde);font-weight:700;">+3 pts</span></div>
+          <div class="score-row"><span>🥈 Acierto exacto 2° lugar del grupo</span><span style="color:var(--dorado);font-weight:700;">+2 pts</span></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Fase Eliminatoria — marcador exacto por partido</div>
         <div style="display:flex;flex-direction:column;gap:5px;">
-          <div class="score-row"><span>Equipo en 16avos (32 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
-          <div class="score-row"><span>Finalista (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
+          <div class="score-row"><span>Gol local correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row"><span>Gol visita correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row" style="background:rgba(0,200,83,0.07);"><span>Tendencia (ganador o empate) correcta</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);">
-            <span>🏆 Campeón correcto</span>
-            <span style="color:var(--dorado);font-weight:700;">+80 pts</span>
+            <span>⭐ Marcador exacto (máximo por partido)</span>
+            <span style="color:var(--dorado);font-weight:700;">4 pts</span>
           </div>
         </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
+          Si un partido de llaves va a alargue o penales, el resultado a los 90' sigue siendo empate para el puntaje — los goles del alargue/penales no suman.
+        </p>
       </div>
     </div>
 
@@ -1555,33 +1562,48 @@ select option { background:#fff; }
 
       <div class="form-card">
         <div class="form-title">⚽ Fase de Grupos — Puntos</div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Por cada grupo (A hasta L), predices qué equipo termina primero y segundo.</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Por cada grupo (A hasta L), predices qué equipo termina primero y segundo. Sumas puntos de dos formas: en vivo, partido a partido, y con un bonus al terminar el grupo.</p>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:4px 0 6px;">En vivo — cada vez que juega un equipo de tu top-2</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">
           <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);">
-            <span>🥇 1° lugar del grupo correcto</span>
+            <span>🥇 Ganó el equipo que predijiste como 1°</span>
             <span style="color:var(--verde);font-weight:800;font-size:15px;">+2 pts</span>
           </div>
           <div class="score-row" style="background:rgba(16,163,74,0.05);border:1px solid rgba(16,163,74,0.15);">
-            <span>🥈 2° lugar del grupo correcto</span>
+            <span>🥈 Ganó el equipo que predijiste como 2°</span>
             <span style="color:var(--verde);font-weight:800;font-size:15px;">+1 pt</span>
           </div>
         </div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:4px 0 6px;">Bonus al terminar el grupo</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);">
+            <span>🥇 Acertaste exacto el 1° lugar</span>
+            <span style="color:var(--verde);font-weight:800;font-size:15px;">+3 pts</span>
+          </div>
+          <div class="score-row" style="background:rgba(16,163,74,0.05);border:1px solid rgba(16,163,74,0.15);">
+            <span>🥈 Acertaste exacto el 2° lugar</span>
+            <span style="color:var(--dorado);font-weight:800;font-size:15px;">+2 pts</span>
+          </div>
+        </div>
         <div style="margin-top:1rem;padding:10px 13px;background:#f9fafb;border-radius:9px;font-size:12px;color:var(--muted);">
-          Máximo en grupos: <strong style="color:var(--rosa);">12 grupos × 3 pts = 36 pts</strong>
+          Bonus máximo en grupos: <strong style="color:var(--rosa);">12 grupos × 5 pts = 60 pts</strong> (más lo que sumes en vivo durante la fase).
         </div>
       </div>
 
       <div class="form-card">
         <div class="form-title">🏆 Fase Eliminatoria — Puntos</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">A partir de 16avos predices el <strong>marcador exacto</strong> de cada partido (a los 90 minutos).</p>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <div class="score-row"><span>Equipo correcto en Octavos (16 equipos)</span><span style="color:var(--verde);font-weight:700;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo correcto en Cuartos (8 equipos)</span><span style="color:var(--verde);font-weight:700;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo correcto en Semis (4 equipos)</span><span style="color:var(--verde);font-weight:700;">+30 pts</span></div>
-          <div class="score-row"><span>Finalista correcto (2 finalistas)</span><span style="color:var(--dorado);font-weight:700;">+40 pts</span></div>
+          <div class="score-row"><span>Gol local correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row"><span>Gol visita correcto</span><span style="color:var(--dorado);font-weight:700;">+1 pt</span></div>
+          <div class="score-row" style="background:rgba(16,163,74,0.08);border:1px solid rgba(16,163,74,0.2);"><span>Tendencia correcta (ganador o empate a los 90')</span><span style="color:var(--verde);font-weight:700;">+2 pts</span></div>
           <div class="score-row" style="background:rgba(245,188,0,0.08);border:1px solid rgba(245,188,0,0.25);">
-            <span>🏆 Campeón del Mundo correcto</span>
-            <span style="color:var(--dorado);font-weight:800;font-size:15px;">+80 pts</span>
+            <span>⭐ Marcador exacto — máximo por partido</span>
+            <span style="color:var(--dorado);font-weight:800;font-size:15px;">4 pts</span>
           </div>
+        </div>
+        <div style="margin-top:1rem;padding:10px 13px;background:#f9fafb;border-radius:9px;font-size:12px;color:var(--muted);line-height:1.6;">
+          ⏱️ <strong>Alargue y penales:</strong> si el partido termina empatado a los 90' y se define después, el resultado que cuenta para el puntaje sigue siendo el empate a los 90' — los goles de alargue/penales no se contabilizan.
         </div>
       </div>
 
@@ -1609,12 +1631,13 @@ select option { background:#fff; }
         <div class="form-title">💡 Ejemplo Práctico</div>
         <div style="font-size:13px;line-height:1.8;color:var(--text);">
           <p>Predices en el <strong>Grupo A</strong>: 1° México, 2° Corea del Sur.</p>
-          <p>Al terminar el grupo, México quedó 1° ✅ → <strong style="color:var(--verde);">+2 pts</strong></p>
-          <p>Corea del Sur quedó 3° ❌ → 0 pts</p><br>
-          <p>Predices que <strong>Argentina</strong> llega a Semis.</p>
-          <p>Argentina llega a Semis ✅ → <strong style="color:var(--verde);">+30 pts</strong></p><br>
-          <p>Predices <strong>México 2–1 Sudáfrica</strong>, el resultado real es 2–1 ✅ → <strong style="color:var(--verde);">+2 pts</strong> (marcador exacto)</p><br>
-          <p style="color:var(--muted);font-size:12px;">💡 Los pronósticos cierran el 11 de junio. ¡Guarda antes!</p>
+          <p>México gana su primer partido de grupo ✅ → <strong style="color:var(--verde);">+2 pts</strong> (en vivo, era tu 1°)</p>
+          <p>Al terminar el grupo, México quedó 1° ✅ → <strong style="color:var(--verde);">+3 pts</strong> (bonus exacto)</p>
+          <p>Corea del Sur quedó 3° ❌ → 0 pts de bonus</p><br>
+          <p>Predices <strong>México 2–1 Sudáfrica</strong> (partido de grupos), el resultado real es 2–1 ✅ → <strong style="color:var(--verde);">+2 pts</strong> (marcador exacto)</p><br>
+          <p>En 16avos predices <strong>Argentina 2–0 Cabo Verde</strong>. El resultado real a los 90' es 2–0 ✅ → <strong style="color:var(--verde);">+4 pts</strong> (1 gol local + 1 gol visita + 2 tendencia)</p>
+          <p>Si el resultado real hubiese sido 1–1 y Argentina gana en penales, tu predicción de 2–0 solo suma <strong style="color:var(--dorado);">0 pts</strong> (ni los goles ni la tendencia coinciden con el 90').</p><br>
+          <p style="color:var(--muted);font-size:12px;">💡 Cada fase tiene su propio plazo de cierre — revisa la fecha en cada pestaña antes de que empiece.</p>
         </div>
       </div>
     </div>
@@ -1807,16 +1830,24 @@ select option { background:#fff; }
           <div style="font-weight:700;color:var(--rosa);margin-bottom:4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Partidos (72 partidos de grupos)</div>
           <div class="score-row"><span>Marcador exacto (ej: 2-1 y salió 2-1)</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
           <div class="score-row"><span>Resultado correcto (ganador o empate, sin el marcador exacto)</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
-          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Grupos (1° y 2° de cada grupo)</div>
-          <div class="score-row"><span>Acierto exacto 1° lugar del grupo</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
-          <div class="score-row"><span>Acierto exacto 2° lugar del grupo</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
-          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Eliminatorias</div>
-          <div class="score-row"><span>Equipo clasifica a Octavos (16avos)</span><span style="color:var(--verde);font-weight:800;">+10 pts</span></div>
-          <div class="score-row"><span>Equipo clasifica a Cuartos de Final</span><span style="color:var(--verde);font-weight:800;">+20 pts</span></div>
-          <div class="score-row"><span>Equipo clasifica a Semifinal</span><span style="color:var(--verde);font-weight:800;">+30 pts</span></div>
-          <div class="score-row"><span>Equipo llega a la Final</span><span style="color:var(--verde);font-weight:800;">+40 pts</span></div>
-          <div class="score-row" style="background:rgba(245,188,0,0.08);"><span>🏆 Campeón del mundo</span><span style="color:var(--dorado);font-weight:800;">+80 pts</span></div>
+
+          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Grupos — en vivo, partido a partido</div>
+          <div class="score-row"><span>Ganó el equipo que predijiste como 1°</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
+          <div class="score-row"><span>Ganó el equipo que predijiste como 2°</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
+
+          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Grupos — bonus al terminar la fase</div>
+          <div class="score-row"><span>Acierto exacto 1° lugar del grupo</span><span style="color:var(--verde);font-weight:800;">+3 pts</span></div>
+          <div class="score-row"><span>Acierto exacto 2° lugar del grupo</span><span style="color:var(--dorado);font-weight:800;">+2 pts</span></div>
+
+          <div style="font-weight:700;color:var(--rosa);margin:8px 0 4px;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;">Eliminatorias — marcador exacto por partido (16avos a la final)</div>
+          <div class="score-row"><span>Gol local correcto</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
+          <div class="score-row"><span>Gol visita correcto</span><span style="color:var(--dorado);font-weight:800;">+1 pt</span></div>
+          <div class="score-row"><span>Tendencia correcta (ganador o empate a los 90')</span><span style="color:var(--verde);font-weight:800;">+2 pts</span></div>
+          <div class="score-row" style="background:rgba(245,188,0,0.08);"><span>⭐ Marcador exacto — máximo por partido</span><span style="color:var(--dorado);font-weight:800;">4 pts</span></div>
         </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px;">
+          ⏱️ <strong>Alargue y penales:</strong> si un partido de llaves termina empatado a los 90' y se define después, el resultado que cuenta para el puntaje sigue siendo el empate a los 90' — los goles de alargue/penales no se contabilizan.
+        </p>
       </div>
 
       <div class="form-card">
@@ -1878,10 +1909,9 @@ select option { background:#fff; }
         <div class="form-title">📋 Reglas Generales</div>
         <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--muted);line-height:1.7;">
           <div>• La inscripción tiene un costo de <strong style="color:var(--text);">$10.000 CLP</strong> por persona. El pago se coordina directamente con el administrador.</div>
-          <div>• Cada participante debe completar sus pronósticos en <strong style="color:var(--text);">2 etapas</strong> antes del <strong style="color:var(--text);">11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.<br>
-            <span style="font-size:12px;">— Etapa 1: marcadores exactos de los 72 partidos de grupos<br>
-            — Etapa 2: completar las llaves hasta el campeón (el cuadro se arma con los clasificados reales)</span></div>
-          <div>• Los pronósticos de cada etapa deben guardarse por separado usando los botones correspondientes.</div>
+          <div>• Los pronósticos de los <strong style="color:var(--text);">72 partidos de grupos</strong> deben guardarse antes del <strong style="color:var(--text);">11 de junio de 2026</strong> (inicio del torneo). No se aceptan modificaciones posteriores.</div>
+          <div>• Las predicciones de <strong style="color:var(--text);">llaves (16avos, 8vos, 4tos, semis, final)</strong> se habilitan ronda por ronda, apenas se conocen los cruces reales de esa ronda, y cierran automáticamente antes del primer partido de la ronda.</div>
+          <div>• Los pronósticos de cada ronda deben guardarse por separado usando los botones correspondientes.</div>
           <div>• Los resultados oficiales se ingresan por el administrador. En caso de error en el ingreso, el administrador puede corregirlos antes del cómputo final.</div>
           <div>• El ranking se actualiza automáticamente cada vez que el administrador ingresa nuevos resultados.</div>
           <div>• Solo participan en el reparto quienes hayan pagado su entrada y tengan pronósticos guardados.</div>
