@@ -1132,7 +1132,7 @@ select option { background:#fff; }
 
     <!-- COUNTDOWN -->
     <div class="countdown-bar">
-      <div class="cd-label">⏱ Inicio del Mundial</div>
+      <div class="cd-label" id="cd-label">⏱ Inicio del Mundial</div>
       <div class="cd-units" id="cd-units">
         <div class="cd-unit"><span class="cd-num" id="cd-d">--</span><span class="cd-sub">días</span></div>
         <div class="cd-sep">:</div>
@@ -1142,6 +1142,7 @@ select option { background:#fff; }
         <div class="cd-sep">:</div>
         <div class="cd-unit"><span class="cd-num" id="cd-s">--</span><span class="cd-sub">seg</span></div>
       </div>
+      <div class="cd-partidos" id="cd-partidos" style="display:none;font-size:12px;color:var(--muted);margin-top:4px;font-weight:600;"></div>
     </div>
 
     <!-- URL BANNER -->
@@ -1973,6 +1974,8 @@ let SCRIPT_URL = DEFAULT_SCRIPT_URL;
 const ADMIN_PIN = '2026';
 const FECHA_INICIO = new Date('2026-06-11T15:00:00-04:00');
 const FECHA_CIERRE = FECHA_INICIO;
+// Kickoff de la Gran Final (MetLife Stadium, 19 jul 2026, 15:00 ET).
+const FECHA_FIN_MUNDIAL = new Date('2026-07-19T15:00:00-04:00');
 const FECHA_APERTURA_LLAVES = new Date('2026-06-27T00:00:00-04:00');
 const MONTO_ENTRADA = 10000;
 const APP_URL = 'https://tingado.github.io/PollaMundial2026';
@@ -2205,23 +2208,85 @@ function setLoad(id,on,txt='Guardando...'){
 // ══════════════════════════════════════════════════════════
 // COUNTDOWN
 // ══════════════════════════════════════════════════════════
+// Cuenta partidos jugados (con resultado real) vs el total del torneo (104).
+function contarPartidosRestantes(){
+  const totalGrupos = PARTIDOS.length;
+  const totalKO = Object.values(KO_ROUND_SIZES).reduce((a,b)=>a+b,0);
+  const total = totalGrupos + totalKO;
+
+  const scores = state.scores||{};
+  const jugadosGrupos = PARTIDOS.filter(p=>{
+    const r = scores[p.local+'|'+p.visita] || scores[p.id];
+    return r && r.gL!=null && r.gV!=null;
+  }).length;
+
+  const scoresKO = state.scoresKO||{};
+  const jugadosKO = KO_ROUNDS.reduce((acc,rnd)=>{
+    const arr = scoresKO[rnd]||[];
+    return acc + arr.filter(r=>r && r.gL!=null && r.gV!=null).length;
+  },0);
+
+  const jugados = jugadosGrupos + jugadosKO;
+  return { total, jugados, restantes: total - jugados };
+}
+
 function initCountdown(){
   function tick(){
-    const diff = FECHA_INICIO - new Date();
-    if(diff <= 0){
-      $id('cd-units').innerHTML = '<div class="cd-started">⚽ ¡EL MUNDIAL YA EMPEZÓ!</div>';
+    const now = new Date();
+    const label = $id('cd-label');
+    const partidosEl = $id('cd-partidos');
+
+    if(now < FECHA_INICIO){
+      // Antes del Mundial: cuenta regresiva al partido inaugural.
+      label.textContent = '⏱ Inicio del Mundial';
+      partidosEl.style.display = 'none';
+      const diff = FECHA_INICIO - now;
+      renderUnidades(diff);
       return;
     }
+
+    if(now < FECHA_FIN_MUNDIAL){
+      // Mundial en curso: cuenta regresiva a la Gran Final + partidos restantes.
+      label.textContent = '🏁 Faltan para la Gran Final';
+      const diff = FECHA_FIN_MUNDIAL - now;
+      renderUnidades(diff);
+      const { total, jugados, restantes } = contarPartidosRestantes();
+      partidosEl.style.display = '';
+      partidosEl.textContent = total>0
+        ? `⚽ ${restantes} de ${total} partidos por jugar (${jugados} jugados)`
+        : '';
+      return;
+    }
+
+    // El Mundial terminó.
+    label.textContent = '';
+    partidosEl.style.display = 'none';
+    $id('cd-units').innerHTML = '<div class="cd-started">🏆 ¡EL MUNDIAL TERMINÓ! Gracias por participar</div>';
+  }
+
+  function renderUnidades(diff){
     const d = Math.floor(diff/86400000);
     const h = Math.floor((diff%86400000)/3600000);
     const m = Math.floor((diff%3600000)/60000);
     const s = Math.floor((diff%60000)/1000);
     const pad = n => String(n).padStart(2,'0');
+    // Puede haberse reemplazado por el mensaje de "terminó" en un tick previo.
+    if(!$id('cd-d')){
+      $id('cd-units').innerHTML = `
+        <div class="cd-unit"><span class="cd-num" id="cd-d">--</span><span class="cd-sub">días</span></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span class="cd-num" id="cd-h">--</span><span class="cd-sub">horas</span></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span class="cd-num" id="cd-m">--</span><span class="cd-sub">min</span></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><span class="cd-num" id="cd-s">--</span><span class="cd-sub">seg</span></div>`;
+    }
     $id('cd-d').textContent = d;
     $id('cd-h').textContent = pad(h);
     $id('cd-m').textContent = pad(m);
     $id('cd-s').textContent = pad(s);
   }
+
   tick();
   setInterval(tick, 1000);
 }
