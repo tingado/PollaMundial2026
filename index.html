@@ -5453,17 +5453,16 @@ function getR32Fecha(local, visita) {
   return null; // no encontrado
 }
 
-// Devuelve los partidos de 16avos del DÍA MÁS PRÓXIMO con partidos sin resultado.
-// Muestra solo los de esa jornada (1 día a la vez).
+// Devuelve solo el SIGUIENTE partido de 16avos sin resultado (uno a la vez),
+// igual que en fase de grupos. No se basa en horarios exactos porque los
+// partidos suelen atrasarse (lluvia, etc.) — usa fecha + orden del bracket
+// y avanza automáticamente en cuanto el admin registra el resultado real.
 function simGetKOMatches(){
   const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
   const results = (state.scoresKO||{}).r32||[];
-  // Fecha LOCAL (no UTC): toISOString() usaría UTC y se adelantaría de día
-  // en la noche chilena (UTC-4), saltándose partidos del día actual.
-  const now = new Date();
-  const hoy = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
 
-  // Construir candidatos con fecha
+  // Construir candidatos con fecha, en orden de bracket (slot)
   const candidatos = [];
   for(let i=0;i<slots.length;i++){
     const s = slots[i];
@@ -5477,9 +5476,9 @@ function simGetKOMatches(){
 
   if(!candidatos.length) return [];
 
-  // Mostrar solo los del día más reciente (máxima fecha <= hoy) con resultado pendiente
-  const maxFecha = candidatos.reduce((mx, c) => c.fecha > mx ? c.fecha : mx, '');
-  return candidatos.filter(c => c.fecha === maxFecha);
+  // Solo el primero pendiente (fecha más antigua, luego orden de bracket)
+  candidatos.sort((a,b) => a.fecha.localeCompare(b.fecha) || a.slot - b.slot);
+  return [candidatos[0]];
 }
 
 // Ranking proyectado inyectando los marcadores KO simulados en state.scoresKO.
