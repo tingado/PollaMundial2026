@@ -1625,8 +1625,10 @@ select option { background:#fff; }
         <div class="view-title">⚙️ Admin</div>
       </div>
 
+      <div class="proy-group-tabs" id="admin-section-tabs" style="margin-bottom:12px;"></div>
+
       <!-- PARTICIPANTES -->
-      <div class="admin-card" style="border-color:rgba(233,30,140,0.25);">
+      <div class="admin-card admin-panel" id="admin-panel-players" style="border-color:rgba(233,30,140,0.25);">
         <div class="admin-title" style="display:flex;align-items:center;justify-content:space-between;">
           <span>👥 Participantes inscritos</span>
           <button onclick="invalidarCache();cargarDatos(true);" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;">🔄 Recargar</button>
@@ -1637,7 +1639,7 @@ select option { background:#fff; }
       </div>
 
       <!-- API SYNC -->
-      <div class="admin-card" style="border-color:rgba(96,200,255,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-sync" style="border-color:rgba(96,200,255,0.2);">
         <div class="admin-title" style="color:#60c8ff;">🔌 Sincronización con API</div>
         <div class="api-badge api-off" id="api-badge">
           <div class="api-dot"></div>
@@ -1681,7 +1683,7 @@ select option { background:#fff; }
       </div>
 
       <!-- RESULTADOS DE GRUPOS -->
-      <div class="admin-card" style="border-color:rgba(245,188,0,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-grupos" style="border-color:rgba(245,188,0,0.2);">
         <div class="admin-title">🏟️ Resultados Finales de Grupos</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Ingresa quién terminó 1° y 2° en cada grupo al finalizar la fase de grupos.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="admin-grupos-grid"></div>
@@ -1690,7 +1692,7 @@ select option { background:#fff; }
       </div>
 
       <!-- RESULTADO MANUAL -->
-      <div class="admin-card" style="border-color:rgba(245,188,0,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-manual" style="border-color:rgba(245,188,0,0.2);">
         <div class="admin-title">✍️ Ingreso Manual de Resultados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Actualiza a medida que avanza el torneo.</p>
         <label>8 Mejores Terceros (en orden de bracket, separados por coma)</label>
@@ -1712,7 +1714,7 @@ select option { background:#fff; }
       </div>
 
       <!-- MARCADORES DE PARTIDOS -->
-      <div class="admin-card" style="border-color:rgba(22,163,74,0.25);">
+      <div class="admin-card admin-panel" id="admin-panel-scores" style="border-color:rgba(22,163,74,0.25);">
         <div class="admin-title" style="color:var(--verde);">⚽ Marcadores de Partidos Jugados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;">Ingresa el resultado de cada partido que ya se jugó. Solo afecta puntos de marcador exacto/resultado.</p>
         <div class="proy-group-tabs" id="admin-scores-tabs" style="margin-bottom:10px;"></div>
@@ -1722,7 +1724,7 @@ select option { background:#fff; }
       </div>
 
       <!-- RESULTADOS FASE ELIMINATORIA KO -->
-      <div class="admin-card" style="border-color:rgba(245,188,0,0.3);">
+      <div class="admin-card admin-panel" id="admin-panel-ko" style="border-color:rgba(245,188,0,0.3);">
         <div class="admin-title" style="color:var(--dorado);">🏆 Fase Eliminatoria KO — Configuración y Resultados</div>
         <p style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;">
           Define los cruces de cada ronda, abre/cierra predicciones y registra resultados (con flag si fue a alargue/penales).
@@ -1787,7 +1789,7 @@ select option { background:#fff; }
         </div>
       </div>
 
-      <div class="admin-card" style="border-color:rgba(255,61,90,0.2);">
+      <div class="admin-card admin-panel" id="admin-panel-danger" style="border-color:rgba(255,61,90,0.2);">
         <div class="admin-title" style="color:var(--rojo);">⚠️ Zona de riesgo</div>
         <button class="btn btn-danger btn-full" onclick="resetear()">🗑️ Borrar todos los datos</button>
       </div>
@@ -2380,6 +2382,35 @@ function irAMisPronos(){
 function openMoreSheet(){ $id('more-overlay').classList.add('open'); }
 function closeMoreSheet(){ $id('more-overlay').classList.remove('open'); }
 
+// ══════════════════════════════════════════════════════════
+// ADMIN — pestañas de sección (solo reorganiza la UI, no toca datos)
+// ══════════════════════════════════════════════════════════
+const ADMIN_SECTIONS = [
+  { id:'players', label:'👥 Jugadores' },
+  { id:'sync',    label:'🔌 API Sync' },
+  { id:'grupos',  label:'🏟️ Grupos' },
+  { id:'manual',  label:'✍️ Manual' },
+  { id:'scores',  label:'⚽ Marcadores' },
+  { id:'ko',      label:'🏆 Llaves' },
+  { id:'danger',  label:'⚠️ Riesgo' },
+];
+let _adminActiveTab = 'players';
+function renderAdminSectionTabs(){
+  const cont=$id('admin-section-tabs'); if(!cont) return;
+  cont.innerHTML = ADMIN_SECTIONS.map(s=>
+    `<button class="proy-tab${_adminActiveTab===s.id?' active':''}" onclick="setAdminTab('${s.id}')">${s.label}</button>`
+  ).join('');
+  setAdminTab(_adminActiveTab, true);
+}
+function setAdminTab(id, skipTabRender){
+  _adminActiveTab = id;
+  ADMIN_SECTIONS.forEach(s=>{
+    const panel=$id('admin-panel-'+s.id);
+    if(panel) panel.style.display = (s.id===id) ? '' : 'none';
+  });
+  if(!skipTabRender) renderAdminSectionTabs();
+}
+
 function showView(v, el){
   if(v==='admin'){
     const ok=sessionStorage.getItem('adminOk')==='1';
@@ -2397,7 +2428,7 @@ function showView(v, el){
   cargarDatos();
   if(v==='proyecciones') renderProyecciones();
   if(v==='inscripcion') cargarInscripcion();
-  if(v==='admin'){ renderAdminScores(); cargarAutoSyncStatus(); renderAdminKO(); }
+  if(v==='admin'){ renderAdminSectionTabs(); renderAdminScores(); cargarAutoSyncStatus(); renderAdminKO(); }
   if(v==='partidos') actualizarBarraAdmin();
   if(v==='simulador') initSimulador();
   if(v==='eliminatorias'){ actualizarSelectorKO(); renderKORoundTabs(); cargarKO(); startKORefresh(); }
