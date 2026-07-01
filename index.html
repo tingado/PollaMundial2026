@@ -5460,8 +5460,7 @@ function getR32Fecha(local, visita) {
 function simGetKOMatches(){
   const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
   const results = (state.scoresKO||{}).r32||[];
-  const now = new Date();
-  const hoy = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const hoy = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
 
   // Construir candidatos con fecha, en orden de bracket (slot)
   const candidatos = [];
@@ -5478,7 +5477,7 @@ function simGetKOMatches(){
   if(!candidatos.length) return [];
 
   // Solo el primero pendiente (fecha más antigua, luego orden de bracket)
-  candidatos.sort((a,b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : a.slot - b.slot);
+  candidatos.sort((a,b) => a.fecha.localeCompare(b.fecha) || a.slot - b.slot);
   return [candidatos[0]];
 }
 
