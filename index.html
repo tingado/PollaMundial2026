@@ -2838,12 +2838,12 @@ function renderKOMatchCardReadOnly(rnd, slot, res){
       </div>
       <div class="match-teams">
         <div class="match-team">
-          <div class="match-flag">${local?flag(local):'🏳️'}</div>
+          <div class="match-flag">${local?fi(local):'🏳️'}</div>
           <div class="match-team-name">${esc(local||'Por definir')}</div>
           <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gL:'-'}</div>
         </div>
         <div class="match-team">
-          <div class="match-flag">${visita?flag(visita):'🏳️'}</div>
+          <div class="match-flag">${visita?fi(visita):'🏳️'}</div>
           <div class="match-team-name">${esc(visita||'Por definir')}</div>
           <div class="match-score ${hasScore?'':'no-score'}">${hasScore?res.gV:'-'}</div>
         </div>
@@ -3627,7 +3627,7 @@ function renderCuadro(){
         </div>`;
       }
       return `<div class="bt${won?' bw':''}" onclick="cuadroPickWinner('${round}',${idx},'${side}')">
-        <span>${flag(t)}</span><span class="bt-name">${t}</span>
+        <span>${fi(t)}</span><span class="bt-name">${t}</span>
         ${won?'<span style="color:var(--verde);margin-left:auto;font-size:10px;">▶</span>':''}
       </div>`;
     }
@@ -3675,7 +3675,7 @@ function renderCuadro(){
               ${renderPairs(r.matches,r.key)}
               ${r.key==='fin'&&champion?`<div class="br-champion">
                 <div class="br-champion-crown">🏆</div>
-                <div class="br-champion-name">${flag(champion)} ${champion}</div>
+                <div class="br-champion-name">${fi(champion)} ${champion}</div>
               </div>`:''}
             </div>
           </div>`).join('')}
