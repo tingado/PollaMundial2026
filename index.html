@@ -5410,16 +5410,19 @@ function simCalcRanking(activoMatches) {
 
 // ── SIMULADOR FASE ELIMINATORIA (16avos) ──
 // Partidos de 16avos sin resultado real aún (los que se pueden simular).
+// Devuelve TODOS los slots sin resultado, no solo el primero.
 function simGetKOMatches(){
   const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
   const results = (state.scoresKO||{}).r32||[];
+  const out = [];
   for(let i=0;i<slots.length;i++){
     const s = slots[i];
     const r = results[i];
     if(r && r.gL!=null) continue; // ya tiene resultado real
-    return [{ id:'r32-'+i, slot:i, local:s?.local||`Equipo ${2*i+1}`, visita:s?.visita||`Equipo ${2*i+2}` }];
+    if(!s?.local && !s?.visita) continue; // slot vacío
+    out.push({ id:'r32-'+i, slot:i, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}` });
   }
-  return [];
+  return out;
 }
 
 // Ranking proyectado inyectando los marcadores KO simulados en state.scoresKO.
