@@ -2644,7 +2644,7 @@ function restoreLastPlayer(){
   if(!chip) return;
   if(!existe){ chip.style.display='none'; return; }
   const st=estadoPron(last);
-  const pts=calcPtsTotal(state.pronosticos[last],state.resultados);
+  const pts=calcPtsTotal(state.pronosticos[last],state.resultados,last);
   chip.style.display='';
   chip.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Último acceso:</div>
     <div style="display:flex;align-items:center;gap:8px;">
@@ -2701,7 +2701,7 @@ function renderLeaderboard(){
   }
   const scores=state.jugadores.map(j=>{
     const st=estadoPron(j.nombre);
-    return {nombre:j.nombre, pts:calcPtsTotal(state.pronosticos[j.nombre], state.resultados), completo:st.completo};
+    return {nombre:j.nombre, pts:calcPtsTotal(state.pronosticos[j.nombre], state.resultados, j.nombre), completo:st.completo};
   }).sort((a,b)=>b.pts-a.pts);
 
   const rk=['r1','r2','r3'];
@@ -3367,7 +3367,7 @@ function mostrarComprobante(nombre){
   const grupos=pron.grupos||{};
   const terceros=pron.terceros||[];
   const elim=pron.elim||{};
-  const pts=calcPtsTotal(pron,state.resultados);
+  const pts=calcPtsTotal(pron,state.resultados,nombre);
 
   $id('comprobante-sub').innerHTML=`<strong>${esc(nombre)}</strong> · ${new Date().toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'})} · ${pts} pts`;
   $id('comprobante-fecha').textContent=new Date().toLocaleString('es-CL');
@@ -3430,11 +3430,12 @@ function cerrarComprobante(){
 
 function compartirComprobante(){
   const sub=$id('comprobante-sub')?.textContent||'';
-  const pron=state.pronosticos[sub.split('·')[0]?.trim()]||{};
+  const nombreSub=sub.split('·')[0]?.trim();
+  const pron=state.pronosticos[nombreSub]||{};
   const camp=(pron.elim||{}).campeon||'';
   let txt=`🏆 *Polla Mundialera 2026 — Mi Pronóstico*\n\n`;
   if(camp) txt+=`🥇 Campeón: ${camp}\n`;
-  const pts=calcPtsTotal(pron,state.resultados);
+  const pts=calcPtsTotal(pron,state.resultados,nombreSub);
   if(pts>0) txt+=`📊 Puntos: ${pts} pts\n`;
   txt+='\n¡A ver quién gana! 🎉';
   window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
@@ -4336,7 +4337,7 @@ function renderRanking(){
   }
   const medals=['🥇','🥈','🥉'];
   const rows=state.jugadores.map(j=>{
-    const d=calcPtsDetalle(state.pronosticos[j.nombre], state.resultados);
+    const d=calcPtsDetalle(state.pronosticos[j.nombre], state.resultados, j.nombre);
     const st=estadoPron(j.nombre);
     return {...j, ...d, ...st};
   }).sort((a,b)=>b.total-a.total||(b.partidos-a.partidos)||(b.grupos-a.grupos));
@@ -4539,7 +4540,7 @@ function openPronModal(nombre){
   const pron=state.pronosticos[nombre]||{};
   const elim=pron.elim||{};
   const st=estadoPron(nombre);
-  const pts=calcPtsTotal(pron,state.resultados);
+  const pts=calcPtsTotal(pron,state.resultados,nombre);
   const res=state.resultados||{};
   const hasRes=!!(res.oct&&res.oct.length||res.campeon);
 
@@ -4637,7 +4638,7 @@ function compartirPronModal(nombre){
   const pron=state.pronosticos[nombre]||{};
   const grupos=pron.grupos||{};
   const elim=pron.elim||{};
-  const pts=calcPtsTotal(pron,state.resultados);
+  const pts=calcPtsTotal(pron,state.resultados,nombre);
   let txt=`⚽ *Pronósticos de ${nombre} — Polla Mundial 2026*\n\n`;
   txt+=`*Grupos:*\n`;
   Object.entries(GRUPOS).forEach(([g])=>{
@@ -4787,13 +4788,42 @@ function calcPtsKO(pron){
   return pts;
 }
 
-function calcPtsTotal(pron, res){ return calcPtsGrupos(pron,res)+calcPtsKO(pron)+calcPtsPartidos(pron); }
+// ══════════════════════════════════════════════════════════
+// CORRECCIONES MANUALES DE PUNTAJE (auditoría de llaves)
+// ══════════════════════════════════════════════════════════
+// IMPORTANTE: esto NO modifica ninguna predicción guardada. Es un ajuste
+// aditivo aplicado solo al total calculado, para casos verificados
+// manualmente donde el cálculo automático dio un resultado incorrecto
+// por el bug de desalineamiento de índice en llaves (ver guardarConfigKO
+// y el commit de esa corrección). Cada entrada debe estar confirmada con
+// evidencia (captura de pantalla de la predicción real del jugador) antes
+// de agregarse. Nunca debe usarse para restar puntos.
+// Sin correcciones activas. El caso de Sara Barahona (Suiza-Argelia) se
+// verificó contra los datos reales de la planilla el 03-jul-2026 y el
+// cálculo puro (sin ningún ajuste) ya reproduce el puntaje correcto —
+// el problema fue transitorio mientras se estabilizaba el orden de los
+// cruces y se corrigió solo al aplicarse el fix de guardarConfigKO.
+const KO_SCORE_CORRECTIONS = [
+  // Agregar aquí solo casos confirmados contra datos reales (no solo
+  // capturas de pantalla momentáneas), con el mismo nivel de detalle.
+];
+function getScoreCorrection(nombre){
+  if(!nombre) return 0;
+  return KO_SCORE_CORRECTIONS
+    .filter(c=>c.jugador===nombre)
+    .reduce((sum,c)=>sum+c.delta, 0);
+}
 
-function calcPtsDetalle(pron, res){
+function calcPtsTotal(pron, res, nombre){
+  return calcPtsGrupos(pron,res)+calcPtsKO(pron)+calcPtsPartidos(pron)+getScoreCorrection(nombre);
+}
+
+function calcPtsDetalle(pron, res, nombre){
   const grupos=calcPtsGrupos(pron,res);
   const ko=calcPtsKO(pron);
   const partidos=calcPtsPartidos(pron);
-  return { grupos, ko, partidos, total:grupos+ko+partidos };
+  const correccion=getScoreCorrection(nombre);
+  return { grupos, ko, partidos, correccion, total:grupos+ko+partidos+correccion };
 }
 
 function buildDesglose(pron, res){
@@ -5224,11 +5254,22 @@ async function guardarConfigKO(){
   const size=KO_ROUND_SIZES[r];
   // Normaliza los nombres al formato de la app al guardar (Croatia→Croacia, RD Congo→R.D. del Congo…)
   // para que el auto-sync de la API empareje bien los resultados.
+  // IMPORTANTE: nunca reordenar ni compactar slots ya llenos. Las predicciones
+  // de los jugadores se guardan por posición (índice) en este mismo arreglo,
+  // así que si una posición ya asignada se corre, todas las predicciones ya
+  // guardadas quedan comparadas contra el partido equivocado (bug detectado
+  // en auditoría — ver commit de esta corrección). Solo se recortan las
+  // filas vacías al FINAL del arreglo (rondas aún no completamente
+  // publicadas); nunca se elimina una fila vacía intermedia, para que la
+  // posición de cada cruce ya definido sea estable para siempre.
   const slots=Array.from({length:size},(_,i)=>{
     const local =($id(`ko-slot-${r}-${i}-local`)?.value||'').trim();
     const visita=($id(`ko-slot-${r}-${i}-visita`)?.value||'').trim();
     return { local: local?koNormalizeName(local):'', visita: visita?koNormalizeName(visita):'' };
-  }).filter(s=>s.local||s.visita);
+  });
+  while(slots.length && !slots[slots.length-1].local && !slots[slots.length-1].visita){
+    slots.pop();
+  }
 
   const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,apertura,deadline,slots}}};
   setLoad('btn-ko-config',true,'Guardando...');
@@ -5571,7 +5612,7 @@ function simCalcRanking(activoMatches) {
   // Puntos reales actuales (con scores originales)
   const realPtsMap = {};
   state.jugadores.forEach(j => {
-    realPtsMap[j.nombre] = calcPtsTotal(state.pronosticos[j.nombre] || {}, state.resultados);
+    realPtsMap[j.nombre] = calcPtsTotal(state.pronosticos[j.nombre] || {}, state.resultados, j.nombre);
   });
 
   // Scores temporales: real + simulados encima
@@ -5586,7 +5627,7 @@ function simCalcRanking(activoMatches) {
   try {
     return state.jugadores.map(j => {
       const pron     = state.pronosticos[j.nombre] || {};
-      const total    = calcPtsTotal(pron, state.resultados);
+      const total    = calcPtsTotal(pron, state.resultados, j.nombre);
       const basePts  = realPtsMap[j.nombre];
       const simPts   = total - basePts;
       const detail   = activoMatches.map(m => {
@@ -5679,7 +5720,7 @@ function simGetKOMatches(){
 function simCalcRankingKO(matches){
   const orig = state.scoresKO;
   const realPtsMap = {};
-  state.jugadores.forEach(j=>{ realPtsMap[j.nombre]=calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados); });
+  state.jugadores.forEach(j=>{ realPtsMap[j.nombre]=calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados, j.nombre); });
 
   const tmp = JSON.parse(JSON.stringify(orig||{}));
   if(!tmp.r32) tmp.r32=[];
@@ -5693,7 +5734,7 @@ function simCalcRankingKO(matches){
   try{
     return state.jugadores.map(j=>{
       const pron=state.pronosticos[j.nombre]||{};
-      const total=calcPtsTotal(pron,state.resultados);
+      const total=calcPtsTotal(pron,state.resultados,j.nombre);
       const basePts=realPtsMap[j.nombre];
       const simPts=total-basePts;
       const detail=matches.map(m=>{
@@ -6119,7 +6160,7 @@ function buildEvolutionData() {
     state.resultados = {};
 
     jugadores.forEach((j, ji) => {
-      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados));
+      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados, j.nombre));
     });
   });
 
@@ -6130,7 +6171,7 @@ function buildEvolutionData() {
     state.scoresKO   = {};
     state.resultados = origResultados;
     jugadores.forEach((j, ji) => {
-      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados));
+      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados, j.nombre));
     });
   }
 
@@ -6147,7 +6188,7 @@ function buildEvolutionData() {
     state.resultados = origResultados;
 
     jugadores.forEach((j, ji) => {
-      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados));
+      rawData[ji].push(calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados, j.nombre));
     });
   });
 
@@ -6182,7 +6223,7 @@ async function shareRankingPNG() {
 
     // Ordenar por puntaje
     const rows = [...jugadores]
-      .map(j => ({ nombre: j.nombre, pts: calcPtsDetalle(state.pronosticos[j.nombre]||{}, state.resultados).total }))
+      .map(j => ({ nombre: j.nombre, pts: calcPtsDetalle(state.pronosticos[j.nombre]||{}, state.resultados, j.nombre).total }))
       .sort((a, b) => b.pts - a.pts);
 
     const DPR    = Math.min(window.devicePixelRatio || 2, 2);
