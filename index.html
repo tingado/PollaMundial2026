@@ -4227,10 +4227,10 @@ function renderKORound(jugador, rnd){
   }
 
   const cards=slots.map((slot,i)=>{
-    const pred=pron[i]||{};
-    const res=results[i]||null;
     const local=slot.local||`Equipo ${2*i+1}`;
     const visita=slot.visita||`Equipo ${2*i+2}`;
+    const pred=findKOPredForMatch(pron,i,local,visita)||{};
+    const res=results[i]||null;
 
     if(status==='abierto'){
       return `<div class="ko-match-card">
@@ -4287,10 +4287,14 @@ async function saveKORound(){
   const cfg=(state.koConfig?.rounds||{})[rnd]||{};
   const slots=cfg.slots||[];
   if(!slots.length){alert('Esta ronda aún no tiene cruces definidos');return;}
-  const preds=slots.map((_,i)=>{
+  // Cada predicción se guarda anclada al nombre de los equipos (local/visita),
+  // no solo a la posición i. Esto evita que un reordenamiento posterior de los
+  // cruces en Admin desalinee predicciones ya guardadas contra el resultado
+  // de otro partido (bug detectado: ver calcPtsKO / findKOPred).
+  const preds=slots.map((s,i)=>{
     const g1=parseInt($id(`ko-${rnd}-${i}-g1`)?.value??'');
     const g2=parseInt($id(`ko-${rnd}-${i}-g2`)?.value??'');
-    return {g1:isNaN(g1)?null:g1, g2:isNaN(g2)?null:g2};
+    return {g1:isNaN(g1)?null:g1, g2:isNaN(g2)?null:g2, local:s.local||'', visita:s.visita||''};
   });
   setLoad('btn-save-ko',true);
   const r=await guardarKOPron(jugador,rnd,preds);
@@ -4492,6 +4496,22 @@ function renderProyecciones(grupo){
 }
 
 // Visor de predicciones de una ronda de llaves (igual que grupos, pero por slot KO).
+// Busca la predicción de un jugador para el cruce (local,visita) que está en
+// la posición i de la config ACTUAL. Si el arreglo de predicciones usa el
+// formato nuevo (con nombres de equipo guardados), busca por coincidencia
+// exacta de nombre — inmune a que los cruces se hayan reordenado desde que
+// el jugador guardó. Si es formato antiguo (sin nombres), usa la posición i
+// tal cual, único dato disponible para esas predicciones.
+function findKOPredForMatch(predsArr, i, localTeam, visitaTeam){
+  if(!Array.isArray(predsArr)) return null;
+  const direct = predsArr[i];
+  const usaNombres = direct && direct.local!=null && direct.visita!=null;
+  if(usaNombres || predsArr.some(p=>p&&p.local!=null&&p.visita!=null)){
+    return predsArr.find(p=>p && p.local===localTeam && p.visita===visitaTeam) || null;
+  }
+  return direct || null;
+}
+
 function renderProyeccionesKO(rnd, cont, jugadores){
   const slots = ((state.koConfig?.rounds||{})[rnd]?.slots)||[];
   const results = (state.scoresKO||{})[rnd]||[];
@@ -4507,7 +4527,7 @@ function renderProyeccionesKO(rnd, cont, jugadores){
 
     const preds = jugadores.map(j=>{
       const pron = state.pronosticos[j.nombre]||{};
-      const p = ((pron.ko||{})[rnd]||[])[i];
+      const p = findKOPredForMatch((pron.ko||{})[rnd], i, local, visita);
       const tieneP = p&&p.g1!=null&&p.g2!=null;
       let cls='';
       if(tieneP&&tieneRes){
@@ -4770,17 +4790,37 @@ function calcPtsKOPartido(pred, res){
 
 const KO_ROUNDS=['r32','r16','qf','sf','fin'];
 
+// Encuentra el resultado correcto para una predicción de llaves.
+// BUG HISTÓRICO: las predicciones se comparaban solo por posición (índice i),
+// que se desalinea si el admin reordena/edita los cruces después de que un
+// jugador ya guardó su predicción (ej: al corregir el orden del bracket).
+// FIX: si la predicción trae los nombres de equipo (local/visita, guardados
+// desde julio 2026 en adelante), se busca el slot actual que coincide por
+// nombre — inmune a reordenamientos posteriores. Las predicciones antiguas
+// sin nombres (antes del fix) siguen usando la posición i como antes, único
+// dato disponible para ellas.
+function findKOResult(pred, i, slots, results){
+  if(pred && pred.local && pred.visita && slots && slots.length){
+    const idx = slots.findIndex(s=>s.local===pred.local && s.visita===pred.visita);
+    if(idx>=0) return Array.isArray(results)?results[idx]:results;
+    return null; // el cruce predicho ya no existe en la config actual
+  }
+  return Array.isArray(results)?results[i]:results;
+}
+
 function calcPtsKO(pron){
   const ko=pron?.ko||{};
   const scoresKO=state.scoresKO||{};
+  const koConfigRounds=state.koConfig?.rounds||{};
   let pts=0;
   KO_ROUNDS.forEach(rnd=>{
     const preds=ko[rnd];
     const results=scoresKO[rnd];
     if(!preds||!results) return;
     const arr=Array.isArray(preds)?preds:[preds];
+    const slots=(koConfigRounds[rnd]?.slots)||[];
     arr.forEach((pred,i)=>{
-      const res=Array.isArray(results)?results[i]:results;
+      const res=findKOResult(pred,i,slots,results);
       pts+=calcPtsKOPartido(pred,res);
     });
   });
@@ -4856,14 +4896,17 @@ function buildDesglose(pron, res){
     if(!preds) return;
     const arr=Array.isArray(preds)?preds:[preds];
     const cfg=(state.koConfig?.rounds||{})[rnd]||{};
+    const slots=cfg.slots||[];
     arr.forEach((pred,i)=>{
-      const res=Array.isArray(results)?results[i]:results;
+      const res=findKOResult(pred,i,slots,results);
       if(!res||res.gL==null) return; // resultado aún no disponible
       const pts=calcPtsKOPartido(pred,res);
       const predStr=pred?`${pred.g1}-${pred.g2}`:'?-?';
       const realStr=res.aet?`${res.gL}-${res.gV} (${res.winner==='local'?'L':'V'} en ET)`:`${res.gL}-${res.gV}`;
       const tipo=res.aet?(pts>0?`⏱️ ET/Pen +${pts}`:'⏱️ ET/Pen'):pts===4?'⭐ Exacto':pts>=2?'✓ Ganador':pts===1?'± Gol':'✗';
-      const slot=cfg.slots?.[i]||{};
+      // Usa el nombre guardado en la predicción (ancla real) si existe;
+      // si es predicción antigua sin nombre, cae al slot posicional actual.
+      const slot=(pred&&pred.local&&pred.visita)?pred:(slots[i]||{});
       const matchLabel=slot.local&&slot.visita?`${flag(slot.local)} ${slot.local} vs ${flag(slot.visita)} ${slot.visita}`:`${koRoundLabels[rnd]} partido ${i+1}`;
       koItems.push({label:matchLabel,pred:predStr,real:realStr,pts,tipo});
     });
@@ -5697,7 +5740,7 @@ function simCalcRankingKO(matches){
       const basePts=realPtsMap[j.nombre];
       const simPts=total-basePts;
       const detail=matches.map(m=>{
-        const pred=((pron.ko||{}).r32||[])[m.slot];
+        const pred=findKOPredForMatch((pron.ko||{}).r32, m.slot, m.local, m.visita);
         const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
         const predObj=pred&&pred.g1!=null&&pred.g2!=null?{g1:pred.g1,g2:pred.g2}:null;
         const pts=calcPtsKOPartido(predObj,{gL:sc.gL,gV:sc.gV});
