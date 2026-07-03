@@ -5224,11 +5224,22 @@ async function guardarConfigKO(){
   const size=KO_ROUND_SIZES[r];
   // Normaliza los nombres al formato de la app al guardar (Croatia→Croacia, RD Congo→R.D. del Congo…)
   // para que el auto-sync de la API empareje bien los resultados.
+  // IMPORTANTE: nunca reordenar ni compactar slots ya llenos. Las predicciones
+  // de los jugadores se guardan por posición (índice) en este mismo arreglo,
+  // así que si una posición ya asignada se corre, todas las predicciones ya
+  // guardadas quedan comparadas contra el partido equivocado (bug detectado
+  // en auditoría — ver commit de esta corrección). Solo se recortan las
+  // filas vacías al FINAL del arreglo (rondas aún no completamente
+  // publicadas); nunca se elimina una fila vacía intermedia, para que la
+  // posición de cada cruce ya definido sea estable para siempre.
   const slots=Array.from({length:size},(_,i)=>{
     const local =($id(`ko-slot-${r}-${i}-local`)?.value||'').trim();
     const visita=($id(`ko-slot-${r}-${i}-visita`)?.value||'').trim();
     return { local: local?koNormalizeName(local):'', visita: visita?koNormalizeName(visita):'' };
-  }).filter(s=>s.local||s.visita);
+  });
+  while(slots.length && !slots[slots.length-1].local && !slots[slots.length-1].visita){
+    slots.pop();
+  }
 
   const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,apertura,deadline,slots}}};
   setLoad('btn-ko-config',true,'Guardando...');
