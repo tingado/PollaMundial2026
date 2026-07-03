@@ -302,10 +302,12 @@ for (const [rnd, arr] of Object.entries(SNAP.scoresKO || {})) {
   if (sinResultado.length) dataWarn(`Faltan resultados de grupos para: ${sinResultado.map(p => p.id).join(', ')}`);
 }
 
-// Bonus de grupos pendiente.
-if (!Object.keys((SNAP.resultados || {}).grupos || {}).length) {
-  const jugados = S.PARTIDOS.filter(p => { const sc = SNAP.scores[p.local + '|' + p.visita]; return sc && sc.gL != null; }).length;
-  if (jugados === S.PARTIDOS.length) dataWarn('Los 72 partidos de grupos tienen resultado pero resultados.grupos está VACÍO: el bonus de cierre de grupos (+3 por 1° exacto, +2 por 2° exacto) aún no se ha otorgado a nadie. El admin debe cargar las posiciones finales en Admin → Grupos.');
+// Bonus de cierre de grupos: por DECISIÓN DE REGLAS del admin (03-jul-2026) NO aplica —
+// los puntos de grupos quedaron cerrados antes de los 16avos. Coherencia esperada:
+// resultados.grupos debe permanecer VACÍO. Si alguien carga posiciones finales, el código
+// otorgaría el bonus (+3/+2) retroactivamente y cambiaría el ranking — avisar fuerte.
+if (Object.keys((SNAP.resultados || {}).grupos || {}).length) {
+  dataWarn('resultados.grupos tiene posiciones cargadas: esto ACTIVA el bonus de cierre de grupos (+3/+2), que por decisión de reglas (03-jul-2026) NO aplica. Vaciar grupos_json en la hoja Resultados o revisar la decisión de reglas antes de continuar.');
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -54,12 +54,27 @@ Verificaciones adicionales sobre los datos guardados:
 
 ## 2. Hallazgos que afectan puntos HOY (datos, no código)
 
-### 🔴 D1 — El bonus de cierre de grupos nunca se otorgó (impacto: hasta 47 pts por jugador)
+### D1 — Bonus de cierre de grupos: **NO APLICA por decisión de reglas** (resuelto 03-jul)
+
+> **Resolución del admin (03-jul-2026):** el puntaje de la fase de grupos quedó **cerrado e
+> inamovible** con los resultados matemáticos previos al inicio de los 16avos (antes de
+> Sudáfrica–Canadá). El bonus de posiciones finales (+3/+2) **no se considera**. Por lo
+> tanto `Resultados!grupos_json` debe **permanecer vacío** — no cargar las posiciones
+> finales en Admin → Grupos, porque eso activaría el bonus retroactivamente.
+>
+> Acción pendiente derivada: el banner del Ranking (index.html:4370) todavía anuncia
+> "Bonus fin de grupos: +2/+1 por posición exacta". Ese texto debe **eliminarse** para que
+> ningún jugador reclame un bonus que por regla no existe.
+
+Lo que sigue de esta sección se conserva **solo como referencia histórica** (qué habría
+pasado si el bonus se aplicara), porque documenta un comportamiento del código que sigue
+latente: si algún día alguien escribe posiciones en `grupos_json`, el bonus se otorgará
+automáticamente.
 
 `Resultados!grupos_json` está **vacío** (`{}`), por lo que `calcPtsGrupos()` (index.html:4694-4699)
-otorga **0 puntos de bonus** a todos, pese a que los 72 partidos de grupos terminaron el 27 de junio.
-El bonus (+3 por 1° exacto, +2 por 2° exacto, por cada uno de los 12 grupos) requiere que el
-admin cargue las posiciones finales en **Admin → 🏟️ Grupos** — y eso nunca ocurrió.
+otorga **0 puntos de bonus** a todos. El bonus (+3 por 1° exacto, +2 por 2° exacto, por
+cada uno de los 12 grupos) solo se activaría si el admin cargara posiciones finales en
+**Admin → 🏟️ Grupos**.
 
 Tablas finales reales calculadas desde los 72 marcadores (sin ambigüedad: ningún grupo
 requirió desempates más allá de puntos/dif. gol/goles a favor, por lo que el criterio de la
@@ -93,17 +108,9 @@ Bonus pendiente por jugador y **ranking corregido** si se aplica:
 | 13 | Catalina Aliste | 129 | +31 | **160** |
 | 14 | Estrella Rivera | 79 | +23 | **102** |
 
-⚠️ **El bonus cambia al líder y al podio completo** (con premios a los 2 primeros).
-Cargarlo no modifica ninguna predicción: solo escribe las posiciones reales en
-`Resultados!grupos_json` y el bonus se calcula solo. Es la aplicación de la regla ya
-publicada, pendiente desde el 27-jun.
-
-**Acción**: Admin → Grupos → marcar 1° y 2° reales de cada grupo → Guardar. Verificar
-después contra la tabla de arriba.
-
-**Nota adicional**: el banner del Ranking (index.html:4370) dice "Bonus fin de grupos:
-**+2/+1** por posición exacta", pero el código otorga **+3/+2** (index.html:4697-4698).
-Hay que corregir el texto (los jugadores deben poder verificar su propio puntaje).
+⚠️ Si se aplicara, el bonus cambiaría al líder y al podio completo — **por eso mismo la
+resolución de arriba (no aplica, grupos cerrados) debe quedar publicada en las reglas
+visibles de la app**, para que el criterio quede fijado antes de que decida premios.
 
 ### 🔴 D2 — Bélgica–Senegal (16avos, slot 7) guardado con marcador de 120', no de 90'
 
@@ -138,6 +145,31 @@ Causa raíz: el auto-sync (`fetchResultadosZafronix`, apps-script.gs:762) guarda
 `m.homeScore/m.awayScore` tal como los entrega la API con `aet=true`, sin verificar que
 sea el marcador de 90'. Y el formulario de Admin → Llaves (`guardarMarcadoresKO`,
 index.html:5287) tampoco valida que `aet ⇒ empate`. Ver hallazgos C4/C5.
+
+#### D2 confirmado por evidencia independiente: el caso Sara Barahona (agregado 03-jul, tarde)
+
+Reclamo de la jugadora: antes de Suiza–Argelia tenía **135** pts en pantalla; acertó el
+marcador exacto (2–0 → +4) y esperaba **139**, pero la app quedó en **138**.
+
+Reconstrucción con los datos reales de la planilla (desglose completo de sus 16avos en la
+suite/snapshot):
+
+- Con los datos **actuales**, Sara suma 47 (partidos) + 62 (grupos) + 29 (llaves) = **138** ✓,
+  y su total *sin* el slot 11 (Suiza–Argelia) da **134** — no 135.
+- El único punto que falta contra su recuerdo está en el **slot 7 (Bélgica–Senegal)**: su
+  predicción fue **2–1** y hoy recibe **0 pts** contra el `3–2 aet` guardado.
+- Si el slot 7 hubiera tenido el marcador de 90' (empate: **1–1 o 2–2**, cualquiera de los
+  dos), Sara habría mostrado **exactamente 135** antes de Suiza–Argelia, y **139** después
+  de su +4 — cuadra al punto con lo que ella vio.
+
+Conclusión: en algún momento el slot 7 tuvo (o debió tener) el marcador de 90' y fue
+sobrescrito con el marcador de 120' (3–2). El reclamo de Sara **no requiere ajuste manual
+de puntos ni tocar ninguna predicción**: se resuelve corrigiendo la fila `r32/slot 7` de
+`ScoresKO` con el marcador real de 90' (pendiente de confirmar si fue 1–1 o 2–2 — para
+Sara da +1 en ambos casos, pero para otros jugadores la matriz de arriba difiere según el
+marcador exacto). Descartadas las alternativas: los otros slots donde Sara puntúa bajo
+(slot 0: pred 2-0 vs 1-1 aet; slot 4: pred 1-2 vs 2-1) no tienen ninguna versión plausible
+del dato que explique el −1, y ningún marcador de grupos cambió su componente de partidos.
 
 ### 🟡 D3 — Filas basura/duplicadas en la hoja `Scores`
 
@@ -256,10 +288,13 @@ decidirá premios).
 
 ## 6. Checklist inmediato para el admin (antes de los 8vos, hoy 20:00)
 
-1. ☐ **Cargar posiciones finales de los 12 grupos** (Admin → Grupos) — desbloquea el bonus
-   pendiente (D1). Verificar contra la tabla de la sección 2.
-2. ☐ **Confirmar el marcador a los 90' de Bélgica–Senegal** y corregir la fila
-   `r32/slot 7` de ScoresKO (D2).
+1. ☐ ~~Cargar posiciones finales de los 12 grupos~~ **NO hacerlo**: por decisión de reglas
+   el bonus no aplica y los puntos de grupos quedaron inamovibles (ver D1). En su lugar,
+   **eliminar la frase "Bonus fin de grupos: +2/+1 por posición exacta"** del banner del
+   Ranking (index.html:4370) y publicar la regla en la app.
+2. ☐ **Confirmar el marcador a los 90' de Bélgica–Senegal** (¿1–1 o 2–2?) y corregir la
+   fila `r32/slot 7` de ScoresKO (D2). Esto resuelve automáticamente el reclamo de Sara
+   Barahona (135+4=139) y ajusta a los demás jugadores según la matriz de la sección 2.
 3. ☐ Borrar filas basura de `Scores` (D3).
 4. ☐ Al configurar los cruces de 8vos: cargarlos **una sola vez, en el orden del bracket
    oficial**, y no reordenarlos después de que alguien guarde predicciones (C1).
