@@ -4798,16 +4798,14 @@ function calcPtsKO(pron){
 // y el commit de esa corrección). Cada entrada debe estar confirmada con
 // evidencia (captura de pantalla de la predicción real del jugador) antes
 // de agregarse. Nunca debe usarse para restar puntos.
+// Sin correcciones activas. El caso de Sara Barahona (Suiza-Argelia) se
+// verificó contra los datos reales de la planilla el 03-jul-2026 y el
+// cálculo puro (sin ningún ajuste) ya reproduce el puntaje correcto —
+// el problema fue transitorio mientras se estabilizaba el orden de los
+// cruces y se corrigió solo al aplicarse el fix de guardarConfigKO.
 const KO_SCORE_CORRECTIONS = [
-  {
-    jugador: 'Sara Barahona',
-    delta: +1,
-    motivo: 'Predijo 2-0 exacto para Suiza vs Argelia (16avos, resultado real 2-0, sin alargue). ' +
-            'Correspondía +4 pts (1 gol local + 1 gol visita + 2 tendencia); el sistema calculó 3 pts ' +
-            'por desalineamiento de posición al reordenar los cruces de 16avos. Confirmado con captura ' +
-            'de pantalla el 03-jul-2026.',
-  },
-  // Agregar aquí más casos confirmados, con el mismo nivel de detalle.
+  // Agregar aquí solo casos confirmados contra datos reales (no solo
+  // capturas de pantalla momentáneas), con el mismo nivel de detalle.
 ];
 function getScoreCorrection(nombre){
   if(!nombre) return 0;
