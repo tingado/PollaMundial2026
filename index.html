@@ -4294,7 +4294,7 @@ async function saveKORound(){
   const preds=slots.map((s,i)=>{
     const g1=parseInt($id(`ko-${rnd}-${i}-g1`)?.value??'');
     const g2=parseInt($id(`ko-${rnd}-${i}-g2`)?.value??'');
-    return {g1:isNaN(g1)?null:g1, g2:isNaN(g2)?null:g2, local:s.local||'', visita:s.visita||''};
+    return {g1:isNaN(g1)?null:g1, g2:isNaN(g2)?null:g2, local:s.local||`Equipo ${2*i+1}`, visita:s.visita||`Equipo ${2*i+2}`};
   });
   setLoad('btn-save-ko',true);
   const r=await guardarKOPron(jugador,rnd,preds);
@@ -4504,12 +4504,12 @@ function renderProyecciones(grupo){
 // tal cual, único dato disponible para esas predicciones.
 function findKOPredForMatch(predsArr, i, localTeam, visitaTeam){
   if(!Array.isArray(predsArr)) return null;
+  const byName = predsArr.find(p => p && p.local === localTeam && p.visita === visitaTeam);
+  if(byName) return byName;
   const direct = predsArr[i];
-  const usaNombres = direct && direct.local!=null && direct.visita!=null;
-  if(usaNombres || predsArr.some(p=>p&&p.local!=null&&p.visita!=null)){
-    return predsArr.find(p=>p && p.local===localTeam && p.visita===visitaTeam) || null;
-  }
-  return direct || null;
+  const hasNames = direct && direct.local != null && direct.visita != null;
+  if(!hasNames) return direct || null;
+  return null;
 }
 
 function renderProyeccionesKO(rnd, cont, jugadores){
