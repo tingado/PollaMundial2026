@@ -35,11 +35,13 @@ function extractBalanced(src, startToken, open, close) {
     : src.indexOf(startToken);
   if (start === -1) throw new Error('No se encontró: ' + startToken);
   const openIdx = src.indexOf(open, start);
+  if (openIdx === -1) throw new Error('No se encontró "' + open + '" después de: ' + startToken);
   let depth = 0, i = openIdx;
   for (; i < src.length; i++) {
     if (src[i] === open) depth++;
     else if (src[i] === close) { depth--; if (depth === 0) break; }
   }
+  if (depth !== 0) throw new Error('Bloque sin cerrar (faltó "' + close + '") para: ' + startToken);
   return src.slice(start, i + 1);
 }
 const extractFn    = name => extractBalanced(HTML, 'function ' + name + '(', '{', '}');
@@ -194,6 +196,8 @@ S.state.koConfig = SNAP.koConfig;
 for (const j of SNAP.jugadores) {
   const n = j.nombre;
   test(`regresión total ${n} = ${TOTALES_ESPERADOS[n]} pts`, () => {
+    if (!(n in TOTALES_ESPERADOS) || !(n in DESGLOSE_ESPERADO))
+      throw new Error(`el jugador "${n}" del snapshot no tiene totales esperados definidos — ¿jugador nuevo o renombrado? Recalcula y agrégalo a TOTALES_ESPERADOS/DESGLOSE_ESPERADO`);
     const d = S.calcPtsDetalle(SNAP.pronosticos[n] || {}, SNAP.resultados, n);
     const [ep, eg, ek] = DESGLOSE_ESPERADO[n];
     eq(d.partidos, ep, 'partidos:'); eq(d.grupos, eg, 'grupos:'); eq(d.ko, ek, 'llaves:');
