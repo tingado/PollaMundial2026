@@ -1,5 +1,5 @@
 {
- "fecha_snapshot": "2026-07-03",
+ "fecha_snapshot": "2026-07-04",
  "jugadores": [
   {
    "nombre": "Omar Olave"
@@ -6386,7 +6386,7 @@
     "gV": 0
    },
    {
-    "gL": 3,
+    "gL": 2,
     "gV": 2,
     "aet": true,
     "winner": "local"
@@ -6407,11 +6407,25 @@
     "gL": 2,
     "gV": 0
    },
-   null,
-   null,
+   {
+    "gL": 1,
+    "gV": 1,
+    "aet": true,
+    "winner": "local"
+   },
+   {
+    "gL": 1,
+    "gV": 1,
+    "aet": true,
+    "winner": "visita"
+   },
    {
     "gL": 2,
     "gV": 1
+   },
+   {
+    "gL": 1,
+    "gV": 0
    }
   ]
  },
@@ -6487,6 +6501,45 @@
       "visita": "Ghana"
      }
     ]
+   },
+   "r16": {
+    "status": "auto",
+    "apertura": "2026-07-03T23:59:00-04:00",
+    "deadline": "2026-07-05T13:00:00-04:00",
+    "slots": [
+     {
+      "local": "Canadá",
+      "visita": "Marruecos"
+     },
+     {
+      "local": "Paraguay",
+      "visita": "Francia"
+     },
+     {
+      "local": "Brasil",
+      "visita": "Noruega"
+     },
+     {
+      "local": "México",
+      "visita": "Inglaterra"
+     },
+     {
+      "local": "Portugal",
+      "visita": "España"
+     },
+     {
+      "local": "Estados Unidos",
+      "visita": "Bélgica"
+     },
+     {
+      "local": "Argentina",
+      "visita": "Egipto"
+     },
+     {
+      "local": "Suiza",
+      "visita": "Colombia"
+     }
+    ]
    }
   }
  },
@@ -6494,74 +6547,74 @@
   "Omar Olave": {
    "partidos": 58,
    "grupos": 63,
-   "ko": 24,
-   "total": 145
+   "ko": 30,
+   "total": 151
   },
   "Gabriel Dartuwig": {
    "partidos": 46,
    "grupos": 57,
-   "ko": 27,
-   "total": 130
+   "ko": 34,
+   "total": 137
   },
   "Esteban": {
    "partidos": 51,
    "grupos": 63,
-   "ko": 23,
-   "total": 137
+   "ko": 27,
+   "total": 141
   },
   "Catalina Aliste": {
    "partidos": 43,
    "grupos": 57,
-   "ko": 29,
-   "total": 129
+   "ko": 32,
+   "total": 132
   },
   "Katherine Widemann": {
    "partidos": 38,
    "grupos": 64,
-   "ko": 27,
-   "total": 129
+   "ko": 35,
+   "total": 137
   },
   "Daniel Piña": {
    "partidos": 51,
    "grupos": 65,
-   "ko": 28,
-   "total": 144
+   "ko": 31,
+   "total": 147
   },
   "Diego Guerrero": {
    "partidos": 45,
    "grupos": 62,
-   "ko": 24,
-   "total": 131
+   "ko": 26,
+   "total": 133
   },
   "Claudia Villablanca": {
    "partidos": 50,
    "grupos": 60,
-   "ko": 30,
-   "total": 140
+   "ko": 34,
+   "total": 144
   },
   "Sara Barahona": {
    "partidos": 47,
    "grupos": 62,
-   "ko": 29,
-   "total": 138
+   "ko": 37,
+   "total": 146
   },
   "German Carvacho": {
    "partidos": 48,
    "grupos": 62,
-   "ko": 29,
-   "total": 139
+   "ko": 34,
+   "total": 144
   },
   "Dani Carvacho": {
    "partidos": 52,
    "grupos": 63,
-   "ko": 35,
-   "total": 150
+   "ko": 39,
+   "total": 154
   },
   "Agustín Delgado": {
    "partidos": 51,
    "grupos": 64,
-   "ko": 33,
-   "total": 148
+   "ko": 35,
+   "total": 150
   },
   "Estrella Rivera": {
    "partidos": 33,
@@ -6572,8 +6625,8 @@
   "Diego Triviño ()": {
    "partidos": 44,
    "grupos": 61,
-   "ko": 23,
-   "total": 128
+   "ko": 26,
+   "total": 131
   }
  }
 }

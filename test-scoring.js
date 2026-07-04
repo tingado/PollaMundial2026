@@ -167,51 +167,50 @@ test('sin resultados de grupos (grupos_json vacío) → bonus 0', () => conEstad
   () => eq(S.calcPtsGrupos({ grupos: { A: { p1: 'México', p2: 'Sudáfrica' } } }, S.state.resultados), 0)));
 
 // ─────────────────────────────────────────────────────────────
-// 6. SNAPSHOT REAL — regresión + integridad de datos
+// 6. SNAPSHOTS REALES — regresión contra TODOS los snapshots de test-data/
+//    Cada snapshot lleva embebido `esperado` (totales calculados de forma
+//    INDEPENDIENTE con la réplica en Python durante la auditoría). Para
+//    agregar un snapshot nuevo tras cerrar una ronda: regenerarlo desde la
+//    planilla con su campo `esperado` recalculado en Python.
 // ─────────────────────────────────────────────────────────────
-console.log('\n■ Snapshot real de la planilla (test-data/snapshot-2026-07-03.json)');
-const SNAP = JSON.parse(fs.readFileSync(path.join(__dirname, 'test-data', 'snapshot-2026-07-03.json'), 'utf8'));
+const snapFiles = fs.readdirSync(path.join(__dirname, 'test-data'))
+  .filter(f => /^snapshot-.*\.json$/.test(f)).sort();
+if (!snapFiles.length) { console.log('✗ No hay snapshots en test-data/'); process.exit(1); }
+const snapshots = snapFiles.map(f => [f, JSON.parse(fs.readFileSync(path.join(__dirname, 'test-data', f), 'utf8'))]);
+const [, SNAP] = snapshots[snapshots.length - 1]; // el más reciente: usado en integridad y chequeos de datos
 
-// Totales esperados calculados de forma INDEPENDIENTE (recálculo Python, auditoría 03-07-2026).
-// Si cambias la fórmula de puntaje a propósito, recalcula y actualiza estos valores.
-const TOTALES_ESPERADOS = {
-  'Omar Olave': 145, 'Gabriel Dartuwig': 130, 'Esteban': 137, 'Catalina Aliste': 129,
-  'Katherine Widemann': 129, 'Daniel Piña': 144, 'Diego Guerrero': 131,
-  'Claudia Villablanca': 140, 'Sara Barahona': 138, 'German Carvacho': 139,
-  'Dani Carvacho': 150, 'Agustín Delgado': 148, 'Estrella Rivera': 79, 'Diego Triviño ()': 128,
-};
-const DESGLOSE_ESPERADO = {
-  'Omar Olave': [58, 63, 24], 'Gabriel Dartuwig': [46, 57, 27], 'Esteban': [51, 63, 23],
-  'Catalina Aliste': [43, 57, 29], 'Katherine Widemann': [38, 64, 27], 'Daniel Piña': [51, 65, 28],
-  'Diego Guerrero': [45, 62, 24], 'Claudia Villablanca': [50, 60, 30], 'Sara Barahona': [47, 62, 29],
-  'German Carvacho': [48, 62, 29], 'Dani Carvacho': [52, 63, 35], 'Agustín Delgado': [51, 64, 33],
-  'Estrella Rivera': [33, 46, 0], 'Diego Triviño ()': [44, 61, 23],
-};
+for (const [archivo, snap] of snapshots) {
+  console.log(`\n■ Snapshot real de la planilla (${archivo})`);
+  S.state.scores = snap.scores;
+  S.state.scoresKO = snap.scoresKO;
+  S.state.resultados = snap.resultados;
+  S.state.koConfig = snap.koConfig;
 
+  for (const j of snap.jugadores) {
+    const n = j.nombre;
+    const e = (snap.esperado || {})[n];
+    test(`regresión total ${n} = ${e ? e.total : '???'} pts`, () => {
+      if (!e) throw new Error(`el jugador "${n}" del snapshot no tiene totales esperados — ¿jugador nuevo o renombrado? Recalcula (réplica Python) y agrégalo al campo "esperado" del snapshot`);
+      const d = S.calcPtsDetalle(snap.pronosticos[n] || {}, snap.resultados, n);
+      eq(d.partidos, e.partidos, 'partidos:'); eq(d.grupos, e.grupos, 'grupos:'); eq(d.ko, e.ko, 'llaves:');
+      eq(d.total, e.total, 'total:');
+      eq(S.calcPtsTotal(snap.pronosticos[n] || {}, snap.resultados, n), e.total, 'calcPtsTotal≠calcPtsDetalle:');
+    });
+  }
+
+  test('consistencia interna: calcPtsDetalle.total === suma de sus componentes (todos los jugadores)', () => {
+    for (const j of snap.jugadores) {
+      const d = S.calcPtsDetalle(snap.pronosticos[j.nombre] || {}, snap.resultados, j.nombre);
+      eq(d.total, d.grupos + d.ko + d.partidos + d.correccion, j.nombre + ':');
+    }
+  });
+}
+
+// El estado activo para las secciones 7 y 8 es el snapshot MÁS RECIENTE.
 S.state.scores = SNAP.scores;
 S.state.scoresKO = SNAP.scoresKO;
 S.state.resultados = SNAP.resultados;
 S.state.koConfig = SNAP.koConfig;
-
-for (const j of SNAP.jugadores) {
-  const n = j.nombre;
-  test(`regresión total ${n} = ${TOTALES_ESPERADOS[n]} pts`, () => {
-    if (!(n in TOTALES_ESPERADOS) || !(n in DESGLOSE_ESPERADO))
-      throw new Error(`el jugador "${n}" del snapshot no tiene totales esperados definidos — ¿jugador nuevo o renombrado? Recalcula y agrégalo a TOTALES_ESPERADOS/DESGLOSE_ESPERADO`);
-    const d = S.calcPtsDetalle(SNAP.pronosticos[n] || {}, SNAP.resultados, n);
-    const [ep, eg, ek] = DESGLOSE_ESPERADO[n];
-    eq(d.partidos, ep, 'partidos:'); eq(d.grupos, eg, 'grupos:'); eq(d.ko, ek, 'llaves:');
-    eq(d.total, TOTALES_ESPERADOS[n], 'total:');
-    eq(S.calcPtsTotal(SNAP.pronosticos[n] || {}, SNAP.resultados, n), TOTALES_ESPERADOS[n], 'calcPtsTotal≠calcPtsDetalle:');
-  });
-}
-
-test('consistencia interna: calcPtsDetalle.total === suma de sus componentes (todos los jugadores)', () => {
-  for (const j of SNAP.jugadores) {
-    const d = S.calcPtsDetalle(SNAP.pronosticos[j.nombre] || {}, SNAP.resultados, j.nombre);
-    eq(d.total, d.grupos + d.ko + d.partidos + d.correccion, j.nombre + ':');
-  }
-});
 
 // ─────────────────────────────────────────────────────────────
 // 7. INTEGRIDAD DE ÍNDICES (el bug de desalineamiento no puede repetirse en silencio)
