@@ -5568,7 +5568,7 @@ function simGetNextMatch() {
 
 // Estado en memoria del simulador (muere al refrescar)
 let _simScores = {};   // {matchId: {gL: number, gV: number}}
-let _simScoresKO = {}; // {slotR32: {gL, gV}} — simulador de fase eliminatoria
+let _simScoresKO = {}; // {"rnd-slot": {gL, gV}} — simulador de fase eliminatoria (cualquier ronda)
 let _simDemo   = false;
 let _simTicker = null; // intervalo del reloj
 
@@ -5688,31 +5688,42 @@ function getR32Kickoff(local, visita) {
   return null; // no encontrado
 }
 
-// Devuelve solo el partido de 16avos que ya empezó y sigue sin resultado
-// (el de kickoff más próximo al presente), uno a la vez, igual que en fase
-// de grupos. Ordena por horario real de kickoff, no por orden de bracket,
-// para no confundir partidos tempranos vs tardíos del mismo día.
+// Devuelve los partidos de llaves pendientes de simular. Recorre las rondas
+// en orden (16avos → 8vos → 4tos → semis → final); apenas una ronda tiene
+// partidos sin resultado, se queda ahí (no salta a la siguiente ronda hasta
+// que la actual esté 100% jugada).
+// Para 16avos (única ronda con horario oficial conocido, KO_R32_SCHEDULE) se
+// filtra al que ya empezó y se muestra solo el de kickoff más reciente, igual
+// que en fase de grupos. Para rondas siguientes (sin horario cargado en la
+// app) se muestran todos los partidos pendientes de esa ronda a la vez.
 function simGetKOMatches(){
-  const slots = ((state.koConfig?.rounds||{}).r32?.slots)||[];
-  const results = (state.scoresKO||{}).r32||[];
-  const now = Date.now();
+  for(const rnd of KO_ROUNDS){
+    const slots = ((state.koConfig?.rounds||{})[rnd]?.slots)||[];
+    if(!slots.length) continue;
+    const results = (state.scoresKO||{})[rnd]||[];
 
-  const candidatos = [];
-  for(let i=0;i<slots.length;i++){
-    const s = slots[i];
-    const r = results[i];
-    if(r && r.gL!=null) continue;
-    if(!s?.local && !s?.visita) continue;
-    const kickoff = getR32Kickoff(s.local, s.visita);
-    if(kickoff==null || kickoff > now) continue; // aún no empieza o desconocido
-    candidatos.push({ id:'r32-'+i, slot:i, local:s.local, visita:s.visita, kickoff });
+    const pendientes = [];
+    for(let i=0;i<slots.length;i++){
+      const s = slots[i];
+      const r = results[i];
+      if(r && r.gL!=null) continue;
+      if(!s?.local && !s?.visita) continue;
+      pendientes.push({ id:rnd+'-'+i, rnd, slot:i, local:s.local, visita:s.visita });
+    }
+    if(!pendientes.length) continue; // ronda 100% jugada, seguir a la siguiente
+
+    if(rnd!=='r32') return pendientes;
+
+    // 16avos: filtrar por horario real de kickoff (dato disponible solo aquí)
+    const now = Date.now();
+    const conHorario = pendientes
+      .map(p => ({...p, kickoff:getR32Kickoff(p.local,p.visita)}))
+      .filter(p => p.kickoff!=null && p.kickoff<=now);
+    if(!conHorario.length) return []; // ninguno ha empezado aún
+    conHorario.sort((a,b) => a.kickoff - b.kickoff);
+    return [conHorario[conHorario.length-1]];
   }
-
-  if(!candidatos.length) return [];
-
-  // Solo el de kickoff más reciente (el que está en curso ahora)
-  candidatos.sort((a,b) => a.kickoff - b.kickoff);
-  return [candidatos[candidatos.length-1]];
+  return [];
 }
 
 // Ranking proyectado inyectando los marcadores KO simulados en state.scoresKO.
@@ -5723,11 +5734,12 @@ function simCalcRankingKO(matches){
   state.jugadores.forEach(j=>{ realPtsMap[j.nombre]=calcPtsTotal(state.pronosticos[j.nombre]||{}, state.resultados, j.nombre); });
 
   const tmp = JSON.parse(JSON.stringify(orig||{}));
-  if(!tmp.r32) tmp.r32=[];
   matches.forEach(m=>{
-    const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
-    while(tmp.r32.length<=m.slot) tmp.r32.push(null);
-    tmp.r32[m.slot]={gL:sc.gL,gV:sc.gV};
+    const key=m.rnd+'-'+m.slot;
+    const sc=_simScoresKO[key]||{gL:0,gV:0};
+    if(!tmp[m.rnd]) tmp[m.rnd]=[];
+    while(tmp[m.rnd].length<=m.slot) tmp[m.rnd].push(null);
+    tmp[m.rnd][m.slot]={gL:sc.gL,gV:sc.gV};
   });
 
   state.scoresKO=tmp;
@@ -5738,8 +5750,9 @@ function simCalcRankingKO(matches){
       const basePts=realPtsMap[j.nombre];
       const simPts=total-basePts;
       const detail=matches.map(m=>{
-        const pred=((pron.ko||{}).r32||[])[m.slot];
-        const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
+        const key=m.rnd+'-'+m.slot;
+        const pred=((pron.ko||{})[m.rnd]||[])[m.slot];
+        const sc=_simScoresKO[key]||{gL:0,gV:0};
         const predObj=pred&&pred.g1!=null&&pred.g2!=null?{g1:pred.g1,g2:pred.g2}:null;
         const pts=calcPtsKOPartido(predObj,{gL:sc.gL,gV:sc.gV});
         return {local:m.local,visita:m.visita,pred:predObj?`${pred.g1}-${pred.g2}`:null,sim:`${sc.gL}-${sc.gV}`,pts};
@@ -5749,32 +5762,36 @@ function simCalcRankingKO(matches){
   } finally { state.scoresKO=orig; }
 }
 
-function simUpdateScoreKO(slot, side, val){
-  if(!_simScoresKO[slot]) _simScoresKO[slot]={gL:0,gV:0};
-  _simScoresKO[slot][side]=Math.max(0, parseInt(val,10)||0);
+function simUpdateScoreKO(rnd, slot, side, val){
+  const key=rnd+'-'+slot;
+  if(!_simScoresKO[key]) _simScoresKO[key]={gL:0,gV:0};
+  _simScoresKO[key][side]=Math.max(0, parseInt(val,10)||0);
   simRefreshRanking();
 }
 
 // Renderiza el simulador en modo fase eliminatoria.
 function simRenderKO(matches, timeStr){
   const root = $id('sim-root'); if(!root) return;
-  matches.forEach(m=>{ if(!_simScoresKO[m.slot]) _simScoresKO[m.slot]={gL:0,gV:0}; });
+  matches.forEach(m=>{ const key=m.rnd+'-'+m.slot; if(!_simScoresKO[key]) _simScoresKO[key]={gL:0,gV:0}; });
+
+  const rondaLabel = KO_ROUND_SHORT[matches[0]?.rnd] || '';
 
   const cardsHtml = matches.map(m=>{
-    const sc=_simScoresKO[m.slot]||{gL:0,gV:0};
+    const key=m.rnd+'-'+m.slot;
+    const sc=_simScoresKO[key]||{gL:0,gV:0};
     return `
     <div class="sim-card">
-      <span class="sim-group-badge" style="background:rgba(245,188,0,0.15);color:#b8860b;">16AVOS</span>
+      <span class="sim-group-badge" style="background:rgba(245,188,0,0.15);color:#b8860b;">${esc(KO_ROUND_SHORT[m.rnd]||'').toUpperCase()}</span>
       <span class="sim-minute" style="background:rgba(245,188,0,0.15);color:#b8860b;">PRÓXIMO</span>
       <span class="sim-team">${esc(m.local)}</span>
       <div class="sim-score-wrap">
         <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gL}"
-               oninput="simUpdateScoreKO(${m.slot},'gL',this.value)" onchange="simUpdateScoreKO(${m.slot},'gL',this.value)"
-               inputmode="numeric" pattern="[0-9]*" id="sik-${m.slot}-gL">
+               oninput="simUpdateScoreKO('${m.rnd}',${m.slot},'gL',this.value)" onchange="simUpdateScoreKO('${m.rnd}',${m.slot},'gL',this.value)"
+               inputmode="numeric" pattern="[0-9]*" id="sik-${m.rnd}-${m.slot}-gL">
         <span class="sim-score-sep">–</span>
         <input class="sim-score-input" type="number" min="0" max="20" value="${sc.gV}"
-               oninput="simUpdateScoreKO(${m.slot},'gV',this.value)" onchange="simUpdateScoreKO(${m.slot},'gV',this.value)"
-               inputmode="numeric" pattern="[0-9]*" id="sik-${m.slot}-gV">
+               oninput="simUpdateScoreKO('${m.rnd}',${m.slot},'gV',this.value)" onchange="simUpdateScoreKO('${m.rnd}',${m.slot},'gV',this.value)"
+               inputmode="numeric" pattern="[0-9]*" id="sik-${m.rnd}-${m.slot}-gV">
       </div>
       <span class="sim-team vis">${esc(m.visita)}</span>
     </div>`;
@@ -5801,12 +5818,12 @@ function simRenderKO(matches, timeStr){
   root.innerHTML = `
   <div class="sim-banner">
     <div class="sim-banner-dot"></div>
-    <div class="sim-banner-label">🏆 Simulación Llaves — 16avos</div>
+    <div class="sim-banner-label">🏆 Simulación Llaves — ${esc(rondaLabel)}</div>
     <div class="sim-banner-clock" id="sim-clock">${timeStr}</div>
-    <div class="sim-banner-sub">Sandbox temporal — simula los marcadores de 16avos y ve cómo quedaría el ranking. No se guarda nada.</div>
+    <div class="sim-banner-sub">Sandbox temporal — simula los marcadores de ${esc(rondaLabel)} y ve cómo quedaría el ranking. No se guarda nada.</div>
   </div>
   <div class="sim-demo-bar"><div>
-    <div class="sim-demo-label">⏭️ Partidos de 16avos por jugar (${matches.length})</div>
+    <div class="sim-demo-label">⏭️ Partidos de ${esc(rondaLabel)} por jugar (${matches.length})</div>
     <div style="font-size:11px;color:var(--muted);margin-top:2px;">Pon un marcador y mira el ranking proyectado. Scoring de llaves: +1 gol local, +1 gol visita, +2 ganador = 4 exacto.</div>
   </div></div>
   <div class="sim-matches">${cardsHtml}</div>
