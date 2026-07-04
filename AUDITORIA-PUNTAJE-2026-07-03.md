@@ -198,6 +198,23 @@ teniendo presente D2 (validar partidos con alargue antes de confiar en el sync).
 Severidad: 🔴 alto · 🟡 medio · 🔵 bajo. Ninguno altera puntos hoy (verificado contra la
 planilla); son puertas abiertas para errores futuros.
 
+> **Actualización 04-jul-2026 — blindaje aplicado** (a pedido del admin, tras repetirse el
+> patrón de D2 con Argentina–Cabo Verde, detectado y cargado bien esta vez):
+> - **C1 corregido**: `guardarConfigKO` (cliente) exige confirmación explícita para cambiar
+>   cruces ya definidos cuando la ronda tiene predicciones, y `guardarKOConfig` (servidor)
+>   **rechaza** ese cambio salvo `force='1'` — ninguna vía puede reordenar en silencio.
+> - **C4 corregido**: el formulario Admin → Llaves bloquea guardar ET/Pen con marcador
+>   desigualado (debe ser el empate de los 90') y exige elegir quién avanzó.
+> - **C5 corregido**: `guardarResultadosKO` (servidor) rechaza `aet` con `gL≠gV`, y el
+>   auto-sync de Zafronix **omite** partidos con alargue cuyo marcador venga desigualado
+>   (marcador de 120'), dejándolos para carga manual con el marcador de 90'.
+> - **C11 corregido**: el banner del Ranking ya no promete el bonus de fin de grupos
+>   (que por decisión de reglas no aplica) y ahora resume la regla real de llaves.
+>
+> ⚠️ Para que esto quede vivo: el cambio de `index.html` se publica al mergear a `main`
+> (GitHub Pages); el de `apps-script.gs` requiere pegar el archivo en el editor de Apps
+> Script y crear **New version** del deployment.
+
 | # | Sev. | Archivo:línea | Hallazgo | Escenario que lo dispara |
 |---|---|---|---|---|
 | C1 | 🔴 | index.html:5249 (`guardarConfigKO`) | El fix actual evita compactar, pero **no protege contra reordenar/reescribir cruces ya definidos** cuando ya existen predicciones guardadas. `importarCrucesKO` (5222) rellena los inputs en el orden del texto pegado; si el admin re-importa 8vos/4tos/semis en otro orden después de que la gente predijo, se guarda sin advertencia y TODAS las predicciones quedan contra el partido equivocado. | Admin re-pega el bracket de 8vos con otro orden después del cierre de predicciones. |

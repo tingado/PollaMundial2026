@@ -4367,7 +4367,7 @@ function renderRanking(){
   const noBanner=!hayResultados?`<div style="background:rgba(96,200,255,0.07);border:1px solid rgba(96,200,255,0.2);border-radius:10px;padding:10px 14px;margin-bottom:1rem;font-size:12px;color:#60c8ff;">
     ⏳ <strong>Esperando resultados</strong> — el admin aún no ha ingresado marcadores. Ve a Admin → ⚽ Marcadores para cargarlos.
   </div>`:`<div style="background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.2);border-radius:10px;padding:8px 14px;margin-bottom:1rem;font-size:11px;color:var(--muted);">
-    ⚽ <strong>${nPartidos}</strong> partido${nPartidos!==1?'s':''} con resultado · <strong>Grupos</strong>: +2 si ganó tu 1° predicho · +1 si ganó tu 2° predicho · Bonus fin de grupos: +2/+1 por posición exacta
+    ⚽ <strong>${nPartidos}</strong> partido${nPartidos!==1?'s':''} con resultado · <strong>Grupos</strong>: +2 si ganó tu 1° predicho · +1 si ganó tu 2° predicho · <strong>Llaves</strong>: +1 por gol de cada lado · +2 ganador/empate (marcador a los 90')
   </div>`;
 
   cont.innerHTML=`
@@ -5271,10 +5271,32 @@ async function guardarConfigKO(){
     slots.pop();
   }
 
+  // GUARDIA ANTI-DESALINEAMIENTO: si esta ronda ya tiene predicciones guardadas,
+  // cambiar los equipos de un cruce ya definido compara esas predicciones contra
+  // OTRO partido (se anclan por posición). Se exige confirmación explícita y se
+  // avisa al servidor (force) para que el backend también lo permita a sabiendas.
+  const oldSlots=((state.koConfig?.rounds||{})[r]?.slots)||[];
+  const rondaConPreds=Object.values(state.pronosticos||{}).some(p=>{
+    const arr=p?.ko?.[r];
+    return Array.isArray(arr)&&arr.some(x=>x&&(x.g1!=null||x.g2!=null));
+  });
+  const cambios=[];
+  oldSlots.forEach((s,i)=>{
+    if(!s||(!s.local&&!s.visita)) return; // slot que estaba vacío: se puede llenar libremente
+    const n=slots[i]||{local:'',visita:''};
+    if(n.local!==s.local||n.visita!==s.visita) cambios.push(`P${i+1}: ${s.local||'?'} vs ${s.visita||'?'} → ${n.local||'(vacío)'} vs ${n.visita||'(vacío)'}`);
+  });
+  let force=false;
+  if(cambios.length&&rondaConPreds){
+    const ok=confirm(`⚠️ PELIGRO — vas a cambiar cruces YA DEFINIDOS de una ronda que YA TIENE predicciones guardadas:\n\n${cambios.join('\n')}\n\nLas predicciones se anclan a la POSICIÓN del cruce: si esto es un reordenamiento, TODAS las predicciones guardadas quedarán comparadas contra el partido equivocado (es el bug que ya causó problemas en 16avos).\n\nContinúa SOLO si corriges un error de tipeo sin cambiar qué partido va en cada posición.\n\n¿Guardar de todos modos?`);
+    if(!ok){ setMsg('msg-admin-ko','Guardado cancelado — los cruces no se modificaron.','warn'); return; }
+    force=true;
+  }
+
   const newConfig={rounds:{...(state.koConfig?.rounds||{}),[r]:{status,apertura,deadline,slots}}};
   setLoad('btn-ko-config',true,'Guardando...');
   try{
-    await api({action:'guardarKOConfig',config:JSON.stringify(newConfig)});
+    await api({action:'guardarKOConfig',config:JSON.stringify(newConfig),force:force?'1':'0'});
     state.koConfig=newConfig;
     renderKORoundTabs();
     renderKOHomeBanner();
@@ -5300,6 +5322,20 @@ async function guardarMarcadoresKO(){
   }).filter(Boolean);
 
   if(!resultados.length){ setMsg('msg-admin-ko','No hay resultados completos para guardar','err'); return; }
+
+  // Regla de alargue: si un partido llegó a ET/penales es porque los 90' terminaron EN EMPATE,
+  // y el puntaje SIEMPRE usa el marcador de los 90' (los goles de alargue no suman).
+  // Esto bloquea el error que ya ocurrió (guardar el 3–2 de 120' de Bélgica–Senegal).
+  for(const res of resultados){
+    if(res.aet&&res.gL!==res.gV){
+      setMsg('msg-admin-ko',`⚠️ P${res.slot+1}: marcaste ET/Pen con ${res.gL}–${res.gV}, pero un partido con alargue fue EMPATE a los 90'. Ingresa el marcador de los 90 minutos (ej: 2–2), no el del alargue, y elige el ganador.`,'err');
+      return;
+    }
+    if(res.aet&&!res.winner){
+      setMsg('msg-admin-ko',`⚠️ P${res.slot+1}: con ET/Pen debes elegir quién avanzó (→ Local / → Visita).`,'err');
+      return;
+    }
+  }
 
   setLoad('btn-ko-results',true,'Guardando...');
   try{
