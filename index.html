@@ -5648,38 +5648,53 @@ function simCalcRanking(activoMatches) {
   }
 }
 
-// ── SIMULADOR FASE ELIMINATORIA (16avos) ──
+// ── SIMULADOR FASE ELIMINATORIA (todas las rondas) ──
 
-// Calendario oficial FIFA World Cup 2026 — 16avos de Final, hora de Chile.
+// Calendario oficial FIFA World Cup 2026 por ronda, hora de Chile.
 // dt es un timestamp con offset -04:00 (Chile en horario de invierno = mismo
 // huso que las sedes EE.UU./CAN/MEX usado en PARTIDOS de fase de grupos).
-const KO_R32_SCHEDULE = [
-  { local:'Sudáfrica',       visita:'Canadá',      dt:'2026-06-28T15:00:00-04:00' },
-  { local:'Brasil',          visita:'Japón',       dt:'2026-06-29T13:00:00-04:00' },
-  { local:'Alemania',        visita:'Paraguay',    dt:'2026-06-29T16:30:00-04:00' },
-  { local:'Países Bajos',    visita:'Marruecos',   dt:'2026-06-29T21:00:00-04:00' },
-  { local:'Costa de Marfil', visita:'Noruega',     dt:'2026-06-30T13:00:00-04:00' },
-  { local:'Francia',         visita:'Suecia',      dt:'2026-06-30T17:00:00-04:00' },
-  { local:'México',          visita:'Ecuador',     dt:'2026-06-30T21:00:00-04:00' },
-  { local:'Inglaterra',      visita:'R.D. del Congo', dt:'2026-07-01T12:00:00-04:00' },
-  { local:'Bélgica',         visita:'Senegal',     dt:'2026-07-01T16:00:00-04:00' },
-  { local:'Estados Unidos',  visita:'Bosnia',      dt:'2026-07-01T20:00:00-04:00' },
-  { local:'España',          visita:'Austria',     dt:'2026-07-02T15:00:00-04:00' },
-  { local:'Portugal',        visita:'Croacia',     dt:'2026-07-02T19:00:00-04:00' },
-  { local:'Suiza',           visita:'Algeria',     dt:'2026-07-02T23:00:00-04:00' },
-  { local:'Australia',       visita:'Egipto',      dt:'2026-07-03T14:00:00-04:00' },
-  { local:'Argentina',       visita:'Cabo Verde',  dt:'2026-07-03T18:00:00-04:00' },
-  { local:'Colombia',        visita:'Ghana',       dt:'2026-07-03T21:00:00-04:00' },
-];
+const KO_SCHEDULES = {
+  r32: [
+    { local:'Sudáfrica',       visita:'Canadá',      dt:'2026-06-28T15:00:00-04:00' },
+    { local:'Brasil',          visita:'Japón',       dt:'2026-06-29T13:00:00-04:00' },
+    { local:'Alemania',        visita:'Paraguay',    dt:'2026-06-29T16:30:00-04:00' },
+    { local:'Países Bajos',    visita:'Marruecos',   dt:'2026-06-29T21:00:00-04:00' },
+    { local:'Costa de Marfil', visita:'Noruega',     dt:'2026-06-30T13:00:00-04:00' },
+    { local:'Francia',         visita:'Suecia',      dt:'2026-06-30T17:00:00-04:00' },
+    { local:'México',          visita:'Ecuador',     dt:'2026-06-30T21:00:00-04:00' },
+    { local:'Inglaterra',      visita:'R.D. del Congo', dt:'2026-07-01T12:00:00-04:00' },
+    { local:'Bélgica',         visita:'Senegal',     dt:'2026-07-01T16:00:00-04:00' },
+    { local:'Estados Unidos',  visita:'Bosnia',      dt:'2026-07-01T20:00:00-04:00' },
+    { local:'España',          visita:'Austria',     dt:'2026-07-02T15:00:00-04:00' },
+    { local:'Portugal',        visita:'Croacia',     dt:'2026-07-02T19:00:00-04:00' },
+    { local:'Suiza',           visita:'Algeria',     dt:'2026-07-02T23:00:00-04:00' },
+    { local:'Australia',       visita:'Egipto',      dt:'2026-07-03T14:00:00-04:00' },
+    { local:'Argentina',       visita:'Cabo Verde',  dt:'2026-07-03T18:00:00-04:00' },
+    { local:'Colombia',        visita:'Ghana',       dt:'2026-07-03T21:00:00-04:00' },
+  ],
+  r16: [
+    { local:'Canadá',         visita:'Marruecos',   dt:'2026-07-04T13:00:00-04:00' },
+    { local:'Paraguay',       visita:'Francia',     dt:'2026-07-04T17:00:00-04:00' },
+    { local:'Brasil',         visita:'Noruega',     dt:'2026-07-05T16:00:00-04:00' },
+    { local:'México',         visita:'Inglaterra',  dt:'2026-07-05T20:00:00-04:00' },
+    { local:'Portugal',       visita:'España',      dt:'2026-07-06T15:00:00-04:00' },
+    { local:'Estados Unidos', visita:'Bélgica',     dt:'2026-07-06T17:00:00-04:00' },
+    { local:'Argentina',      visita:'Egipto',      dt:'2026-07-07T12:00:00-04:00' },
+    { local:'Suiza',          visita:'Colombia',    dt:'2026-07-07T16:00:00-04:00' },
+  ],
+};
 
-// Busca el kickoff (timestamp ms) del partido comparando por inclusión de
-// substring normalizado (tolera variantes de nombre: "Bosnia y Herzegovina",
-// "Congo" vs "RD Congo", etc.)
-function getR32Kickoff(local, visita) {
+// Busca el kickoff (timestamp ms) de un partido de llaves comparando por
+// inclusión de substring normalizado (tolera variantes de nombre: "Bosnia y
+// Herzegovina", "Congo" vs "RD Congo", etc.). rnd sin calendario cargado
+// (qf/sf/fin, aún no jugadas al momento de escribir esto) devuelve null.
+function getKOKickoff(rnd, local, visita) {
   if (!local || !visita) return null;
+  const schedule = KO_SCHEDULES[rnd];
+  if (!schedule) return null;
   const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   const nL = norm(local), nV = norm(visita);
-  for(const e of KO_R32_SCHEDULE){
+  for(const e of schedule){
     const eL = norm(e.local), eV = norm(e.visita);
     const match = (nL.includes(eL)||eL.includes(nL)) && (nV.includes(eV)||eV.includes(nV));
     const matchSwap = (nV.includes(eL)||eL.includes(nV)) && (nL.includes(eV)||eV.includes(nL));
@@ -5688,14 +5703,13 @@ function getR32Kickoff(local, visita) {
   return null; // no encontrado
 }
 
-// Devuelve los partidos de llaves pendientes de simular. Recorre las rondas
-// en orden (16avos → 8vos → 4tos → semis → final); apenas una ronda tiene
-// partidos sin resultado, se queda ahí (no salta a la siguiente ronda hasta
-// que la actual esté 100% jugada).
-// Para 16avos (única ronda con horario oficial conocido, KO_R32_SCHEDULE) se
-// filtra al que ya empezó y se muestra solo el de kickoff más reciente, igual
-// que en fase de grupos. Para rondas siguientes (sin horario cargado en la
-// app) se muestran todos los partidos pendientes de esa ronda a la vez.
+// Devuelve solo el partido de llaves que está en curso ahora mismo, uno a la
+// vez, igual que en fase de grupos. Recorre las rondas en orden (16avos →
+// 8vos → 4tos → semis → final); se detiene en la primera ronda que tenga
+// partidos sin resultado. Dentro de esa ronda, filtra por horario real de
+// kickoff (KO_SCHEDULES) y muestra el de kickoff más reciente que ya empezó.
+// Si la ronda no tiene calendario cargado (aún no llega esa fase del torneo),
+// muestra todos los pendientes de esa ronda como respaldo.
 function simGetKOMatches(){
   for(const rnd of KO_ROUNDS){
     const slots = ((state.koConfig?.rounds||{})[rnd]?.slots)||[];
@@ -5712,12 +5726,11 @@ function simGetKOMatches(){
     }
     if(!pendientes.length) continue; // ronda 100% jugada, seguir a la siguiente
 
-    if(rnd!=='r32') return pendientes;
+    if(!KO_SCHEDULES[rnd]) return pendientes; // sin calendario cargado: mostrar todos
 
-    // 16avos: filtrar por horario real de kickoff (dato disponible solo aquí)
     const now = Date.now();
     const conHorario = pendientes
-      .map(p => ({...p, kickoff:getR32Kickoff(p.local,p.visita)}))
+      .map(p => ({...p, kickoff:getKOKickoff(rnd,p.local,p.visita)}))
       .filter(p => p.kickoff!=null && p.kickoff<=now);
     if(!conHorario.length) return []; // ninguno ha empezado aún
     conHorario.sort((a,b) => a.kickoff - b.kickoff);
