@@ -502,10 +502,19 @@ function guardarPron(p) {
       // en ese caso se preserva el 'ko' ya guardado en la planilla en vez
       // de borrarlo. Si el payload sí trae 'ko', se fusiona ronda por ronda
       // con el existente para no perder rondas que el payload no incluya.
+      if (!pron || typeof pron !== 'object') {
+        return { ok: false, error: 'Pronóstico inválido' };
+      }
       let existing = {};
-      try { existing = JSON.parse(rows[i][1] || '{}'); } catch(e) {}
+      try {
+        const parsed = JSON.parse(rows[i][1] || '{}');
+        if (parsed && typeof parsed === 'object') {
+          existing = parsed;
+        }
+      } catch(e) {}
       if (existing.ko && Object.keys(existing.ko).length) {
-        pron.ko = Object.assign({}, existing.ko, pron.ko || {});
+        const safePronKo = (pron.ko && typeof pron.ko === 'object') ? pron.ko : {};
+        pron.ko = Object.assign({}, existing.ko, safePronKo);
       }
       sh.getRange(i + 1, 2).setValue(JSON.stringify(pron));
       return { ok: true };
