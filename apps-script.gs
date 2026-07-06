@@ -495,6 +495,27 @@ function guardarPron(p) {
   const rows = sh.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] === nombre) {
+      // CRÍTICO: nunca sobrescribir ciegamente. Si el navegador que guarda
+      // Grupos/Partidos tiene en memoria un estado viejo (ej. una pestaña
+      // abierta desde antes de que el jugador guardara sus predicciones de
+      // llaves en otra sesión), el payload entrante puede no traer 'ko' —
+      // en ese caso se preserva el 'ko' ya guardado en la planilla en vez
+      // de borrarlo. Si el payload sí trae 'ko', se fusiona ronda por ronda
+      // con el existente para no perder rondas que el payload no incluya.
+      if (!pron || typeof pron !== 'object') {
+        return { ok: false, error: 'Pronóstico inválido' };
+      }
+      let existing = {};
+      try {
+        const parsed = JSON.parse(rows[i][1] || '{}');
+        if (parsed && typeof parsed === 'object') {
+          existing = parsed;
+        }
+      } catch(e) {}
+      if (existing.ko && Object.keys(existing.ko).length) {
+        const safePronKo = (pron.ko && typeof pron.ko === 'object') ? pron.ko : {};
+        pron.ko = Object.assign({}, existing.ko, safePronKo);
+      }
       sh.getRange(i + 1, 2).setValue(JSON.stringify(pron));
       return { ok: true };
     }
