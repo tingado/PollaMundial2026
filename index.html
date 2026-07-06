@@ -5714,6 +5714,21 @@ const KO_SCHEDULES = {
   ],
 };
 
+// 4tos de final: aún no se conocen los equipos (dependen de quién gane
+// 8vos), así que el horario se ancla por POSICIÓN de cruce (slot), no por
+// nombre de equipo. El emparejamiento de bracket (r16 slot 2k,2k+1 → qf
+// slot k) ya se validó contra el calendario oficial de sedes/horarios.
+// Semis y Final no se incluyen aún: la fuente consultada no permite
+// confirmar con certeza el emparejamiento slot-a-slot más allá de 4tos,
+// así que esas rondas usan el respaldo ("mostrar todos los pendientes")
+// hasta poder confirmarlo con el bracket real más cerca de la fecha.
+const KO_QF_SCHEDULE_BY_SLOT = {
+  0: '2026-07-09T16:00:00-04:00', // Foxborough
+  1: '2026-07-11T17:00:00-04:00', // Miami Gardens
+  2: '2026-07-10T15:00:00-04:00', // Inglewood
+  3: '2026-07-11T21:00:00-04:00', // Kansas City
+};
+
 // Busca el kickoff (timestamp ms) de un partido de llaves comparando por
 // inclusión de substring normalizado (tolera variantes de nombre: "Bosnia y
 // Herzegovina", "Congo" vs "RD Congo", etc.). rnd sin calendario cargado
@@ -5755,6 +5770,17 @@ function simGetKOMatches(){
       pendientes.push({ id:rnd+'-'+i, rnd, slot:i, local:s.local, visita:s.visita });
     }
     if(!pendientes.length) continue; // ronda 100% jugada, seguir a la siguiente
+
+    // 4tos: horario conocido por posición de slot (equipos aún no definidos)
+    if(rnd==='qf'){
+      const now = Date.now();
+      const conHorario = pendientes
+        .map(p => ({...p, kickoff: KO_QF_SCHEDULE_BY_SLOT[p.slot] ? new Date(KO_QF_SCHEDULE_BY_SLOT[p.slot]).getTime() : null}))
+        .filter(p => p.kickoff!=null && p.kickoff<=now);
+      if(!conHorario.length) return [];
+      conHorario.sort((a,b) => a.kickoff - b.kickoff);
+      return [conHorario[conHorario.length-1]];
+    }
 
     if(!KO_SCHEDULES[rnd]) return pendientes; // sin calendario cargado: mostrar todos
 
