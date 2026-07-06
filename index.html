@@ -3723,12 +3723,22 @@ async function guardarPronosPartidos(){
   const jugador=$id('sel-jugador-partidos')?.value; if(!jugador)return;
   const pron=state.pronosticos[jugador]?JSON.parse(JSON.stringify(state.pronosticos[jugador])):{};
   pron.partidos=pron.partidos||{};
+  const incompletos=[];
   PARTIDOS.forEach(p=>{
     const g1el=$id(`prd-${p.id}-g1`), g2el=$id(`prd-${p.id}-g2`);
     if(!g1el||!g2el) return;
     const g1=parseInt(g1el.value), g2=parseInt(g2el.value);
     if(!isNaN(g1)&&!isNaN(g2)) pron.partidos[p.id]={g1,g2};
+    else if(!isNaN(g1)||!isNaN(g2)) incompletos.push(`${p.local} vs ${p.visita}: falta el gol de ${isNaN(g1)?'local':'visita'}`);
   });
+  // Aviso de predicciones a medias: un gol escrito y el otro vacío no se
+  // guarda (queda como "sin predicción"), fácil de no notar porque el
+  // placeholder gris "0" del casillero vacío puede confundirse con un valor
+  // ya escrito.
+  if(incompletos.length){
+    const ok=confirm(`⚠️ Estos partidos tienen un solo gol escrito (el otro casillero quedó vacío) — NO se guardarán:\n\n${incompletos.join('\n')}\n\n¿Guardar el resto de todos modos? Cancela y completa ambos casilleros (incluye el 0 si corresponde) para que cuenten.`);
+    if(!ok) return;
+  }
   setLoad('btn-save-partidos',true);
   try{
     await api({action:'guardarPron',nombre:jugador,pronostico:pron});
@@ -4293,6 +4303,26 @@ async function saveKORound(){
     const g2=parseInt($id(`ko-${rnd}-${i}-g2`)?.value??'');
     return {g1:isNaN(g1)?null:g1, g2:isNaN(g2)?null:g2};
   });
+
+  // Aviso de predicciones a medias: un gol escrito y el otro vacío se guarda
+  // silenciosamente como "sin predicción" (0 pts), un error fácil de cometer
+  // porque el placeholder gris "0" del casillero vacío puede confundirse con
+  // un valor ya escrito. Se avisa explícitamente y se pide confirmar antes
+  // de continuar, en vez de guardar sin decir nada.
+  const incompletos=[];
+  preds.forEach((p,i)=>{
+    const soloUno=(p.g1==null)!==(p.g2==null);
+    if(soloUno){
+      const s=slots[i]||{};
+      const local=s.local||`Equipo ${2*i+1}`, visita=s.visita||`Equipo ${2*i+2}`;
+      incompletos.push(`Partido ${i+1} (${local} vs ${visita}): falta el gol de ${p.g1==null?'local':'visita'}`);
+    }
+  });
+  if(incompletos.length){
+    const ok=confirm(`⚠️ Estos partidos tienen un solo gol escrito (el otro casillero quedó vacío) — se guardarán como "sin predicción" (0 pts):\n\n${incompletos.join('\n')}\n\n¿Guardar de todos modos? Cancela y completa ambos casilleros (incluye el 0 si corresponde) para que cuenten.`);
+    if(!ok) return;
+  }
+
   setLoad('btn-save-ko',true);
   const r=await guardarKOPron(jugador,rnd,preds);
   setLoad('btn-save-ko',false);
