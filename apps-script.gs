@@ -495,6 +495,18 @@ function guardarPron(p) {
   const rows = sh.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] === nombre) {
+      // CRÍTICO: nunca sobrescribir ciegamente. Si el navegador que guarda
+      // Grupos/Partidos tiene en memoria un estado viejo (ej. una pestaña
+      // abierta desde antes de que el jugador guardara sus predicciones de
+      // llaves en otra sesión), el payload entrante puede no traer 'ko' —
+      // en ese caso se preserva el 'ko' ya guardado en la planilla en vez
+      // de borrarlo. Si el payload sí trae 'ko', se fusiona ronda por ronda
+      // con el existente para no perder rondas que el payload no incluya.
+      let existing = {};
+      try { existing = JSON.parse(rows[i][1] || '{}'); } catch(e) {}
+      if (existing.ko && Object.keys(existing.ko).length) {
+        pron.ko = Object.assign({}, existing.ko, pron.ko || {});
+      }
       sh.getRange(i + 1, 2).setValue(JSON.stringify(pron));
       return { ok: true };
     }
