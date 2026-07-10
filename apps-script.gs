@@ -513,7 +513,7 @@ function guardarPron(p) {
         }
       } catch(e) {}
       if (existing.ko && Object.keys(existing.ko).length) {
-        const safePronKo = (pron.ko && typeof pron.ko === 'object') ? pron.ko : {};
+        const safePronKo = (pron.ko && typeof pron.ko === 'object' && !Array.isArray(pron.ko)) ? pron.ko : {};
         pron.ko = Object.assign({}, existing.ko, safePronKo);
       }
       sh.getRange(i + 1, 2).setValue(JSON.stringify(pron));
