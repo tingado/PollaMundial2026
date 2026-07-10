@@ -5712,6 +5712,18 @@ const KO_SCHEDULES = {
     { local:'Argentina',      visita:'Egipto',      dt:'2026-07-07T12:00:00-04:00' },
     { local:'Suiza',          visita:'Colombia',    dt:'2026-07-07T16:00:00-04:00' },
   ],
+  // 4tos de final: los 4 cruces ya están confirmados por nombre de equipo
+  // en KOConfig (no dependen de posición de slot, que puede variar según
+  // el orden en que el admin cargó los cruces en el panel — como pasó acá:
+  // el cruce España-Bélgica quedó en slot 1, no en slot 2 como se asumió
+  // originalmente al anclar por posición). Se ancla por nombre de equipo,
+  // igual que 16avos/8vos, para no depender de un orden de slot frágil.
+  qf: [
+    { local:'Francia',   visita:'Marruecos',   dt:'2026-07-09T16:00:00-04:00' }, // Foxborough
+    { local:'España',    visita:'Bélgica',     dt:'2026-07-10T15:00:00-04:00' }, // Inglewood
+    { local:'Noruega',   visita:'Inglaterra',  dt:'2026-07-11T17:00:00-04:00' }, // Miami Gardens
+    { local:'Argentina', visita:'Suiza',       dt:'2026-07-11T21:00:00-04:00' }, // Kansas City
+  ],
 };
 
 // 4tos de final: aún no se conocen los equipos (dependen de quién gane
