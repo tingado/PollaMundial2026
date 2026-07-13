@@ -2811,7 +2811,7 @@ function renderMatchCard(p){
 
 // Pestañas de ronda en la vista Partidos: Grupos + cada ronda de llaves.
 // Solo cambia qué se muestra (lectura); no toca predicciones ni puntajes.
-const PARTIDOS_ROUND_LABELS = {grupos:'Grupos', r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', fin:'Final'};
+const PARTIDOS_ROUND_LABELS = {grupos:'Grupos', r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', tercer:'3er Lugar', fin:'Final'};
 function renderPartidosRoundTabs(){
   const cont=$id('partidos-round-tabs'); if(!cont) return;
   const rounds=['grupos',...KO_ROUNDS];
@@ -3854,14 +3854,16 @@ async function guardarElim(){
 // FASE ELIMINATORIA KO — UI por ronda
 // ══════════════════════════════════════════════════════════
 
-const KO_ROUND_LABELS = {r32:'16avos de final',r16:'8vos de final',qf:'Cuartos de final',sf:'Semifinales',fin:'Final'};
-const KO_ROUND_SHORT  = {r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
-const KO_ROUND_ORDER  = ['r32','r16','qf','sf','fin'];
+const KO_ROUND_LABELS = {r32:'16avos de final',r16:'8vos de final',qf:'Cuartos de final',sf:'Semifinales',tercer:'Partido por el 3er puesto',fin:'Final'};
+const KO_ROUND_SHORT  = {r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',tercer:'3er Lugar',fin:'Final'};
+const KO_ROUND_ORDER  = ['r32','r16','qf','sf','tercer','fin'];
 
 // ── CALENDARIO FIFA 2026 — apertura/cierre por ronda (hora de Chile, UTC−4) ──
 // apertura = al terminar la fase anterior · cierre = 5 min antes del 1er partido de la ronda.
 // El admin puede sobreescribir estas fechas en Admin → 🏆 Fase Eliminatoria KO.
 // (Las horas de cierre de R16/QF/SF/Final son provisionales hasta confirmar el horario FIFA.)
+// 'tercer' no tiene fecha por defecto: el admin la define en el panel (evita asumir un
+// horario de partido sin confirmar, igual que ya pasó con el horario de 4tos).
 const KO_CALENDAR_DEFAULTS = {
   r32: { apertura:'2026-06-27T20:00:00-04:00', cierre:'2026-06-28T14:55:00-04:00' },
   r16: { apertura:'2026-07-03T20:00:00-04:00', cierre:'2026-07-04T12:55:00-04:00' },
@@ -4799,7 +4801,7 @@ function calcPtsKOPartido(pred, res){
   return pts;
 }
 
-const KO_ROUNDS=['r32','r16','qf','sf','fin'];
+const KO_ROUNDS=['r32','r16','qf','sf','tercer','fin'];
 
 function calcPtsKO(pron){
   const ko=pron?.ko||{};
@@ -4909,7 +4911,7 @@ function buildDesglose(pron, res){
   const koItems=[];
   const scoresKO=state.scoresKO||{};
   const koPron=pron?.ko||{};
-  const koRoundLabels={r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',fin:'Final'};
+  const koRoundLabels={r32:'16avos',r16:'8vos',qf:'4tos',sf:'Semis',tercer:'3er Lugar',fin:'Final'};
   KO_ROUNDS.forEach(rnd=>{
     const preds=koPron[rnd];
     const results=scoresKO[rnd];
@@ -5138,7 +5140,7 @@ function renderAdminScores(grupo){
 function previewAdminScore(matchId){}  // visual hook, no-op for now
 
 // ── ADMIN: FASE ELIMINATORIA KO ──────────────────────────
-const KO_ROUND_SIZES = {r32:16, r16:8, qf:4, sf:2, fin:1};
+const KO_ROUND_SIZES = {r32:16, r16:8, qf:4, sf:2, tercer:1, fin:1};
 let _adminKORound = 'r32';
 
 function renderAdminKO(rnd){
@@ -6198,7 +6200,7 @@ function buildEvolutionData() {
     .sort((a, b) => new Date(a.fecha+'T'+(a.hora||'00:00')+':00') - new Date(b.fecha+'T'+(b.hora||'00:00')+':00'));
 
   // ── 2. Eventos KO (por ronda, en orden de slot) ──
-  const koSlotLabels = { r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', fin:'Final' };
+  const koSlotLabels = { r32:'16avos', r16:'8vos', qf:'4tos', sf:'Semis', tercer:'3er Lugar', fin:'Final' };
   const koEvents = [];
   KO_ROUNDS.forEach(rnd => {
     const slots   = (state.koConfig?.rounds?.[rnd]?.slots) || [];
