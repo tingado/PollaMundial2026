@@ -355,7 +355,7 @@ function guardarScoresAutoSync(scoresList) {
 
 // ── KO WRITE ─────────────────────────────────────────────
 
-const KO_ROUNDS_VALID = ['r32','r16','qf','sf','fin'];
+const KO_ROUNDS_VALID = ['r32','r16','qf','sf','tercer','fin'];
 
 // Calendario FIFA 2026 por defecto (hora de Chile, UTC−4). Debe coincidir con
 // KO_CALENDAR_DEFAULTS del index.html. Apertura = fin fase anterior; cierre = 5 min antes del 1er partido.
@@ -385,7 +385,7 @@ function koEffectiveStatus(ronda, config) {
 }
 
 // Guarda predicciones de marcadores KO de un jugador para una ronda.
-// p.nombre, p.ronda (r32|r16|qf|sf|fin), p.predicciones (JSON array [{g1,g2},...])
+// p.nombre, p.ronda (r32|r16|qf|sf|tercer|fin), p.predicciones (JSON array [{g1,g2},...])
 function guardarKO(p) {
   const nombre = (p.nombre || '').trim();
   if (!nombre) throw new Error('Nombre requerido');
