@@ -427,6 +427,17 @@ function guardarResultadosKO(p) {
   let resultados;
   try { resultados = JSON.parse(p.resultados || '[]'); } catch(e) { resultados = []; }
 
+  // Regla de alargue (validación de servidor): aet=true implica que los 90'
+  // terminaron en empate, y el puntaje usa SIEMPRE el marcador de los 90'.
+  // Rechaza guardar un marcador de 120' con aet (error ya ocurrido: 3–2 de
+  // Bélgica–Senegal). Se valida ANTES de escribir para no dejar guardados parciales.
+  for (let k = 0; k < resultados.length; k++) {
+    const r = resultados[k];
+    if (r && r.aet && Number(r.gL) !== Number(r.gV)) {
+      return { error: 'Slot ' + (Number(r.slot) + 1) + ': un partido con alargue/penales fue EMPATE a los 90\'. Ingresa el marcador de los 90 minutos (no el ' + r.gL + '–' + r.gV + ' del alargue) y marca quién avanzó.' };
+    }
+  }
+
   const sh = getSheet('ScoresKO');
   if (sh.getLastRow() === 0) {
     sh.appendRow(['ronda', 'slot', 'gL', 'gV', 'aet', 'winner']);
@@ -454,9 +465,40 @@ function guardarResultadosKO(p) {
 
 // Guarda configuración de rondas KO (status, deadlines, slots).
 // p.config = JSON con {rounds:{r32:{status,deadline,slots:[{local,visita}]}, ...}}
+// GUARDIA ANTI-DESALINEAMIENTO (servidor): las predicciones se anclan a la
+// posición del cruce. Si la nueva config cambia los equipos de un slot ya
+// definido en una ronda que YA tiene predicciones guardadas, se rechaza,
+// salvo que venga force='1' (el panel Admin lo envía tras una confirmación
+// explícita con advertencia). Así ninguna otra vía (script, API, error de
+// pestaña) puede reordenar cruces en silencio.
 function guardarKOConfig(p) {
   let config;
   try { config = JSON.parse(p.config || '{}'); } catch(e) { config = {}; }
+  if (p.force !== '1') {
+    const oldCfg = getKOConfig();
+    const prons = getPronosticos();
+    const conflictos = [];
+    KO_ROUNDS_VALID.forEach(rnd => {
+      const oldSlots = (oldCfg.rounds && oldCfg.rounds[rnd] && oldCfg.rounds[rnd].slots) || [];
+      if (!oldSlots.length) return;
+      const tienePreds = Object.keys(prons).some(n => {
+        const arr = prons[n] && prons[n].ko && prons[n].ko[rnd];
+        return Array.isArray(arr) && arr.some(x => x && (x.g1 != null || x.g2 != null));
+      });
+      if (!tienePreds) return;
+      const newSlots = (config.rounds && config.rounds[rnd] && config.rounds[rnd].slots) || [];
+      oldSlots.forEach((s, i) => {
+        if (!s || (!s.local && !s.visita)) return;
+        const n = newSlots[i] || { local: '', visita: '' };
+        if ((n.local || '') !== (s.local || '') || (n.visita || '') !== (s.visita || '')) {
+          conflictos.push(rnd + ' P' + (i + 1) + ' (' + (s.local || '?') + ' vs ' + (s.visita || '?') + ')');
+        }
+      });
+    });
+    if (conflictos.length) {
+      return { error: 'Bloqueado para proteger las predicciones ya guardadas: la nueva configuración cambia cruces ya definidos: ' + conflictos.join(', ') + '. Si realmente corresponde (corrección de tipeo sin reordenar), guarda desde Admin → Llaves y confirma la advertencia.' };
+    }
+  }
   const sh = getSheet('KOConfig');
   if (sh.getLastRow() === 0) sh.appendRow(['config_json']);
   if (sh.getLastRow() <= 1) sh.appendRow([JSON.stringify(config)]);
@@ -777,8 +819,14 @@ function fetchResultadosZafronix(p) {
       // Nuevo sistema: guardar marcadores KO por slot (usando config de slots)
       const koRnd = ZAFRONIX_STAGE_TO_KO[stage];
       if (koRnd && played && home && away) {
-        if (!koMatchesByRnd[koRnd]) koMatchesByRnd[koRnd] = [];
         const aet = !!(m.extraTime || m.penalties);
+        // Regla de alargue: el puntaje usa el marcador de los 90' (siempre empate si
+        // hubo alargue). Si la API entrega un marcador desigualado con alargue, es el
+        // de 120' y NO sirve para puntuar: se omite y el admin lo carga a mano con el
+        // marcador de 90' (el formulario ya lo valida). Así no se repite el caso
+        // Bélgica–Senegal (se guardó 3–2 de 120' y pagó puntos contra el marcador equivocado).
+        if (aet && m.homeScore !== m.awayScore) return;
+        if (!koMatchesByRnd[koRnd]) koMatchesByRnd[koRnd] = [];
         const winner = aet ? (m.homeScore > m.awayScore || (m.penalties && m.homePenalties > m.awayPenalties) ? 'local' : 'visita') : '';
         koMatchesByRnd[koRnd].push({ local: home, visita: away, gL: m.homeScore, gV: m.awayScore, aet, winner });
       }

@@ -72,6 +72,9 @@ Máximo posible: 36 pts grupos + 264 pts eliminatorias = **300 pts**
 | `apps-script.gs` | Backend (Google Apps Script) — se pega en el editor de Google |
 | `MANUAL.md` | Guía paso a paso para desplegar desde cero en ~15 minutos |
 | `Explicacion_Proyecto_Polla2026` | Guía conceptual para entender la arquitectura y trabajar con IA |
+| `test-scoring.js` | Suite de tests del sistema de puntaje — `node test-scoring.js` (ejecuta las funciones reales de `index.html`) |
+| `test-data/snapshot-2026-07-03.json` | Snapshot real de la planilla para el test de regresión |
+| `AUDITORIA-PUNTAJE-2026-07-03.md` | Informe de la auditoría completa del sistema de puntaje |
 
 ---
 
@@ -101,9 +104,9 @@ Este proyecto está pensado para adaptarse fácilmente. Todo lo que necesitas ca
 - El layout usa flexbox con sidebar fijo + main + panel derecho
 
 **Para cambiar la lógica de puntaje:**
-- `calcPtsGrupos()` y `calcPtsElim()` en `index.html`
-- `calcularScores()` en `apps-script.gs` (debe ser idéntico al frontend)
-- `ELIM_RONDAS` para las rondas y sus valores
+- `calcPtsGrupos()`, `calcPtsPartido()`/`calcPtsPartidos()` y `calcPtsKOPartido()`/`calcPtsKO()` en `index.html` — el puntaje se calcula SOLO en el frontend, siempre fresco desde los datos
+- (`calcPtsElim()` en `index.html` y `calcularScores()` en `apps-script.gs` son código legado sin uso — no los reconectes)
+- Después de cualquier cambio corre `node test-scoring.js` para validar la fórmula contra los casos conocidos
 
 > 💡 La arquitectura está diseñada para que puedas describir los cambios en lenguaje natural a una IA (Claude, ChatGPT, Gemini) y aplicarlos sin saber programar. Ver [Explicacion_Proyecto_Polla2026](./Explicacion_Proyecto_Polla2026) para guía de prompts.
 
