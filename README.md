@@ -1,122 +1,64 @@
-# ⚽ La Polla Mundialera 2026
+# La Polla Mundialera 2026
 
-> **Demo en vivo:** [tingado.github.io/PollaMundial2026](https://tingado.github.io/PollaMundial2026/)
+Aplicación web para organizar pronósticos de fútbol entre amigos. Combina un frontend HTML/CSS/JavaScript con Google Apps Script y Google Sheets.
 
-Plataforma web para organizar una quiniela de fútbol entre amigos para el Mundial 2026. Sin servidores de pago, sin instalaciones — solo un archivo HTML y Google Sheets como base de datos.
+## Empieza aquí
 
----
+- [Mapa visual, arquitectura y recorrido de los datos](docs/MAPA.md).
+- [Revisión documental y pendientes](docs/REVISION.md).
 
-## ¿Qué incluye?
+> Revisión documental: 26 de octubre de 2026. La presencia de código no acredita despliegue ni pruebas aprobadas. Esta revisión no cambia lógica, datos ni configuración operativa.
 
-- 📅 Calendario de los 64 partidos de la fase de grupos
-- 🏟️ Tablas de posición de los 12 grupos (A–L)
-- 🎯 Pronósticos: quién clasifica 1° y 2° en cada grupo
-- 🏆 Eliminatorias: selección de equipos por ronda
-- 📊 Ranking con puntaje en tiempo real
-- 📋 Inscripción con gestión del pozo ($5.000 CLP entrada)
-- 🧮 Explicación del sistema de puntaje
-- ⚙️ Admin: resultados manuales + sincronización automática con football-data.org
-- ⚡ Panel lateral "¿Sabías que?" con datos curiosos del Mundial
+## Qué hay en este repositorio
 
----
-
-## Sistema de puntaje
-
-### Fase de grupos
-| Acierto | Puntos |
+| Archivo | Para qué sirve |
 |---|---|
-| 🥇 1° lugar del grupo correcto | **+2 pts** |
-| 🥈 2° lugar del grupo correcto | **+1 pt** |
+| `index.html` | Interfaz, pronósticos, administración, simulación y cálculo visible de puntajes. |
+| `apps-script.gs` | Acceso a Sheets, lectura/escritura y sincronización con proveedores externos. |
+| `MANUAL.md` | Instrucciones de despliegue existentes; contrastar con la versión actual antes de usarlas. |
+| `sw.js` | Service worker; comportamiento no auditado en esta revisión. |
+| `grafica-wsp.html`, `render-grafica.js` | Recursos de gráfica; no ejecutados en esta revisión. |
+| `polla-mundialera-2026.png` | Recurso gráfico. |
 
-### Fase eliminatoria
-| Ronda | Puntos por equipo |
-|---|---|
-| 16avos de Final (32 equipos) | **+2 pts** |
-| Cuartos de Final (8 equipos) | **+4 pts** |
-| Semifinales (4 equipos) | **+6 pts** |
-| Finalista (2 equipos) | **+8 pts** |
-| 🏆 Campeón | **+10 pts** |
+## Arquitectura en un vistazo
 
-Máximo posible: 36 pts grupos + 264 pts eliminatorias = **300 pts**
-
----
-
-## Arquitectura
-
-```
-┌─────────────────────────────────────────────────────┐
-│              index.html (Frontend)                  │
-│  Todo el app en un solo archivo HTML/CSS/JS         │
-│  Se publica en GitHub Pages o Netlify               │
-└───────────────────┬─────────────────────────────────┘
-                    │ JSONP (GET)
-┌───────────────────▼─────────────────────────────────┐
-│         apps-script.gs (Backend)                    │
-│  Google Apps Script — gratis, sin servidor          │
-│  Desplegado como Web App pública                    │
-└───────────────────┬─────────────────────────────────┘
-                    │
-┌───────────────────▼─────────────────────────────────┐
-│         Google Sheets (Base de datos)               │
-│  Hojas: Jugadores · Pronosticos · Resultados        │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    P[Participante] --> F[index.html]
+    A[Administrador] --> F
+    F -->|GET con JSONP| G[apps-script.gs]
+    G --> S[Google Sheets]
+    G -->|Consulta opcional| X[Proveedores de resultados]
+    G -->|Respuesta| F
 ```
 
----
+**Lectura textual:** el navegador presenta la app; Apps Script conecta con la planilla y los proveedores. Los datos operativos de Sheets no están respaldados automáticamente por versionar el código en GitHub.
 
-## Archivos del repositorio
+## Puntajes: leer antes de modificar
 
-| Archivo | Descripción |
-|---|---|
-| `index.html` | App completa (frontend) — todo en un solo archivo |
-| `apps-script.gs` | Backend (Google Apps Script) — se pega en el editor de Google |
-| `MANUAL.md` | Guía paso a paso para desplegar desde cero en ~15 minutos |
-| `Explicacion_Proyecto_Polla2026` | Guía conceptual para entender la arquitectura y trabajar con IA |
+El frontend actual calcula el total mediante `calcPtsTotal()` sumando grupos, marcadores KO, partidos y correcciones configuradas. El backend conserva `calcularScores()` con otra composición. **No se ha comprobado equivalencia entre ambos.**
 
----
+El antiguo README describía un sistema por rondas y un máximo de 300 puntos que no representan de forma fiable el cálculo visible actual. Se conserva íntegro en [README anterior](docs/README-ANTERIOR.md), como referencia histórica, no como reglamento vigente.
 
-## Deploy rápido (15 minutos)
+Antes de una nueva edición del torneo: acordar un reglamento único, crear ejemplos de prueba y contrastar frontend, backend y datos reales. Esta revisión no altera puntajes ni pronósticos.
 
-1. **Backend:** Abre Google Sheets → Extensiones → Apps Script → pega `apps-script.gs` → Implementar como Web App
-2. **Frontend:** Activa GitHub Pages en este repo (Settings → Pages → rama `main`) o arrastra `index.html` a Netlify
-3. **Conectar:** Abre la app → pega la URL del Apps Script en el banner → Conectar
+## Preparación y uso
 
-📋 Instrucciones detalladas en el [MANUAL.md](./MANUAL.md)
+1. Trabajar con una copia de prueba de Google Sheets, nunca con participantes reales para experimentar.
+2. Revisar `MANUAL.md` y la configuración del script vinculado a la planilla.
+3. Configurar proveedores y credenciales únicamente en entornos privados; la cobertura de una competición depende del proveedor y del plan.
+4. Revisar la autenticación del backend **antes** de publicar una Web App accesible a cualquiera.
+5. Publicar el frontend estático solo después de validar el flujo con la copia de prueba.
 
----
+La dirección histórica del frontend es [GitHub Pages](https://tingado.github.io/PollaMundial2026/). Su disponibilidad y el despliegue del backend no fueron comprobados en esta revisión.
 
-## Replicar este proyecto para tu propio torneo
+## Seguridad y límites
 
-Este proyecto está pensado para adaptarse fácilmente. Todo lo que necesitas cambiar está bien señalizado en los archivos:
+- El PIN incrustado en el frontend no sustituye una autorización del servidor.
+- El enrutador `doGet()` expone acciones de escritura y administración sin una comprobación de autorización visible en ese punto. Revisar la protección efectiva de toda la operación antes de usar datos reales.
+- No transportar secretos mediante URLs: pueden quedar en registros e historial. Revisar el flujo existente de guardado de tokens.
+- No se ejecutaron Apps Script, sincronizaciones, borrados ni acciones administrativas.
 
-**Para adaptar el torneo:**
-- `FECHA_INICIO` y `FECHA_CIERRE` en `index.html`
-- Array `PARTIDOS` con el calendario de tu torneo
-- Objeto `GRUPOS` con los equipos participantes
-- `MONTO_ENTRADA` y porcentajes del pozo
-- `ADMIN_PIN` (default: `2026`)
+## Cómo continuar
 
-**Para cambiar el diseño:**
-- Variables CSS en `:root` al inicio del `<style>` (colores, fuentes)
-- El layout usa flexbox con sidebar fijo + main + panel derecho
-
-**Para cambiar la lógica de puntaje:**
-- `calcPtsGrupos()` y `calcPtsElim()` en `index.html`
-- `calcularScores()` en `apps-script.gs` (debe ser idéntico al frontend)
-- `ELIM_RONDAS` para las rondas y sus valores
-
-> 💡 La arquitectura está diseñada para que puedas describir los cambios en lenguaje natural a una IA (Claude, ChatGPT, Gemini) y aplicarlos sin saber programar. Ver [Explicacion_Proyecto_Polla2026](./Explicacion_Proyecto_Polla2026) para guía de prompts.
-
----
-
-## Datos técnicos
-
-| | |
-|---|---|
-| Frontend | HTML + CSS + JS vanilla (sin frameworks) |
-| Backend | Google Apps Script (JSONP) |
-| Base de datos | Google Sheets |
-| Hosting | GitHub Pages (gratis) |
-| API resultados | football-data.org (plan gratuito) |
-| Fuentes | Google Fonts (Bebas Neue + Outfit) |
-| Costo total | **$0** |
+Consulta [MAPA](docs/MAPA.md) para entender funciones y relaciones; [REVISION](docs/REVISION.md) distingue hallazgos, propuestas y verificaciones pendientes. No hay garantía de costo cero: aplican cuotas, planes y condiciones de los servicios externos.
